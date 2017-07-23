@@ -1,0 +1,11 @@
+*~
+*#*
+*.swp
+
+/dist
+/dist-newstyle
+/cabal-dev
+/.cabal-sandbox
+/cabal.sandbox.config
+/cabal.project.local
+
