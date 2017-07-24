@@ -74,9 +74,17 @@ recordTest :: TestTree
 recordTest =
   let p = parse (record comma) ""
   in  testGroup "record" [
-    testCase "empty" $
-      p "" @?=/ []
-  , testCase "newlines" $
-      p "\n\n\r\n" @?=/ []
+    testCase "single field" $
+      p "Yes" @?=/ ["Yes"]
+  , testCase "fields" $
+      p "Anderson,Squire,Wakeman,Howe,Bruford" @?=/ ["Anderson", "Squire", "Wakeman", "Howe", "Bruford"]
+  , testCase "commas" $
+      p ",,," @?=/ ["","","",""]
+  , testCase "record ends at newline" $
+      p "a,b,c\nd,e,f" @?=/ ["a","b","c"]
+  , testCase "record ends at carriage return" $
+      p "g,h,i\rj,k,l" @?=/ ["g","h","i"]
+  , testCase "record ends at carriage return followed by newline" $
+      p "m,n,o\r\np,q,r" @?=/ ["m","n","o"]
   ]
 

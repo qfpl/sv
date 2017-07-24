@@ -3,8 +3,9 @@ module Data.CSV.Parser where
 import           Control.Applicative     (Alternative, (<$>), (<|>))
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet
+import           Data.Functor            (void)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, many, sepBy, sepEndBy, sepEndBy1, some, try)
+import           Text.Parser.Combinators (between, choice, many, sepEndBy, sepEndBy1, some, try)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -60,6 +61,12 @@ spaced =
 record :: CharParsing m => Char -> m [String]
 record sep = field sep `sepEndBy1` spaced (char sep)
 
+beginning :: CharParsing m => m ()
+beginning = void $ many (oneOfSet newlines)
+
 separatedValues :: CharParsing m => Char -> m [[String]]
-separatedValues sep = record sep `sepEndBy` some (oneOfSet newlines)
+separatedValues sep = beginning *> values sep
+
+values :: CharParsing m => Char -> m [[String]]
+values sep = record sep `sepEndBy` some (oneOfSet newlines)
 
