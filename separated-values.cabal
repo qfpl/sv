@@ -21,6 +21,7 @@ source-repository    head
 library
   exposed-modules:     Data.CSV.Parser
                        , Data.CSV.Field
+                       , Data.CSV.Record
                        , Data.CSV.Quote
   -- other-modules:       
   -- other-extensions:    

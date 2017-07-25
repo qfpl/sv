@@ -7,8 +7,9 @@ import           Data.Functor            (void, ($>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
 
-import           Data.CSV.Field (Field (Unquoted, Quoted) )
-import           Data.CSV.Quote (Quote (SingleQuote, DoubleQuote), quoteChar)
+import           Data.CSV.Field          (Field (Unquoted, Quoted) )
+import           Data.CSV.Record         (Record (Record) )
+import           Data.CSV.Quote          (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -69,17 +70,17 @@ spaced =
   let s = many horizontalSpace
   in between s s
 
-record :: CharParsing m => Char -> m [Field]
+record :: CharParsing m => Char -> m Record
 record sep =
-  field sep `sepEndBy1` char sep
+  Record <$> field sep `sepEndBy1` char sep
 
 beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)
 
-separatedValues :: CharParsing m => Char -> m [[Field]]
+separatedValues :: CharParsing m => Char -> m [Record]
 separatedValues sep = beginning *> values sep
 
-values :: CharParsing m => Char -> m [[Field]]
+values :: CharParsing m => Char -> m [Record]
 values sep =
   eof $> []
     <|> record sep `sepEndBy` some (oneOfSet newlines)

@@ -10,6 +10,7 @@ import           Text.Parsec
 
 import           Data.CSV.Field
 import           Data.CSV.Parser
+import           Data.CSV.Record  (Record (Record))
 import           Data.CSV.Quote   (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 test_Parser :: TestTree
@@ -29,13 +30,11 @@ test_Parser =
   -> Assertion
 (@?=/) l r = l @?= Right r
 
-singleQ = '\''
-doubleQ = '"'
 qd = Quoted DoubleQuote
 qs = Quoted SingleQuote
 uq = Unquoted
-uqa = fmap Unquoted
-uqaa = fmap (fmap Unquoted)
+uqa = Record . fmap Unquoted
+uqaa = fmap uqa
 
 quotedFieldTest :: (forall m . CharParsing m => m Field) -> String -> Quote -> TestTree
 quotedFieldTest parser name quote =
