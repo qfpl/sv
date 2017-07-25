@@ -3,9 +3,9 @@ module Data.CSV.Parser where
 import           Control.Applicative     (Alternative, (<$>), (<|>))
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet
-import           Data.Functor            (void)
+import           Data.Functor            (void, ($>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, many, sepEndBy, sepEndBy1, some, try)
+import           Text.Parser.Combinators (between, choice, many, sepEndBy, some, try)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -26,19 +26,20 @@ doubleQuotedField = quotedField doubleQuote
 quotedField :: CharParsing m => Char -> m String
 quotedField quote =
   let cq = char quote
-  in spaced (between cq cq (concatMany (escapeChar quote <|> fmap pure (notChar quote))))
+      quoted = between cq cq
+  in spaced (quoted (many (escapeChar quote <|> notChar quote)))
 
-escapeChar :: CharParsing m => Char -> m String
-escapeChar c = string (concatenate backslash c)
+escapeChar :: CharParsing m => Char -> m Char
+escapeChar c = try (string (concatenate backslash c)) $> c
 
 concatenate :: Char -> Char -> String
 concatenate c d = [c,d]
 
 unquotedField :: CharParsing m => Char -> m String
 unquotedField sep =
-  concatMany (
+  many (
     escapeChar sep <|>
-      (pure <$> noneOfSet (newlineOr sep))
+      noneOfSet (newlineOr sep)
   )
 
 newlineOr :: Char -> CharSet
@@ -59,7 +60,7 @@ spaced =
   in between s s
 
 record :: CharParsing m => Char -> m [String]
-record sep = field sep `sepEndBy1` spaced (char sep)
+record sep = field sep `sepEndBy` char sep
 
 beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)

@@ -17,6 +17,7 @@ test_Parser =
   , doubleQuotedFieldTest
   , fieldTest
   , recordTest
+  , separatedValuesTest
   ]
 
 (@?=/) ::
@@ -38,6 +39,10 @@ quotedFieldTest parser name q =
       assertBool "wasn't left" (isLeft (p [   "no opening quote", q]))
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
+  , testCase "quoted field can handle escaped quotes" $
+     p [q,"yes\\", q, "no", q] @?=/ concat ["yes", q, "no"]
+  , testCase "quoted field can handle backslash on its own" $
+     p [q,"hello\\goodbye",q] @?=/ "hello\\goodbye"
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
@@ -86,5 +91,21 @@ recordTest =
       p "g,h,i\rj,k,l" @?=/ ["g","h","i"]
   , testCase "record ends at carriage return followed by newline" $
       p "m,n,o\r\np,q,r" @?=/ ["m","n","o"]
+  ]
+
+separatedValuesTest :: TestTree
+separatedValuesTest =
+  let p = parse (separatedValues comma) ""
+  in  testGroup "separatedValue" [
+    testCase "empty string" $
+      p "" @?=/ []
+  , testCase "single field, single record" $
+      p "one" @?=/ [["one"]]
+  , testCase "single field, multiple records" $
+      p "one\nun" @?=/ [["one"],["un"]]
+  , testCase "multiple fields, single record" $
+      p "one,two" @?=/ [["one","two"]]
+  , testCase "multiple fields, multiple records" $
+      p "one,two,three\nun,deux,trois" @?=/ [["one", "two", "three"], ["un", "deux", "trois"]]
   ]
 
