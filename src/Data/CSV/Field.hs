@@ -1,8 +1,9 @@
 module Data.CSV.Field where
 
+import Data.CSV.Quote
+
 data Field =
     Unquoted String
-  -- TODO Maybe don't use Char here?
-  | Quoted Char String
+  | Quoted Quote String
   deriving (Eq, Ord, Show)
 

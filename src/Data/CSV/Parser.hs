@@ -7,7 +7,8 @@ import           Data.Functor            (void, ($>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
 
-import Data.CSV.Field (Field ( Unquoted, Quoted) )
+import           Data.CSV.Field (Field (Unquoted, Quoted) )
+import           Data.CSV.Quote (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -18,18 +19,19 @@ pipe = '|'
 tab = '\t'
 
 singleQuotedField, doubleQuotedField :: CharParsing m => m Field
-singleQuotedField = quotedField singleQuote
-doubleQuotedField = quotedField doubleQuote
+singleQuotedField = quotedField SingleQuote
+doubleQuotedField = quotedField DoubleQuote
 
-between' :: CharParsing m => Char -> m String -> m Field
-between' c p =
-  let cc = char c
-  in  fmap (Quoted c) (between cc cc p)
+quoted :: CharParsing m => Quote -> m String -> m Field
+quoted q p =
+  let c = char (quoteChar q)
+  in  fmap (Quoted q) (between c c p)
 
-quotedField :: CharParsing m => Char -> m Field
+quotedField :: CharParsing m => Quote -> m Field
 quotedField quote =
-  let quoted = between' quote
-  in  spaced (quoted (many (escapeChar quote <|> notChar quote)))
+  let qc = quoteChar quote
+      escape = escapeChar qc
+  in  spaced (quoted quote (many (escape <|> notChar qc)))
 
 escapeChar :: CharParsing m => Char -> m Char
 escapeChar c = try (string (concatenate backslash c)) $> c

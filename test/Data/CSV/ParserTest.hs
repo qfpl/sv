@@ -10,6 +10,7 @@ import           Text.Parsec
 
 import           Data.CSV.Field
 import           Data.CSV.Parser
+import           Data.CSV.Quote   (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 test_Parser :: TestTree
 test_Parser =
@@ -30,19 +31,19 @@ test_Parser =
 
 singleQ = '\''
 doubleQ = '"'
-qd = Quoted doubleQ
-qs = Quoted singleQ
+qd = Quoted DoubleQuote
+qs = Quoted SingleQuote
 uq = Unquoted
 uqa = fmap Unquoted
 uqaa = fmap (fmap Unquoted)
 
-quotedFieldTest :: (forall m . CharParsing m => m Field) -> String -> Char -> TestTree
-quotedFieldTest parser name qc =
+quotedFieldTest :: (forall m . CharParsing m => m Field) -> String -> Quote -> TestTree
+quotedFieldTest parser name quote =
   let p = parse parser "" . concat
-      q = [qc]
+      q = [quoteChar quote]
   in testGroup name [
     testCase "pass" $
-      p [q,"hello text",q] @?=/ Quoted qc "hello text"
+      p [q,"hello text",q] @?=/ Quoted quote "hello text"
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -50,14 +51,14 @@ quotedFieldTest parser name qc =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes\\", q, "no", q] @?=/ Quoted qc (concat ["yes", q, "no"])
+     p [q,"yes\\", q, "no", q] @?=/ Quoted quote (concat ["yes", q, "no"])
   , testCase "quoted field can handle backslash on its own" $
-     p [q,"hello\\goodbye",q] @?=/ Quoted qc "hello\\goodbye"
+     p [q,"hello\\goodbye",q] @?=/ Quoted quote "hello\\goodbye"
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
-singleQuotedFieldTest = quotedFieldTest singleQuotedField "singleQuotedField" singleQ
-doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" doubleQ
+singleQuotedFieldTest = quotedFieldTest singleQuotedField "singleQuotedField" SingleQuote
+doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" DoubleQuote
 
 fieldTest :: TestTree
 fieldTest =
