@@ -1,11 +1,11 @@
 module Data.CSV.Parser where
 
-import           Control.Applicative     (Alternative, (<$>), (<|>))
+import           Control.Applicative     ((<|>))
 import           Data.CharSet            (CharSet)
-import qualified Data.CharSet as CharSet
+import qualified Data.CharSet as CharSet (fromList, insert)
 import           Data.Functor            (void, ($>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, many, sepEndBy, some, try)
+import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -14,10 +14,6 @@ backslash = '\\'
 comma = ','
 pipe = '|'
 tab = '\t'
-
-concatMany, concatSome :: Alternative f => f [a] -> f [a]
-concatMany p = concat <$> many p
-concatSome p = concat <$> some p
 
 singleQuotedField, doubleQuotedField :: CharParsing m => m String
 singleQuotedField = quotedField singleQuote
@@ -60,7 +56,8 @@ spaced =
   in between s s
 
 record :: CharParsing m => Char -> m [String]
-record sep = field sep `sepEndBy` char sep
+record sep =
+  field sep `sepEndBy1` char sep
 
 beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)
@@ -69,5 +66,6 @@ separatedValues :: CharParsing m => Char -> m [[String]]
 separatedValues sep = beginning *> values sep
 
 values :: CharParsing m => Char -> m [[String]]
-values sep = record sep `sepEndBy` some (oneOfSet newlines)
-
+values sep =
+  eof $> []
+    <|> record sep `sepEndBy` some (oneOfSet newlines)
