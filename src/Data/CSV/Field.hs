@@ -2,7 +2,7 @@ module Data.CSV.Field where
 
 import Data.Bifunctor   (Bifunctor (bimap))
 import Data.Foldable    (Foldable (foldMap))
-import Data.Functor     (Functor (fmap))
+import Data.Functor     (Functor (fmap), (<$>))
 import Data.Traversable (Traversable (traverse))
 
 import Text.Between (Between)
@@ -25,8 +25,8 @@ instance Foldable (Field spc) where
 
 instance Traversable (Field spc) where
   traverse f fi = case fi of
-    UnquotedF s -> fmap UnquotedF (f s)
-    QuotedF b -> fmap QuotedF (traverse (traverse f) b)
+    UnquotedF s -> UnquotedF <$> f s
+    QuotedF b -> QuotedF <$> (traverse (traverse f) b)
 
 instance Bifunctor Field where
   bimap f g fi = case fi of

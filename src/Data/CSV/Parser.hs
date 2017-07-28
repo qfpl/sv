@@ -7,9 +7,10 @@ import           Data.Functor            (void, ($>), (<$>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
 
+import           Data.CSV.CSV            (CSV (CSV))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
 import           Data.CSV.Record         (Record (Record) )
-import           Text.Between            (Between (Between), betwixt)
+import           Text.Between            (Between, betwixt)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
@@ -79,10 +80,11 @@ record sep =
 beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)
 
-separatedValues :: CharParsing m => Char -> m [Record String String]
-separatedValues sep = beginning *> values sep
+separatedValues :: CharParsing m => Char -> m (CSV String String)
+separatedValues sep = beginning *> fmap (CSV sep) (values sep)
 
 values :: CharParsing m => Char -> m [Record String String]
 values sep =
   eof $> []
     <|> record sep `sepEndBy` some (oneOfSet newlines)
+

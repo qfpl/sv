@@ -19,8 +19,9 @@ source-repository    head
   location:          git@github.com/data61/separated-values.git
 
 library
-  exposed-modules:     Data.CSV.Parser
+  exposed-modules:     Data.CSV.CSV
                        , Data.CSV.Field
+                       , Data.CSV.Parser
                        , Data.CSV.Record
                        , Text.Between
                        , Text.Newline

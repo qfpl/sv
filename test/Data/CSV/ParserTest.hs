@@ -8,10 +8,11 @@ import           Test.Tasty.HUnit (Assertion, assertBool, testCase, (@?=))
 import           Text.Parser.Char (CharParsing)
 import           Text.Parsec
 
+import           Data.CSV.CSV     (CSV (CSV))
 import           Data.CSV.Field
 import           Data.CSV.Parser
 import           Data.CSV.Record  (Record (Record))
-import           Text.Between     (Between (Between), betwixt, uniform)
+import           Text.Between     (Between (Between), uniform)
 import           Text.Quote       (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 test_Parser :: TestTree
@@ -21,7 +22,8 @@ test_Parser =
   , doubleQuotedFieldTest
   , fieldTest
   , recordTest
-  , separatedValuesTest
+  , csvTest
+  , psvTest
   ]
 
 (@?=/) ::
@@ -31,11 +33,16 @@ test_Parser =
   -> Assertion
 (@?=/) l r = l @?= Right r
 
+qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote
 qs = Quoted SingleQuote
+uq :: str -> Field spc str
 uq = UnquotedF
+uqa :: [str] -> Record spc str
 uqa = Record . fmap uq
+uqaa :: [[str]] -> [Record spc str]
 uqaa = fmap uqa
+nospc :: Quoted str -> Field String str
 nospc = QuotedF . uniform ""
 
 quotedFieldTest :: (forall m . CharParsing m => m (Field String String)) -> String -> Quote -> TestTree
@@ -107,20 +114,27 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ["m","n","o"]
   ]
 
-separatedValuesTest :: TestTree
-separatedValuesTest =
-  let p = parse (separatedValues comma) ""
+separatedValuesTest :: Char -> TestTree
+separatedValuesTest sep =
+  let p = parse (separatedValues sep) ""
+      ps = parse (separatedValues sep) "" . concat
+      csv = CSV sep
+      s = [sep]
   in  testGroup "separatedValue" [
     testCase "empty string" $
-      p "" @?=/ []
+      p "" @?=/ csv []
   , testCase "single field, single record" $
-      p "one" @?=/ uqaa [["one"]]
+      p "one" @?=/ csv (uqaa [["one"]])
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ uqaa [["one"],["un"]]
+      p "one\nun" @?=/ csv (uqaa [["one"],["un"]])
   , testCase "multiple fields, single record" $
-      p "one,two" @?=/ uqaa [["one","two"]]
+      ps ["one", s, "two"] @?=/ csv (uqaa [["one","two"]])
   , testCase "multiple fields, multiple records" $
-      p "one,two,three\nun,deux,trois"
-        @?=/ uqaa [["one", "two", "three"], ["un", "deux", "trois"]]
+      ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
+        @?=/ csv (uqaa [["one", "two", "three"], ["un", "deux", "trois"]])
   ]
+
+csvTest, psvTest :: TestTree
+csvTest = separatedValuesTest comma
+psvTest = separatedValuesTest pipe
 
