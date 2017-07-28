@@ -11,7 +11,8 @@ import           Text.Parsec
 import           Data.CSV.Field
 import           Data.CSV.Parser
 import           Data.CSV.Record  (Record (Record))
-import           Data.CSV.Quote   (Quote (SingleQuote, DoubleQuote), quoteChar)
+import           Text.Between     (Between (Between), betwixt, uniform)
+import           Text.Quote       (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 test_Parser :: TestTree
 test_Parser =
@@ -32,17 +33,22 @@ test_Parser =
 
 qd = Quoted DoubleQuote
 qs = Quoted SingleQuote
-uq = Unquoted
-uqa = Record . fmap Unquoted
+uq = UnquotedF
+uqa = Record . fmap uq
 uqaa = fmap uqa
+nospc = QuotedF . uniform ""
 
-quotedFieldTest :: (forall m . CharParsing m => m Field) -> String -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field String String)) -> String -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
   in testGroup name [
     testCase "pass" $
-      p [q,"hello text",q] @?=/ Quoted quote "hello text"
+      p [q,"hello text",q]
+        @?=/ (nospc (Quoted quote "hello text"))
+  , testCase "capture space" $
+      p ["   ", q, " spaced text  ", q, "     "]
+        @?=/ QuotedF (Between "   " "     " (Quoted quote " spaced text  "))
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -50,9 +56,9 @@ quotedFieldTest parser name quote =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes\\", q, "no", q] @?=/ Quoted quote (concat ["yes", q, "no"])
+     p [q,"yes\\", q, "no", q] @?=/ nospc (Quoted quote (concat ["yes", q, "no"]))
   , testCase "quoted field can handle backslash on its own" $
-     p [q,"hello\\goodbye",q] @?=/ Quoted quote "hello\\goodbye"
+     p [q,"hello\\goodbye",q] @?=/ nospc (Quoted quote "hello\\goodbye")
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
@@ -64,21 +70,21 @@ fieldTest =
   let p = parse (field comma) ""
   in  testGroup "field" [
     testCase "doublequoted" $
-      p "\"hello\"" @?=/ qd "hello"
+      p "\"hello\"" @?=/ nospc (qd "hello")
   , testCase "singlequoted" $
-      p "'goodbye'" @?=/ qs "goodbye"
+      p "'goodbye'" @?=/ nospc (qs "goodbye")
   , testCase "unquoted" $
       p "yes" @?=/ uq "yes"
   , testCase "spaced doublequoted" $
-     p "       \" spaces \"    " @?=/ qd " spaces "
+     p "       \" spaces  \"    " @?=/ QuotedF (Between "       " "    " (qd " spaces  "))
   , testCase "spaced singlequoted" $
-     p "        ' more spaces ' " @?=/ qs " more spaces "
+     p "        ' more spaces ' " @?=/ QuotedF (Between  "        " " " (qs " more spaces "))
   , testCase "spaced unquoted" $
      p "  text  " @?=/ uq "  text  "
   , testCase "fields can include the separator in single quotes" $
-     p "'hello,there,'" @?=/ qs "hello,there,"
+     p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $
-     p "\"court,of,the,,,,crimson,king\"" @?=/ qd "court,of,the,,,,crimson,king"
+     p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
   , testCase "unquoted fields stop at the separator (1)" $
      p "close,to,the,edge" @?=/ uq "close"
   , testCase "unquoted fields stop at the separator (2)" $

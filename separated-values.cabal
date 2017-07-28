@@ -22,7 +22,8 @@ library
   exposed-modules:     Data.CSV.Parser
                        , Data.CSV.Field
                        , Data.CSV.Record
-                       , Data.CSV.Quote
+                       , Text.Between
+                       , Text.Quote
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <5
