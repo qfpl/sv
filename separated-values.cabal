@@ -23,6 +23,7 @@ library
                        , Data.CSV.Field
                        , Data.CSV.Record
                        , Text.Between
+                       , Text.Newline
                        , Text.Quote
   -- other-modules:       
   -- other-extensions:    
