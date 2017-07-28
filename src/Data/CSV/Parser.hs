@@ -32,21 +32,22 @@ quoted q p =
 quotedField :: CharParsing m => Quote -> m (Field String String)
 quotedField quote =
   let qc = quoteChar quote
-      escape = escapeChar qc
+      escape = escapeQuote quote
   in  QuotedF <$> spaced (quoted quote (many (escape <|> notChar qc)))
 
-escapeChar :: CharParsing m => Char -> m Char
-escapeChar c = try (string (concatenate backslash c)) $> c
+escapeQuote :: CharParsing m => Quote -> m Char
+escapeQuote q =
+  let c = quoteChar q
+  in  try (string (two c)) $> c
 
-concatenate :: Char -> Char -> String
-concatenate c d = [c,d]
+two :: a -> [a]
+two a = [a,a]
 
 unquotedField :: CharParsing m => Char -> m (Field String String)
 unquotedField sep =
   UnquotedF <$>
     many (
-      escapeChar sep <|>
-        noneOfSet (newlineOr sep)
+      noneOfSet (newlineOr sep)
     )
 
 newlineOr :: Char -> CharSet

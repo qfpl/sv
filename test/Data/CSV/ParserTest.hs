@@ -56,9 +56,7 @@ quotedFieldTest parser name quote =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes\\", q, "no", q] @?=/ nospc (Quoted quote (concat ["yes", q, "no"]))
-  , testCase "quoted field can handle backslash on its own" $
-     p [q,"hello\\goodbye",q] @?=/ nospc (Quoted quote "hello\\goodbye")
+     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (concat ["yes", q, "no"]))
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
@@ -89,8 +87,6 @@ fieldTest =
      p "close,to,the,edge" @?=/ uq "close"
   , testCase "unquoted fields stop at the separator (2)" $
      p ",close,to,the,edge" @?=/ uq ""
-  , testCase "unquoted fields can contain escaped commas" $
-     p "I knew him\\, Horatio" @?=/ uq "I knew him, Horatio"
   ]
 
 recordTest :: TestTree
