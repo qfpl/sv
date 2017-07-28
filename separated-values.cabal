@@ -22,6 +22,7 @@ library
   exposed-modules:     Data.CSV.CSV
                        , Data.CSV.Field
                        , Data.CSV.Parser
+                       , Data.CSV.Pretty
                        , Data.CSV.Record
                        , Text.Between
                        , Text.Newline
@@ -31,6 +32,7 @@ library
   build-depends:       base >=4.8 && <5
                        , charset >=0.3 && <=0.4
                        , parsers >=0.12 && <0.13
+                       , semigroupoids >= 5 && <6
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:

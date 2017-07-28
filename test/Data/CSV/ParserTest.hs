@@ -2,18 +2,19 @@
 
 module Data.CSV.ParserTest (test_Parser) where
 
-import           Data.Either      (isLeft)
-import           Test.Tasty       (TestTree, testGroup)
-import           Test.Tasty.HUnit (Assertion, assertBool, testCase, (@?=))
-import           Text.Parser.Char (CharParsing)
-import           Text.Parsec
+import           Data.List.NonEmpty (NonEmpty ((:|)))
+import           Data.Either        (isLeft)
+import           Test.Tasty         (TestTree, testGroup)
+import           Test.Tasty.HUnit   (Assertion, assertBool, testCase, (@?=))
+import           Text.Parser.Char   (CharParsing)
+import           Text.Parsec        (parse)
 
-import           Data.CSV.CSV     (CSV (CSV))
-import           Data.CSV.Field
-import           Data.CSV.Parser
-import           Data.CSV.Record  (Record (Record))
-import           Text.Between     (Between (Between), uniform)
-import           Text.Quote       (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
+import           Data.CSV.CSV       (CSV (CSV))
+import           Data.CSV.Field     (Field (QuotedF, UnquotedF))
+import           Data.CSV.Parser    (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.CSV.Record    (Record (Record))
+import           Text.Between       (Between (Between), uniform)
+import           Text.Quote         (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
 
 test_Parser :: TestTree
 test_Parser =
@@ -34,8 +35,8 @@ test_Parser =
 (@?=/) l r = l @?= Right r
 
 qd, qs :: a -> Quoted a
-qd = Quoted DoubleQuote
-qs = Quoted SingleQuote
+qd = Quoted DoubleQuote . noEscapes
+qs = Quoted SingleQuote . noEscapes
 uq :: str -> Field spc str
 uq = UnquotedF
 uqa :: [str] -> Record spc str
@@ -49,13 +50,14 @@ quotedFieldTest :: (forall m . CharParsing m => m (Field String String)) -> Stri
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
+      qq = Quoted quote . noEscapes
   in testGroup name [
     testCase "pass" $
       p [q,"hello text",q]
-        @?=/ (nospc (Quoted quote "hello text"))
+        @?=/ (nospc (qq "hello text"))
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
-        @?=/ QuotedF (Between "   " "     " (Quoted quote " spaced text  "))
+        @?=/ QuotedF (Between "   " "     " (qq " spaced text  "))
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -63,7 +65,7 @@ quotedFieldTest parser name quote =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (concat ["yes", q, "no"]))
+     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (SeparatedByEscapes ("yes" :| ["no"])))
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree

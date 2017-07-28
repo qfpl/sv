@@ -1,8 +1,9 @@
 module Data.CSV.Parser where
 
-import           Control.Applicative     ((<|>), liftA3)
+import           Control.Applicative     (Alternative, (<|>), liftA3)
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
+import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Functor            (void, ($>), (<$>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
@@ -11,7 +12,7 @@ import           Data.CSV.CSV            (CSV (CSV))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
 import           Data.CSV.Record         (Record (Record) )
 import           Text.Between            (Between, betwixt)
-import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
+import           Text.Quote              (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
@@ -21,11 +22,14 @@ comma = ','
 pipe = '|'
 tab = '\t'
 
+sepBy1Nel :: Alternative m => m a -> m sep -> m (NonEmpty a)
+sepBy1Nel p sep = (:|) <$> p <*> many (sep *> p)
+
 singleQuotedField, doubleQuotedField :: CharParsing m => m (Field String String)
 singleQuotedField = quotedField SingleQuote
 doubleQuotedField = quotedField DoubleQuote
 
-quoted :: CharParsing m => Quote -> m String -> m (Quoted String)
+quoted :: CharParsing m => Quote -> m (Escaped a) -> m (Quoted a)
 quoted q p =
   let c = char (quoteChar q)
   in  (fmap (Quoted q)) (between c c p)
@@ -34,7 +38,7 @@ quotedField :: CharParsing m => Quote -> m (Field String String)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
-  in  QuotedF <$> spaced (quoted quote (many (escape <|> notChar qc)))
+  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> (many (notChar qc) `sepBy1Nel` escape)))
 
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
