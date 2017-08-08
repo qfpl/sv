@@ -13,7 +13,7 @@ mkDerivation {
     base parsec parsers semigroups tasty tasty-discover tasty-hunit
     tasty-quickcheck
   ];
-  homepage = "https://github.com/data61/separated-values";
+  homepage = "https://github.com/qfpl/separated-values";
   description = "Values which are separated, often by commas";
   license = stdenv.lib.licenses.bsd3;
 }

@@ -8,15 +8,15 @@ copyright:           Copyright (c) 2017, Commonwealth Scientific and Industrial 
 category:            CSV
 synopsis:            Values which are separated, often by commas
 description:         Library for parsing and decoding values which are separated, often by commas
-homepage:            https://github.com/data61/separated-values
-bug-reports:         https://github.com/data61/separated-values/issues
+homepage:            https://github.com/qfpl/separated-values
+bug-reports:         https://github.com/qfpl/separated-values/issues
 build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 source-repository    head
   type:              git
-  location:          git@github.com/data61/separated-values.git
+  location:          git@github.com/qfpl/separated-values.git
 
 library
   exposed-modules:     Data.CSV.CSV
