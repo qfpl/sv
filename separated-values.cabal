@@ -54,7 +54,6 @@ test-suite             tasty
                        , semigroups >= 0.18 && < 0.19
                        , separated-values
                        , tasty >= 0.11 && < 0.12
-                       , tasty-discover >= 3 && < 3.1
                        , tasty-hunit >= 0.9 && < 0.10
                        , tasty-quickcheck >= 0.8 && < 0.9
   ghc-options:
