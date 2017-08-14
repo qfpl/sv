@@ -1,5 +1,5 @@
 { mkDerivation, base, charset, parsec, parsers, semigroupoids
-, semigroups, stdenv, tasty, tasty-discover, tasty-hunit
+, semigroups, separated, stdenv, tasty, tasty-discover, tasty-hunit
 , tasty-quickcheck
 }:
 mkDerivation {

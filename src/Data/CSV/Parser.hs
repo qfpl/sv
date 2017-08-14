@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Data.CSV.Parser where
 
 import           Control.Applicative     (Alternative, (<|>), liftA3)
@@ -5,13 +7,15 @@ import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
 import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Functor            (void, ($>), (<$>))
+import           Data.Separated          (Pesarated1, pesaratedBy1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, sepEndBy1, some, try)
+import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy1, try)
 
 import           Data.CSV.CSV            (CSV (CSV))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
 import           Data.CSV.Record         (Record (Record) )
 import           Text.Between            (Between, betwixt)
+import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Quote              (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
@@ -61,6 +65,12 @@ newlineOr c = CharSet.insert c newlines
 newlines :: CharSet
 newlines = CharSet.fromList "\r\n"
 
+newline :: CharParsing m => m Newline
+newline =
+  CRLF <$ try (string "\r\n")
+    <|> CR <$ char '\r'
+    <|> LF <$ char '\n'
+
 field :: CharParsing m => Char -> m (Field String String)
 field sep =
   choice [
@@ -85,10 +95,14 @@ beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)
 
 separatedValues :: CharParsing m => Char -> m (CSV String String)
-separatedValues sep = beginning *> fmap (CSV sep) (values sep)
+separatedValues sep =
+  beginning *> (CSV sep <$> values sep <*> ending)
 
-values :: CharParsing m => Char -> m [Record String String]
+values :: CharParsing m => Char -> m (Maybe (Pesarated1 Newline (Record String String)))
 values sep =
-  eof $> []
-    <|> record sep `sepEndBy` some (oneOfSet newlines)
+  (Nothing <$ eof)
+    <|> fmap Just (record sep `pesaratedBy1` newline)
+
+ending :: CharParsing m => m [Newline]
+ending = many newline
 

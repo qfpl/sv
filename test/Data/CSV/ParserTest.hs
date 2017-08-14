@@ -2,19 +2,21 @@
 
 module Data.CSV.ParserTest (test_Parser) where
 
-import           Data.List.NonEmpty (NonEmpty ((:|)))
-import           Data.Either        (isLeft)
-import           Test.Tasty         (TestTree, testGroup)
-import           Test.Tasty.HUnit   (Assertion, assertBool, testCase, (@?=))
-import           Text.Parser.Char   (CharParsing)
-import           Text.Parsec        (parse)
+import           Data.List.NonEmpty   (NonEmpty ((:|)))
+import           Data.Either          (isLeft)
+import           Test.Tasty           (TestTree, testGroup)
+import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
+import           Text.Newline         (Newline (LF))
+import           Text.Parser.Char     (CharParsing)
+import           Text.Parsec          (parse)
 
-import           Data.CSV.CSV       (CSV (CSV))
-import           Data.CSV.Field     (Field (QuotedF, UnquotedF))
-import           Data.CSV.Parser    (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
-import           Data.CSV.Record    (Record (Record))
-import           Text.Between       (Between (Between), uniform)
-import           Text.Quote         (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
+import           Data.CSV.CSV         (mkCsv)
+import           Data.CSV.Field       (Field (QuotedF, UnquotedF))
+import           Data.CSV.Parser      (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.CSV.Record      (Record (Record))
+import           Data.Separated.Extra (skrinpleMay)
+import           Text.Between         (Between (Between), uniform)
+import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
 
 test_Parser :: TestTree
 test_Parser =
@@ -116,27 +118,27 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ["m","n","o"]
   ]
 
-separatedValuesTest :: Char -> TestTree
-separatedValuesTest sep =
+separatedValuesTest :: Char -> Newline -> TestTree
+separatedValuesTest sep nl =
   let p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv = CSV sep
+      csv rs e = mkCsv sep e $ skrinpleMay nl rs
       s = [sep]
   in  testGroup "separatedValue" [
     testCase "empty string" $
-      p "" @?=/ csv []
+      p "" @?=/ csv [] []
   , testCase "single field, single record" $
-      p "one" @?=/ csv (uqaa [["one"]])
+      p "one" @?=/ csv (uqaa [["one"]]) []
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv (uqaa [["one"],["un"]])
+      p "one\nun" @?=/ csv (uqaa [["one"],["un"]]) []
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two"] @?=/ csv (uqaa [["one","two"]])
+      ps ["one", s, "two"] @?=/ csv (uqaa [["one","two"]]) []
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
-        @?=/ csv (uqaa [["one", "two", "three"], ["un", "deux", "trois"]])
+        @?=/ csv (uqaa [["one", "two", "three"], ["un", "deux", "trois"]]) []
   ]
 
 csvTest, psvTest :: TestTree
-csvTest = separatedValuesTest comma
-psvTest = separatedValuesTest pipe
+csvTest = separatedValuesTest comma LF
+psvTest = separatedValuesTest pipe LF
 
