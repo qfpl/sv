@@ -10,12 +10,12 @@ import           Text.Newline         (Newline (LF))
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (parse)
 
-import           Data.CSV.CSV         (mkCsv)
+import           Data.CSV.CSV         (mkCsv')
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF))
 import           Data.CSV.Parser      (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.CSV.Record      (Record (Record))
 import           Data.Separated.Extra (skrinpleMay)
-import           Text.Between         (Between (Between), uniform)
+import           Text.Between         (betwixt, uniform)
 import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
 
 test_Parser :: TestTree
@@ -59,7 +59,7 @@ quotedFieldTest parser name quote =
         @?=/ (nospc (qq "hello text"))
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
-        @?=/ QuotedF (Between "   " "     " (qq " spaced text  "))
+        @?=/ QuotedF (betwixt "   " "     " (qq " spaced text  "))
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -85,9 +85,9 @@ fieldTest =
   , testCase "unquoted" $
       p "yes" @?=/ uq "yes"
   , testCase "spaced doublequoted" $
-     p "       \" spaces  \"    " @?=/ QuotedF (Between "       " "    " (qd " spaces  "))
+     p "       \" spaces  \"    " @?=/ QuotedF (betwixt "       " "    " (qd " spaces  "))
   , testCase "spaced singlequoted" $
-     p "        ' more spaces ' " @?=/ QuotedF (Between  "        " " " (qs " more spaces "))
+     p "        ' more spaces ' " @?=/ QuotedF (betwixt "        " " " (qs " more spaces "))
   , testCase "spaced unquoted" $
      p "  text  " @?=/ uq "  text  "
   , testCase "fields can include the separator in single quotes" $
@@ -122,7 +122,7 @@ separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
   let p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv rs e = mkCsv sep e $ skrinpleMay nl rs
+      csv rs e = mkCsv' sep e $ skrinpleMay nl rs
       s = [sep]
   in  testGroup "separatedValue" [
     testCase "empty string" $

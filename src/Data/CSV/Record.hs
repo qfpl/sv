@@ -1,9 +1,11 @@
 module Data.CSV.Record where
 
-import Data.Bifunctor   (Bifunctor (bimap))
-import Data.Foldable    (Foldable (foldMap))
-import Data.Functor     (Functor (fmap))
-import Data.Traversable (Traversable (traverse))
+import Data.Bifoldable    (Bifoldable (bifoldMap))
+import Data.Bifunctor     (Bifunctor (bimap))
+import Data.Bitraversable (Bitraversable (bitraverse))
+import Data.Foldable      (Foldable (foldMap))
+import Data.Functor       (Functor (fmap))
+import Data.Traversable   (Traversable (traverse))
 
 import Data.CSV.Field   (Field)
 
@@ -24,4 +26,10 @@ instance Traversable (Record spc) where
 
 instance Bifunctor Record where
   bimap f g = Record . fmap (bimap f g) . fields
+
+instance Bifoldable Record where
+  bifoldMap f g = foldMap (bifoldMap f g) . fields
+
+instance Bitraversable Record where
+  bitraverse f g = fmap Record . traverse (bitraverse f g) . fields
 

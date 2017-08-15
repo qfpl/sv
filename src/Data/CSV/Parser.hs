@@ -7,14 +7,14 @@ import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
 import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Functor            (void, ($>), (<$>))
-import           Data.Separated          (Pesarated1, pesaratedBy1)
+import           Data.Separated          (pesaratedBy1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy1, try)
 
-import           Data.CSV.CSV            (CSV (CSV))
+import           Data.CSV.CSV            (CSV (CSV), Records (Records))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
 import           Data.CSV.Record         (Record (Record) )
-import           Text.Between            (Between, betwixt)
+import           Text.Between            (Between (Between))
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Quote              (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
@@ -85,7 +85,7 @@ horizontalSpace = choice (fmap char [' ', '\t'])
 spaced :: CharParsing m => m a -> m (Between String a)
 spaced p =
   let s = many horizontalSpace
-  in liftA3 betwixt s p s
+  in liftA3 Between s p s
 
 record :: CharParsing m => Char -> m (Record String String)
 record sep =
@@ -98,10 +98,10 @@ separatedValues :: CharParsing m => Char -> m (CSV String String)
 separatedValues sep =
   beginning *> (CSV sep <$> values sep <*> ending)
 
-values :: CharParsing m => Char -> m (Maybe (Pesarated1 Newline (Record String String)))
+values :: CharParsing m => Char -> m (Records String String)
 values sep =
-  (Nothing <$ eof)
-    <|> fmap Just (record sep `pesaratedBy1` newline)
+  (Records Nothing <$ eof)
+    <|> (Records . Just) <$> (record sep `pesaratedBy1` newline)
 
 ending :: CharParsing m => m [Newline]
 ending = many newline

@@ -11,7 +11,7 @@ import Text.Quote      (Quoted (Quoted), Escaped (SeparatedByEscapes), quoteChar
 prettyField :: Field String String -> String
 prettyField f =
   case f of
-    QuotedF (Between b t (Quoted q (SeparatedByEscapes ss))) ->
+    QuotedF (Between b (Quoted q (SeparatedByEscapes ss)) t) ->
       let c = [quoteChar q]
           cc = c ++ c
           s = intercalate1 cc ss

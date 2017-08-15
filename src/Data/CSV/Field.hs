@@ -1,35 +1,42 @@
 module Data.CSV.Field where
 
-import Data.Bifunctor   (Bifunctor (bimap))
-import Data.Foldable    (Foldable (foldMap))
-import Data.Functor     (Functor (fmap), (<$>))
-import Data.Traversable (Traversable (traverse))
+import Data.Bifoldable    (Bifoldable (bifoldMap))
+import Data.Bifunctor     (Bifunctor (bimap))
+import Data.Bitraversable (Bitraversable (bitraverse))
+import Data.Foldable      (Foldable (foldMap))
+import Data.Functor       (Functor (fmap))
+import Data.Traversable   (Traversable (traverse))
 
-import Text.Between (Between)
-import Text.Quote   (Quoted)
+import Text.Between       (Between)
+import Text.Quote         (Quoted)
 
 data Field spc str =
     UnquotedF str
   | QuotedF (Between spc (Quoted str))
   deriving (Eq, Ord, Show)
 
+foldField :: (str -> b) -> (Between spc (Quoted str) -> b) -> Field spc str -> b
+foldField u q fi = case fi of
+  UnquotedF s -> u s
+  QuotedF b -> q b
+
 instance Functor (Field spc) where
-  fmap f fi = case fi of
-    UnquotedF s -> UnquotedF (f s)
-    QuotedF b -> QuotedF (fmap (fmap f) b)
+  fmap f = foldField (UnquotedF . f) (QuotedF . (fmap (fmap f)))
 
 instance Foldable (Field spc) where
-  foldMap f fi = case fi of
-    UnquotedF s -> f s
-    QuotedF b -> foldMap (foldMap f) b
+  foldMap f = foldField f (foldMap (foldMap f))
 
 instance Traversable (Field spc) where
-  traverse f fi = case fi of
-    UnquotedF s -> UnquotedF <$> f s
-    QuotedF b -> QuotedF <$> (traverse (traverse f) b)
+  traverse f =
+    foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse f))
 
 instance Bifunctor Field where
-  bimap f g fi = case fi of
-    UnquotedF s -> UnquotedF (g s)
-    QuotedF b -> QuotedF (bimap f (fmap g) b)
+  bimap f g = foldField (UnquotedF . g) (QuotedF . bimap f (fmap g))
+
+instance Bifoldable Field where
+  bifoldMap f g = foldField g (bifoldMap f (foldMap g))
+
+instance Bitraversable Field where
+  bitraverse f g =
+    foldField (fmap UnquotedF . g) (fmap QuotedF . bitraverse f (traverse g))
 
