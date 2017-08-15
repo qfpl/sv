@@ -10,7 +10,6 @@ let
 
   modifiedHaskellPackages = haskellPackages.override {
     overrides = self: super: {
-      tasty-discover = pkgs.haskell.lib.dontCheck super.tasty-discover_3_0_2;
       parsers = pkgs.haskell.lib.dontCheck super.parsers;
     };
   };

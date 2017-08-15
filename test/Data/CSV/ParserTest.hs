@@ -41,9 +41,9 @@ qd = Quoted DoubleQuote . noEscapes
 qs = Quoted SingleQuote . noEscapes
 uq :: str -> Field spc str
 uq = UnquotedF
-uqa :: [str] -> Record spc str
+uqa :: NonEmpty str -> Record spc str
 uqa = Record . fmap uq
-uqaa :: [[str]] -> [Record spc str]
+uqaa :: [NonEmpty str] -> [Record spc str]
 uqaa = fmap uqa
 nospc :: Quoted str -> Field String str
 nospc = QuotedF . uniform ""
@@ -105,17 +105,17 @@ recordTest =
   let p = parse (record comma) ""
   in  testGroup "record" [
     testCase "single field" $
-      p "Yes" @?=/ uqa ["Yes"]
+      p "Yes" @?=/ uqa (pure "Yes")
   , testCase "fields" $
-      p "Anderson,Squire,Wakeman,Howe,Bruford" @?=/ uqa ["Anderson", "Squire", "Wakeman", "Howe", "Bruford"]
+      p "Anderson,Squire,Wakeman,Howe,Bruford" @?=/ uqa ("Anderson":|["Squire", "Wakeman", "Howe", "Bruford"])
   , testCase "commas" $
-      p ",,," @?=/ uqa ["","","",""]
+      p ",,," @?=/ uqa ("":|["","",""])
   , testCase "record ends at newline" $
-      p "a,b,c\nd,e,f" @?=/ uqa ["a","b","c"]
+      p "a,b,c\nd,e,f" @?=/ uqa ("a":|["b","c"])
   , testCase "record ends at carriage return" $
-      p "g,h,i\rj,k,l" @?=/ uqa ["g","h","i"]
+      p "g,h,i\rj,k,l" @?=/ uqa ("g":|["h","i"])
   , testCase "record ends at carriage return followed by newline" $
-      p "m,n,o\r\np,q,r" @?=/ uqa ["m","n","o"]
+      p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
 separatedValuesTest :: Char -> Newline -> TestTree
@@ -128,14 +128,14 @@ separatedValuesTest sep nl =
     testCase "empty string" $
       p "" @?=/ csv [] []
   , testCase "single field, single record" $
-      p "one" @?=/ csv (uqaa [["one"]]) []
+      p "one" @?=/ csv (uqaa [pure "one"]) []
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv (uqaa [["one"],["un"]]) []
+      p "one\nun" @?=/ csv (uqaa [pure "one", pure "un"]) []
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two"] @?=/ csv (uqaa [["one","two"]]) []
+      ps ["one", s, "two"] @?=/ csv (uqaa ["one":|["two"]]) []
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
-        @?=/ csv (uqaa [["one", "two", "three"], ["un", "deux", "trois"]]) []
+        @?=/ csv (uqaa ["one":|["two", "three"], "un":|["deux", "trois"]]) []
   ]
 
 csvTest, psvTest :: TestTree

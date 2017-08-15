@@ -47,7 +47,7 @@ test-suite             tasty
   type:
                        exitcode-stdio-1.0
   main-is:
-                       Tasty.hs
+                       tasty.hs
   other-modules:
                        Data.CSV.PrettyTest
                     ,  Data.CSV.ParserTest
@@ -57,6 +57,7 @@ test-suite             tasty
                        base >=4.8 && <5
                        , parsec >= 3.1 && < 3.2
                        , parsers >=0.12 && <0.13
+                       , QuickCheck >= 2.9 && <2.11
                        , semigroups >= 0.18 && < 0.19
                        , separated >= 0.2.3 && < 0.3
                        , separated-values
@@ -69,3 +70,26 @@ test-suite             tasty
   hs-source-dirs:
                        test
 
+test-suite             hedgehog
+  type:
+                       exitcode-stdio-1.0
+  main-is:
+                       hedgehog.hs
+  other-modules:
+                       Data.CSV.Arbitraries
+  default-language:
+                       Haskell2010
+  build-depends:
+                       base >=4.8 && <5
+                       , hedgehog >= 0.5 && < 0.6
+                       , parsec >= 3.1 && < 3.2
+                       , parsers >=0.12 && <0.13
+                       , semigroups >= 0.18 && < 0.19
+                       , separated >= 0.2.3 && < 0.3
+                       , separated-values
+  ghc-options:
+                       -Wall
+                       -threaded
+  hs-source-dirs:
+                       test
+ 

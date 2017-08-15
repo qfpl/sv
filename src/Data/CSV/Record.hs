@@ -5,13 +5,14 @@ import Data.Bifunctor     (Bifunctor (bimap))
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
+import Data.List.NonEmpty (NonEmpty)
 import Data.Traversable   (Traversable (traverse))
 
 import Data.CSV.Field   (Field)
 
 newtype Record spc str =
   Record {
-    fields :: [Field spc str]
+    fields :: NonEmpty (Field spc str)
   }
   deriving (Eq, Ord, Show)
 

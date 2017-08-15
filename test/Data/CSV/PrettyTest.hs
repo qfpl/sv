@@ -7,7 +7,7 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import Text.Parsec      (parse)
 import Text.Parser.Char (CharParsing)
 
-import Data.CSV.Parser  (comma ,field)
+import Data.CSV.Parser  (comma, field)
 import Data.CSV.Pretty  (prettyField)
 
 test_Pretty :: TestTree
@@ -17,14 +17,14 @@ test_Pretty =
   , recordRoundTrip
   ]
 
-roundTripTest :: (forall m. CharParsing m  => m a) -> (a -> String) -> String -> String -> TestTree
-roundTripTest p pretty name s =
+prettyAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> String) -> String -> String -> TestTree
+prettyAfterParseRoundTrip parser pretty name s =
   testCase name $
-    fmap pretty (parse p "" s) @?= Right s
+    fmap pretty (parse parser "" s) @?= Right s
 
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
-  let test = roundTripTest (field comma) prettyField
+  let test = prettyAfterParseRoundTrip (field comma) prettyField
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -42,6 +42,17 @@ fieldRoundTrip =
 recordRoundTrip :: TestTree
 recordRoundTrip =
   testGroup "record" [
-    
   ]
+
+{-
+parseAfterPrettyRoundTrip ::
+  (Arbitrary a, Show a, Eq a) => (forall m. CharParsing m => m a) -> (a -> String) -> String -> TestTree
+parseAfterPrettyRoundTrip parser pretty name =
+  QC.testProperty name $
+    \a -> parse parser "" (pretty a) == Right a
+
+csvRoundTrip :: TestTree
+csvRoundTrip =
+  parseAfterPrettyRoundTrip (ArbCsv <$> separatedValues comma) (prettyCsv . unArbCsv) "csv"
+-}
 

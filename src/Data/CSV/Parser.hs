@@ -9,7 +9,7 @@ import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Functor            (void, ($>), (<$>))
 import           Data.Separated          (pesaratedBy1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy1, try)
+import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
 import           Data.CSV.CSV            (CSV (CSV), Records (Records))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
@@ -26,8 +26,11 @@ comma = ','
 pipe = '|'
 tab = '\t'
 
-sepBy1Nel :: Alternative m => m a -> m sep -> m (NonEmpty a)
-sepBy1Nel p sep = (:|) <$> p <*> many (sep *> p)
+sepByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
+sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
+
+sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
+sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
 singleQuotedField, doubleQuotedField :: CharParsing m => m (Field String String)
 singleQuotedField = quotedField SingleQuote
@@ -42,7 +45,7 @@ quotedField :: CharParsing m => Quote -> m (Field String String)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
-  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> (many (notChar qc) `sepBy1Nel` escape)))
+  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> (many (notChar qc) `sepByNonEmpty` escape)))
 
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
@@ -89,7 +92,7 @@ spaced p =
 
 record :: CharParsing m => Char -> m (Record String String)
 record sep =
-  Record <$> field sep `sepEndBy1` char sep
+  Record <$> field sep `sepEndByNonEmpty` char sep
 
 beginning :: CharParsing m => m ()
 beginning = void $ many (oneOfSet newlines)

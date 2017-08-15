@@ -1,3 +1,5 @@
+module Main where
+
 import Test.Tasty
 
 import Data.CSV.ParserTest (test_Parser)

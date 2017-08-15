@@ -1,5 +1,5 @@
-{ mkDerivation, base, bifunctors, charset, parsec, parsers, semigroupoids
-, semigroups, separated, stdenv, tasty, tasty-discover, tasty-hunit
+{ mkDerivation, base, bifunctors, charset, hedgehog, parsec, parsers, semigroupoids
+, semigroups, separated, stdenv, tasty, tasty-hunit
 , tasty-quickcheck
 }:
 mkDerivation {
@@ -10,7 +10,7 @@ mkDerivation {
     base bifunctors charset parsers semigroupoids semigroups
   ];
   testHaskellDepends = [
-    base bifunctors parsec parsers semigroups tasty tasty-discover tasty-hunit
+    base bifunctors hedgehog parsec parsers semigroups tasty tasty-hunit
     tasty-quickcheck
   ];
   homepage = "https://github.com/qfpl/separated-values";
