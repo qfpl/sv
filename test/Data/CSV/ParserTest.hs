@@ -14,7 +14,7 @@ import           Data.CSV.CSV         (mkCsv')
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF))
 import           Data.CSV.Parser      (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.CSV.Record      (Record (Record))
-import           Data.Separated.Extra (skrinpleMay)
+import           Data.Separated.Extra (skrinple)
 import           Text.Between         (betwixt, uniform)
 import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
 
@@ -43,7 +43,7 @@ uq :: str -> Field spc str
 uq = UnquotedF
 uqa :: NonEmpty str -> Record spc str
 uqa = Record . fmap uq
-uqaa :: [NonEmpty str] -> [Record spc str]
+uqaa :: NonEmpty (NonEmpty str) -> NonEmpty (Record spc str)
 uqaa = fmap uqa
 nospc :: Quoted str -> Field String str
 nospc = QuotedF . uniform ""
@@ -122,20 +122,20 @@ separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
   let p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv rs e = mkCsv' sep e $ skrinpleMay nl rs
+      csv rs e = mkCsv' sep e $ skrinple nl rs
       s = [sep]
   in  testGroup "separatedValue" [
     testCase "empty string" $
-      p "" @?=/ csv [] []
+      p "" @?=/ csv (uqaa (pure (pure ""))) Nothing
   , testCase "single field, single record" $
-      p "one" @?=/ csv (uqaa [pure "one"]) []
+      p "one" @?=/ csv (uqaa (pure (pure "one"))) Nothing
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv (uqaa [pure "one", pure "un"]) []
+      p "one\nun" @?=/ csv (uqaa (fmap pure ("one":|["un"]))) Nothing
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two"] @?=/ csv (uqaa ["one":|["two"]]) []
+      ps ["one", s, "two"] @?=/ csv (uqaa (pure ("one":|["two"]))) Nothing
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
-        @?=/ csv (uqaa ["one":|["two", "three"], "un":|["deux", "trois"]]) []
+        @?=/ csv (uqaa (("one":|["two", "three"]) :| ["un":|["deux", "trois"]])) Nothing
   ]
 
 csvTest, psvTest :: TestTree

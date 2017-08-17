@@ -22,7 +22,7 @@ prettyField f =
       in  concat [b, c, s, c, t]
     UnquotedF s -> s
 
-prettyNewlines :: [Newline] -> String
+prettyNewlines :: Foldable f => f Newline -> String
 prettyNewlines = foldMap newlineString
 
 prettyPesarated :: Char -> Pesarated1 Newline (Record String String) -> String
@@ -35,7 +35,7 @@ prettyRecord sep (Record fs) =
 
 prettyRecords :: Char -> Records String String -> String
 prettyRecords c =
-  foldMap (prettyPesarated c) . getRecords
+  prettyPesarated c . getRecords
 
 prettyCsv :: CSV String String -> String
 prettyCsv (CSV c rs e) =

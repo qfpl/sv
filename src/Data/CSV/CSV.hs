@@ -16,14 +16,14 @@ data CSV spc str =
   CSV {
     separator :: Char
   , records :: Records spc str
-  , end :: [Newline]
+  , end :: Maybe Newline
   }
   deriving (Eq, Ord, Show)
 
-mkCsv :: Char -> [Newline] -> Records spc str -> CSV spc str
+mkCsv :: Char -> Maybe Newline -> Records spc str -> CSV spc str
 mkCsv c ns rs = CSV c rs ns
 
-mkCsv' :: Char -> [Newline] -> Maybe (Pesarated1 Newline (Record spc str)) -> CSV spc str
+mkCsv' :: Char -> Maybe Newline -> Pesarated1 Newline (Record spc str) -> CSV spc str
 mkCsv' c ns = mkCsv c ns . Records
 
 instance Functor (CSV spc) where
@@ -46,24 +46,24 @@ instance Bitraversable CSV where
 
 -- | Newtype for records
 newtype Records spc str =
-  Records { getRecords :: Maybe (Pesarated1 Newline (Record spc str)) }
+  Records { getRecords :: Pesarated1 Newline (Record spc str) }
   deriving (Eq, Ord, Show)
 
 instance Functor (Records spc) where
-  fmap f (Records rs) = Records (fmap (fmap (fmap f)) rs)
+  fmap f (Records rs) = Records (fmap (fmap f) rs)
 
 instance Foldable (Records spc) where
-  foldMap f = foldMap (foldMap (foldMap f)) . getRecords
+  foldMap f = foldMap (foldMap f) . getRecords
 
 instance Traversable (Records spc) where
-  traverse f = fmap Records . traverse (traverse (traverse f)) . getRecords
+  traverse f = fmap Records . traverse (traverse f) . getRecords
 
 instance Bifunctor Records where
-  bimap f g = Records . fmap (fmap (bimap f g)) . getRecords
+  bimap f g = Records . fmap (bimap f g) . getRecords
 
 instance Bifoldable Records where
-  bifoldMap f g = foldMap (foldMap (bifoldMap f g)) . getRecords
+  bifoldMap f g = foldMap (bifoldMap f g) . getRecords
 
 instance Bitraversable Records where
-  bitraverse f g = fmap Records . traverse (traverse (bitraverse f g)) . getRecords
+  bitraverse f g = fmap Records . traverse (bitraverse f g) . getRecords
 

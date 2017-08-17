@@ -9,7 +9,7 @@ import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Functor            (void, ($>), (<$>))
 import           Data.Separated          (pesaratedBy1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
+import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, option, sepEndBy, try)
 
 import           Data.CSV.CSV            (CSV (CSV), Records (Records))
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF) )
@@ -45,7 +45,8 @@ quotedField :: CharParsing m => Quote -> m (Field String String)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
-  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> (many (notChar qc) `sepByNonEmpty` escape)))
+      noescape = many (notChar qc) `sepByNonEmpty` escape
+  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> noescape))
 
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
@@ -95,7 +96,8 @@ record sep =
   Record <$> field sep `sepEndByNonEmpty` char sep
 
 beginning :: CharParsing m => m ()
-beginning = void $ many (oneOfSet newlines)
+--beginning = void $ many (oneOfSet newlines)
+beginning = pure ()
 
 separatedValues :: CharParsing m => Char -> m (CSV String String)
 separatedValues sep =
@@ -103,9 +105,8 @@ separatedValues sep =
 
 values :: CharParsing m => Char -> m (Records String String)
 values sep =
-  (Records Nothing <$ eof)
-    <|> (Records . Just) <$> (record sep `pesaratedBy1` newline)
+  Records <$> record sep `pesaratedBy1` newline
 
-ending :: CharParsing m => m [Newline]
-ending = many newline
+ending :: CharParsing m => m (Maybe Newline)
+ending = option Nothing (Just <$> newline) <* eof
 
