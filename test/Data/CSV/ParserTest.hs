@@ -11,8 +11,8 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (parse)
 
 import           Data.CSV.CSV         (CSV (CSV), mkCsv', noFinal, FinalRecord (FinalRecord))
-import           Data.CSV.Field       (Field (QuotedF, UnquotedF))
-import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.CSV.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
+import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, monoField, record, separatedValues, singleQuotedField)
 import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFieldNER))
 import           Data.NonEmptyString  (NonEmptyString)
 import           Data.Separated       (sprinkle)
@@ -41,11 +41,11 @@ test_Parser =
 qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscapes
 qs = Quoted SingleQuote . noEscapes
-uq :: s1 -> Field spc s1 s2
-uq = UnquotedF
-uqa :: NonEmpty s1 -> Record spc s1 s2
+uq :: s -> MonoField spc s
+uq = MonoField . UnquotedF
+uqa :: NonEmpty s -> Record spc s
 uqa = Record . fmap uq
-uqaa :: [NonEmpty s1] -> [Record spc s1 s2]
+uqaa :: [NonEmpty s] -> [Record spc s]
 uqaa = fmap uqa
 nospc :: Quoted s2 -> Field String s1 s2
 nospc = QuotedF . uniform ""
@@ -85,21 +85,21 @@ fieldTest =
   , testCase "singlequoted" $
       p "'goodbye'" @?=/ nospc (qs "goodbye")
   , testCase "unquoted" $
-      p "yes" @?=/ uq "yes"
+      p "yes" @?=/ getField (uq "yes")
   , testCase "spaced doublequoted" $
      p "       \" spaces  \"    " @?=/ QuotedF (betwixt "       " "    " (qd " spaces  "))
   , testCase "spaced singlequoted" $
      p "        ' more spaces ' " @?=/ QuotedF (betwixt "        " " " (qs " more spaces "))
   , testCase "spaced unquoted" $
-     p "  text  " @?=/ uq "  text  "
+     p "  text  " @?=/ getField (uq "  text  ")
   , testCase "fields can include the separator in single quotes" $
      p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $
      p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
   , testCase "unquoted fields stop at the separator (1)" $
-     p "close,to,the,edge" @?=/ uq "close"
+     p "close,to,the,edge" @?=/ getField (uq "close")
   , testCase "unquoted fields stop at the separator (2)" $
-     p ",close,to,the,edge" @?=/ uq ""
+     p ",close,to,the,edge" @?=/ getField (uq "")
   ]
 
 recordTest :: TestTree

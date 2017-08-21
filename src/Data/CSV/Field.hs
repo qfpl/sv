@@ -1,11 +1,8 @@
 module Data.CSV.Field where
 
 import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap))
+import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
-import Data.Trifunctor    (Trifunctor (trimap))
-import Data.Trifoldable   (Trifoldable (trifoldMap))
-import Data.Triversable   (Triversable (triverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.Traversable   (Traversable (traverse))
@@ -43,11 +40,28 @@ instance Bitraversable (Field spc) where
   bitraverse f g =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
 
-instance Trifunctor Field where
-  trimap f g h = foldField (UnquotedF . g) (QuotedF . bimap f (fmap h))
+newtype MonoField spc s =
+  MonoField { getField :: Field spc s s }
+  deriving (Eq, Ord, Show)
 
-instance Trifoldable Field where
-  trifoldMap f g h = foldField g (bifoldMap f (foldMap h))
+instance Functor (MonoField spc) where
+  fmap f = MonoField . bimap f f . getField
 
-instance Triversable Field where
-  triverse f g h = foldField (fmap UnquotedF . g) (fmap QuotedF . bitraverse f (traverse h))
+instance Foldable (MonoField spc) where
+  foldMap f = bifoldMap (const mempty) f . getField
+
+instance Traversable (MonoField spc) where
+  traverse f = fmap MonoField . bitraverse f f . getField
+
+instance Bifunctor MonoField where
+  bimap f g (MonoField (UnquotedF s)) = MonoField (UnquotedF (g s))
+  bimap f g (MonoField (QuotedF b)) = MonoField (QuotedF (bimap f (fmap g) b))
+
+instance Bifoldable MonoField where
+  bifoldMap f g (MonoField (UnquotedF s)) = g s
+  bifoldMap f g (MonoField (QuotedF b)) = bifoldMap f (foldMap g) b
+
+instance Bitraversable MonoField where
+  bitraverse f g (MonoField (UnquotedF s)) = (MonoField . UnquotedF) <$> g s
+  bitraverse f g (MonoField (QuotedF b)) = (MonoField . QuotedF) <$> (bitraverse f (traverse g) b)
+
