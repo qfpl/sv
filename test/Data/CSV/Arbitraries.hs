@@ -1,23 +1,22 @@
 module Data.CSV.Arbitraries where
 
 import Control.Applicative ((<$>), liftA2, liftA3)
-import Data.Separated      (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
+import Data.Separated      (Pesarated (Pesarated), Separated (Separated), Separated1 (Separated1))
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.CSV.CSV        (CSV (CSV), Records (Records))
+import Data.CSV.CSV        (CSV (CSV), FinalRecord (FinalRecord), Records (Records), RecordSet (RecordSet))
 import Data.CSV.Field      (Field (QuotedF, UnquotedF))
-import Data.CSV.Record     (Record (Record))
+import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Text.Between        (Between (Between))
 import Text.Newline        (Newline (CR, CRLF, LF))
 import Text.Quote          (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
-genCsv :: Gen Char -> Gen spc -> Gen str -> Gen (CSV spc str)
-genCsv sep spc str =
-  let ns = Gen.maybe genNewline
-      rs = genRecords spc str
-  in  liftA3 CSV sep rs ns
+genCsv :: Gen Char -> Gen spc -> Gen s1 -> Gen s2 -> Gen (CSV spc s1 s2)
+genCsv sep spc s1 s2 =
+  let rs = genRecordSet spc s1 s2
+  in  liftA2 CSV sep rs
 
 genNewline :: Gen Newline
 genNewline =
@@ -27,6 +26,10 @@ genNewline =
 genSep :: Gen Char
 genSep =
   Gen.element ['|', ',']
+
+genFinalRecord :: Gen spc -> Gen s1 -> Gen s2 -> Gen (FinalRecord spc s1 s2)
+genFinalRecord spc s1 s2 =
+  FinalRecord <$> Gen.maybe (genNonEmptyRecord spc s1 s2)
 
 genBetween :: Gen spc -> Gen str -> Gen (Between spc str)
 genBetween spc str =
@@ -44,25 +47,37 @@ genQuoted :: Gen a -> Gen (Quoted a)
 genQuoted =
   liftA2 Quoted genQuote . genEscaped
 
-genField :: Gen spc -> Gen str -> Gen (Field spc str)
-genField spc str =
+genField :: Gen spc -> Gen s1 -> Gen s2 -> Gen (Field spc s1 s2)
+genField spc s1 s2 =
   Gen.choice [
-    UnquotedF <$> str
-  , QuotedF <$> genBetween spc (genQuoted str)
+    UnquotedF <$> s1
+  , QuotedF <$> genBetween spc (genQuoted s2)
   ]
 
-genRecord :: Gen spc -> Gen str -> Gen (Record spc str)
-genRecord spc str =
-  Record <$> Gen.nonEmpty (Range.linear 1 50) (genField spc str)
+genRecord :: Gen spc -> Gen s1 -> Gen s2 -> Gen (Record spc s1 s2)
+genRecord spc s1 s2 =
+  Record <$> Gen.nonEmpty (Range.linear 1 50) (genField spc s1 s2)
+
+genNonEmptyRecord :: Gen spc -> Gen s1 -> Gen s2 -> Gen (NonEmptyRecord spc s1 s2)
+genNonEmptyRecord spc s1 s2 =
+  let f  = genField spc s1 s2
+      f' = genField spc s2 s2
+  in  Gen.choice [
+    SingleFieldNER <$> f
+  , MultiFieldNER <$> f' <*> Gen.nonEmpty (Range.linear 1 50) f'
+  ]
 
 genRecords :: Gen spc -> Gen str -> Gen (Records spc str)
 genRecords spc str =
-  Records <$> genPesarated1 spc str
+  Records <$> genPesarated spc str str
 
-genPesarated1 :: Gen spc -> Gen str -> Gen (Pesarated1 Newline (Record spc str))
-genPesarated1 spc str =
-  let r = genRecord spc str 
-  in  Pesarated1 <$> (Separated1 <$> r <*> genSeparated genNewline r)
+genRecordSet :: Gen spc -> Gen s1 -> Gen s2 -> Gen (RecordSet spc s1 s2)
+genRecordSet spc s1 s2 = RecordSet <$> genRecords spc s2 <*> genFinalRecord spc s1 s2
+
+genPesarated :: Gen spc -> Gen s1 -> Gen s2 -> Gen (Pesarated Newline (Record spc s1 s2))
+genPesarated spc s1 s2 =
+  let r = genRecord spc s1 s2
+  in  Pesarated <$> genSeparated r genNewline
 
 genSeparated :: Gen a -> Gen b -> Gen (Separated a b)
 genSeparated a b =

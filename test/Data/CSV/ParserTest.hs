@@ -10,11 +10,12 @@ import           Text.Newline         (Newline (LF))
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (parse)
 
-import           Data.CSV.CSV         (mkCsv')
+import           Data.CSV.CSV         (CSV (CSV), mkCsv', noFinal, FinalRecord (FinalRecord))
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF))
-import           Data.CSV.Parser      (comma, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
-import           Data.CSV.Record      (Record (Record))
-import           Data.Separated.Extra (skrinple)
+import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFieldNER))
+import           Data.NonEmptyString  (NonEmptyString)
+import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
 import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
 
@@ -25,6 +26,7 @@ test_Parser =
   , doubleQuotedFieldTest
   , fieldTest
   , recordTest
+  , finalRecordTest
   , csvTest
   , psvTest
   ]
@@ -39,16 +41,16 @@ test_Parser =
 qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscapes
 qs = Quoted SingleQuote . noEscapes
-uq :: str -> Field spc str
+uq :: s1 -> Field spc s1 s2
 uq = UnquotedF
-uqa :: NonEmpty str -> Record spc str
+uqa :: NonEmpty s1 -> Record spc s1 s2
 uqa = Record . fmap uq
-uqaa :: NonEmpty (NonEmpty str) -> NonEmpty (Record spc str)
+uqaa :: [NonEmpty s1] -> [Record spc s1 s2]
 uqaa = fmap uqa
-nospc :: Quoted str -> Field String str
+nospc :: Quoted s2 -> Field String s1 s2
 nospc = QuotedF . uniform ""
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field String String)) -> String -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field String String String)) -> String -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
@@ -118,24 +120,34 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
+finalRecordTest :: TestTree
+finalRecordTest =
+  let p = parse (ending comma) ""
+      uqf :: NonEmptyString -> FinalRecord a NonEmptyString b
+      uqf = FinalRecord . Just . SingleFieldNER . UnquotedF
+  in  testGroup "finalRecord" [
+    testCase "single character" $
+      p "a" @?=/ uqf ('a':|[])
+  ]
+
 separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
   let p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv rs e = mkCsv' sep e $ skrinple nl rs
+      csv rs e = mkCsv' sep e $ sprinkle nl rs
       s = [sep]
   in  testGroup "separatedValue" [
     testCase "empty string" $
-      p "" @?=/ csv (uqaa (pure (pure ""))) Nothing
+      p "" @?=/ csv [] noFinal
   , testCase "single field, single record" $
-      p "one" @?=/ csv (uqaa (pure (pure "one"))) Nothing
+      p "one" @?=/ csv [] (FinalRecord (Just (SingleFieldNER (UnquotedF ('o':|"ne")))))
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv (uqaa (fmap pure ("one":|["un"]))) Nothing
+      p "one\nun" @?=/ csv (uqaa (fmap pure ["one","un"])) noFinal
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two"] @?=/ csv (uqaa (pure ("one":|["two"]))) Nothing
+      ps ["one", s, "two"] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
-        @?=/ csv (uqaa (("one":|["two", "three"]) :| ["un":|["deux", "trois"]])) Nothing
+        @?=/ csv (uqaa [("one":|["two", "three"]) , "un":|["deux", "trois"]]) noFinal
   ]
 
 csvTest, psvTest :: TestTree

@@ -16,6 +16,7 @@ import Data.CSV.Arbitraries (genCsv)
 import Data.CSV.CSV         (CSV)
 import Data.CSV.Parser      (separatedValues)
 import Data.CSV.Pretty      (prettyCsv)
+import Data.NonEmptyString  (NonEmptyString)
 
 main :: IO ()
 main = do
@@ -33,9 +34,11 @@ tests =
 prop_csv :: Property
 prop_csv =
   let genSpace = Gen.string (Range.linear 0 5) (Gen.element [' ', '\t'])
-      gen = genCsv (pure ',') genSpace (Gen.string (Range.linear 0 100) Gen.alphaNum)
+      genString = Gen.string (Range.linear 0 100) Gen.alphaNum
+      genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
+      gen = genCsv (pure ',') genSpace genNonEmptyString genString
       pretty = prettyCsv
-      parseCsv :: CharParsing m => m (CSV String String)
+      parseCsv :: CharParsing m => m (CSV String NonEmptyString String)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen
 
