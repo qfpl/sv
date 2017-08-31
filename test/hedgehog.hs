@@ -38,11 +38,11 @@ prop_csv =
       genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
       gen = genCsv (pure ',') genSpace genNonEmptyString genString
       pretty = prettyCsv
-      parseCsv :: CharParsing m => m (CSV String NonEmptyString String)
+      parseCsv :: (Monad m, CharParsing m) => m (CSV String NonEmptyString String)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen
 
-parsePretty :: (Eq a, Show a) => (forall m. CharParsing m => m a) -> (a -> String) -> Gen a -> Property
+parsePretty :: (Eq a, Show a) => (forall m. (Monad m, CharParsing m) => m a) -> (a -> String) -> Gen a -> Property
 parsePretty parser pretty genA =
   property $ do
     c <- forAll genA

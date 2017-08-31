@@ -6,11 +6,11 @@ import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
 import           Test.Tasty           (TestTree, testGroup)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
-import           Text.Newline         (Newline (LF))
+import           Text.Newline         (Newline (LF), newlineString)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (parse)
 
-import           Data.CSV.CSV         (CSV (CSV), mkCsv', noFinal, FinalRecord (FinalRecord))
+import           Data.CSV.CSV         (CSV (CSV), mkCsv', noFinal, emptyRecords, FinalRecord (FinalRecord), singleFinal)
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
 import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, monoField, record, separatedValues, singleQuotedField)
 import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFieldNER))
@@ -136,17 +136,18 @@ separatedValuesTest sep nl =
       ps = parse (separatedValues sep) "" . concat
       csv rs e = mkCsv' sep e $ sprinkle nl rs
       s = [sep]
-  in  testGroup "separatedValue" [
+      nls = newlineString nl
+  in  testGroup "separatedValues" [
     testCase "empty string" $
       p "" @?=/ csv [] noFinal
   , testCase "single field, single record" $
-      p "one" @?=/ csv [] (FinalRecord (Just (SingleFieldNER (UnquotedF ('o':|"ne")))))
+      p "one" @?=/ csv [] (singleFinal 'o' "ne")
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv (uqaa (fmap pure ["one","un"])) noFinal
+      p "one\nun" @?=/ csv [uqa (pure "one")] (singleFinal 'u' "n")
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two"] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
+      ps ["one", s, "two", nls] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
   , testCase "multiple fields, multiple records" $
-      ps ["one", s, "two", s, "three\nun", s, "deux", s, "trois"]
+      ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois", nls]
         @?=/ csv (uqaa [("one":|["two", "three"]) , "un":|["deux", "trois"]]) noFinal
   ]
 

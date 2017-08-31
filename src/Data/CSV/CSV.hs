@@ -5,11 +5,14 @@ import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid        ((<>))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.CSV.Record    (NonEmptyRecord, Record)
-import Data.Separated     (Pesarated)
+import Data.CSV.Field     (Field (UnquotedF))
+import Data.CSV.Record    (NonEmptyRecord (SingleFieldNER), Record)
+import Data.NonEmptyString (NonEmptyString)
+import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Text.Newline       (Newline)
 
 -- | Whitespace-preserving CSV data type
@@ -50,6 +53,10 @@ newtype Records spc s =
   Records { getRecords :: Pesarated Newline (Record spc s) }
   deriving (Eq, Ord, Show)
 
+instance Monoid (Records spc s) where
+  mempty = Records mempty
+  mappend (Records x) (Records y) = Records (x <> y)
+
 instance Functor (Records spc) where
   fmap f = Records . fmap (fmap f) . getRecords
 
@@ -67,6 +74,12 @@ instance Bifoldable Records where
 
 instance Bitraversable Records where
   bitraverse f g = fmap Records . traverse (bitraverse f g) . getRecords
+
+emptyRecords :: Records spc s
+emptyRecords = Records (Pesarated (Separated []))
+
+singletonRecords :: Record spc s -> Newline -> Records spc s
+singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 
 newtype FinalRecord spc s1 s2 =
   FinalRecord { unFinal :: Maybe (NonEmptyRecord spc s1 s2) }
@@ -90,6 +103,9 @@ instance Bifoldable (FinalRecord n) where
 instance Bitraversable (FinalRecord n) where
   bitraverse f g = fmap FinalRecord . traverse (bitraverse f g) . unFinal
 
-noFinal :: FinalRecord nestr spc str
+noFinal :: FinalRecord a b c
 noFinal = FinalRecord Nothing
+
+singleFinal :: Char -> String -> FinalRecord a (NonEmptyString) c
+singleFinal c s = FinalRecord (Just (SingleFieldNER (UnquotedF (c :| s))))
 

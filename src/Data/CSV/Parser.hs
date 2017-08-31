@@ -3,15 +3,17 @@
 module Data.CSV.Parser where
 
 import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
+import           Data.Bifunctor          (Bifunctor (first))
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
 import           Data.List.NonEmpty      (NonEmpty ((:|)), some1)
+import           Data.Monoid             ((<>))
 import           Data.Functor            (void, ($>), (<$>))
 import           Data.Separated          (pesaratedBy)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, option, sepEndBy, skipOptional, try)
 
-import           Data.CSV.CSV            (CSV (CSV), FinalRecord (FinalRecord), Records (Records))
+import           Data.CSV.CSV            (CSV (CSV), FinalRecord (FinalRecord), Records (Records), singletonRecords)
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF), MonoField (MonoField))
 import           Data.CSV.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields))
 import           Data.NonEmptyString     (NonEmptyString)
@@ -103,13 +105,24 @@ record :: CharParsing m => Char -> m (Record String String)
 record sep =
   Record <$> ((MonoField <$> field sep) `sepEndByNonEmpty` char sep)
 
-separatedValues :: CharParsing m => Char -> m (CSV String NonEmptyString String)
+separatedValues :: (Monad m, CharParsing m) => Char -> m (CSV String NonEmptyString String)
 separatedValues sep =
-  CSV sep <$> values sep <*> ending sep
+  uncurry (CSV sep) <$> multiRecords sep
 
-values :: CharParsing m => Char -> m (Records String String)
-values sep =
-  Records <$> try (record sep <* notFollowedBy eof) `pesaratedBy` newline
+records :: CharParsing m => Char -> m (Either (FinalRecord String NonEmptyString String) (Records String String))
+records sep =
+  try (Left <$> ending sep)
+  <|> (Right <$> (singletonRecords <$> record sep <*> newline))
+
+multiRecords :: (Monad m, CharParsing m) => Char -> m (Records String String, FinalRecord String NonEmptyString String)
+multiRecords sep =
+  untilLeft id (records sep)
+
+untilLeft :: (Monoid r, Monad m) => (a -> r) -> m (Either l a) -> m (r, l)
+untilLeft f x =
+  x >>= \e -> case e of
+    Left l  -> pure (mempty, l)
+    Right r -> first (f r <>) <$> untilLeft f x
 
 ending :: CharParsing m => Char -> m (FinalRecord String NonEmptyString String)
 ending sep = (FinalRecord <$> (optional (nonEmptyRecord sep))) <* eof
