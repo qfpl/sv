@@ -4,6 +4,7 @@
 module Main where
 
 import Control.Monad        (unless)
+import Data.Foldable        (toList)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -37,7 +38,7 @@ prop_csv =
       genString = Gen.string (Range.linear 0 100) Gen.alphaNum
       genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
       gen = genCsv (pure ',') genSpace genNonEmptyString genString
-      pretty = prettyCsv
+      pretty = prettyCsv toList id
       parseCsv :: (Monad m, CharParsing m) => m (CSV String NonEmptyString String)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen

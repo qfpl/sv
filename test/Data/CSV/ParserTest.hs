@@ -10,14 +10,14 @@ import           Text.Newline         (Newline (LF), newlineString)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (parse)
 
-import           Data.CSV.CSV         (CSV (CSV), mkCsv', noFinal, emptyRecords, FinalRecord (FinalRecord), singleFinal)
+import           Data.CSV.CSV         (CSV (CSV), mkCsv', final, noFinal, emptyRecords, FinalRecord (FinalRecord), singleFinal)
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
 import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, monoField, record, separatedValues, singleQuotedField)
 import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFieldNER))
 import           Data.NonEmptyString  (NonEmptyString)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
-import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscapes, quoteChar)
+import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscape, quoteChar)
 
 test_Parser :: TestTree
 test_Parser =
@@ -39,8 +39,8 @@ test_Parser =
 (@?=/) l r = l @?= Right r
 
 qd, qs :: a -> Quoted a
-qd = Quoted DoubleQuote . noEscapes
-qs = Quoted SingleQuote . noEscapes
+qd = Quoted DoubleQuote . noEscape
+qs = Quoted SingleQuote . noEscape
 uq :: s -> MonoField spc s
 uq = MonoField . UnquotedF
 uqa :: NonEmpty s -> Record spc s
@@ -54,9 +54,11 @@ quotedFieldTest :: (forall m . CharParsing m => m (Field String String String)) 
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
-      qq = Quoted quote . noEscapes
+      qq = Quoted quote . noEscape
   in testGroup name [
-    testCase "pass" $
+    testCase "empty" $
+      p [q,q] @?=/ (nospc (qq ""))
+  , testCase "text" $
       p [q,"hello text",q]
         @?=/ (nospc (qq "hello text"))
   , testCase "capture space" $
@@ -120,14 +122,19 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
+sqf :: String -> FinalRecord String b String
+sqf = final . SingleFieldNER . QuotedF . betwixt "" "" . qs
+uqf :: NonEmptyString -> FinalRecord a NonEmptyString b
+uqf = final . SingleFieldNER . UnquotedF
+
 finalRecordTest :: TestTree
 finalRecordTest =
   let p = parse (ending comma) ""
-      uqf :: NonEmptyString -> FinalRecord a NonEmptyString b
-      uqf = FinalRecord . Just . SingleFieldNER . UnquotedF
   in  testGroup "finalRecord" [
     testCase "single character" $
       p "a" @?=/ uqf ('a':|[])
+  , testCase "empty string" $
+      p "''" @?=/ sqf ""
   ]
 
 separatedValuesTest :: Char -> Newline -> TestTree
@@ -138,8 +145,10 @@ separatedValuesTest sep nl =
       s = [sep]
       nls = newlineString nl
   in  testGroup "separatedValues" [
-    testCase "empty string" $
+    testCase "empty" $
       p "" @?=/ csv [] noFinal
+  , testCase "single empty quotes field" $ 
+      p "''" @?=/ csv [] (sqf "")
   , testCase "single field, single record" $
       p "one" @?=/ csv [] (singleFinal 'o' "ne")
   , testCase "single field, multiple records" $

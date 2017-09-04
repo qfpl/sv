@@ -36,9 +36,6 @@ newtype Escaped a =
   SeparatedByEscapes (NonEmpty a)
   deriving (Eq, Ord, Show)
 
-noEscapes :: a -> Escaped a
-noEscapes a = SeparatedByEscapes (a :| [])
-
 instance Functor Escaped where
   fmap f (SeparatedByEscapes xs) = SeparatedByEscapes (fmap f xs)
 
@@ -47,4 +44,7 @@ instance Foldable Escaped where
 
 instance Traversable Escaped where
   traverse f (SeparatedByEscapes xs) = SeparatedByEscapes <$> traverse f xs
+
+noEscape :: a -> Escaped a
+noEscape a = SeparatedByEscapes (a :| [])
 

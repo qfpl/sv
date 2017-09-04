@@ -15,47 +15,59 @@ import Text.Between
 import Text.Newline    (Newline, newlineString)
 import Text.Quote      (Quoted (Quoted), Escaped (SeparatedByEscapes), quoteChar)
 
-prettyField :: Field String String String -> String
-prettyField f =
+data PrettyConfig s1 s2 =
+  PrettyConfig {
+    separator :: Char
+  , string1 :: s1 -> String
+  , string2 :: s2 -> String
+  }
+
+
+prettyField :: (s1 -> String) -> (s2 -> String) -> Field String s1 s2 -> String
+prettyField str1 str2 f =
   case f of
     QuotedF (Between b (Quoted q (SeparatedByEscapes ss)) t) ->
       let c = [quoteChar q]
-          cc = c ++ c
-          s = intercalate1 cc ss
+          cc = c <> c
+          s = intercalate1 cc (fmap str2 ss)
       in  concat [b, c, s, c, t]
-    UnquotedF s -> s
+    UnquotedF s -> str1 s
 
-prettyMonoField :: MonoField String String -> String
-prettyMonoField = prettyField . getField
+prettyMonoField :: PrettyConfig s1 s2 -> MonoField String s2 -> String
+prettyMonoField c =
+  let str = string2 c in prettyField str str . getField
 
 prettyNewlines :: Foldable f => f Newline -> String
 prettyNewlines = foldMap newlineString
 
-prettyFinalRecord :: Char -> FinalRecord String NonEmptyString String -> String
+prettyFinalRecord :: PrettyConfig s1 s2 -> FinalRecord String s1 s2 -> String
 prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . unFinal
 
-prettyPesarated :: Bifoldable p => Char -> p Newline (Record String String) -> String
+prettyPesarated :: Bifoldable p => PrettyConfig s1 s2 -> p Newline (Record String s2) -> String
 prettyPesarated c =
   bifoldMap newlineString (prettyRecord c)
 
-prettyRecord :: Char -> Record String String -> String
-prettyRecord sep (Record fs) =
-  intercalate1 [sep] (fmap prettyMonoField fs)
+prettyRecord :: PrettyConfig s1 s2 -> Record String s2 -> String
+prettyRecord c (Record fs) =
+  let sep = separator c
+      str = string2 c
+  in  intercalate1 [sep] (fmap (prettyMonoField c) fs)
 
 prettyNonEmptyString :: Foldable f => f Char -> String
 prettyNonEmptyString = toList
 
-prettyNonEmptyRecord :: Char -> NonEmptyRecord String NonEmptyString String -> String
-prettyNonEmptyRecord _ (SingleFieldNER f) =
-  bifoldMap prettyNonEmptyString id f
+prettyNonEmptyRecord :: PrettyConfig s1 s2 -> NonEmptyRecord String s1 s2 -> String
+prettyNonEmptyRecord c (SingleFieldNER f) =
+  prettyField (string1 c) (string2 c) f
 prettyNonEmptyRecord c (MultiFieldNER f fs) =
   prettyRecord c (Record (f <| fs))
 
-prettyRecords :: Char -> Records String String -> String
+prettyRecords :: PrettyConfig s1 s2 -> Records String s2 -> String
 prettyRecords c =
   prettyPesarated c . getRecords
 
-prettyCsv :: CSV String NonEmptyString String -> String
-prettyCsv (CSV c rs e) =
-  prettyRecords c (first toList rs) <> prettyFinalRecord c e
+prettyCsv :: (s1 -> String) -> (s2 -> String) -> CSV String s1 s2 -> String
+prettyCsv s1 s2 (CSV c rs e) =
+  let config = PrettyConfig c s1 s2
+  in  prettyRecords config (first toList rs) <> prettyFinalRecord config e
 

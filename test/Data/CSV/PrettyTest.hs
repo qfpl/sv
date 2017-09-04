@@ -7,14 +7,18 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import Text.Parsec      (parse)
 import Text.Parser.Char (CharParsing)
 
+import Data.CSV.CSV     (CSV (CSV), final, noFinal)
+import Data.CSV.Field   (unspacedField)
 import Data.CSV.Parser  (comma, field)
-import Data.CSV.Pretty  (prettyField)
+import Data.CSV.Pretty  (prettyField, prettyCsv)
+import Data.CSV.Record  (NonEmptyRecord (SingleFieldNER))
+import Text.Quote       (Quote (SingleQuote))
 
 test_Pretty :: TestTree
 test_Pretty =
   testGroup "Pretty" [
     fieldRoundTrip
-  , recordRoundTrip
+  , csvPretty
   ]
 
 prettyAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> String) -> String -> String -> TestTree
@@ -24,7 +28,7 @@ prettyAfterParseRoundTrip parser pretty name s =
 
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
-  let test = prettyAfterParseRoundTrip (field comma) prettyField
+  let test = prettyAfterParseRoundTrip (field comma) (prettyField id id)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -39,20 +43,15 @@ fieldRoundTrip =
   , test "double quoted with escape in the middle" "\"John \"\"The Duke\"\" Wayne\""
   ]
 
-recordRoundTrip :: TestTree
-recordRoundTrip =
-  testGroup "record" [
+csvPretty :: TestTree
+csvPretty =
+  let pretty = prettyCsv id id
+  in  testGroup "csvPretty" [
+    testCase "empty" $
+      let subject = CSV comma mempty noFinal
+      in  pretty subject @?= ""
+  , testCase "empty quotes" $
+      let subject = CSV comma mempty (final (SingleFieldNER (unspacedField SingleQuote "")))
+      in pretty subject @?= "''"
   ]
-
-{-
-parseAfterPrettyRoundTrip ::
-  (Arbitrary a, Show a, Eq a) => (forall m. CharParsing m => m a) -> (a -> String) -> String -> TestTree
-parseAfterPrettyRoundTrip parser pretty name =
-  QC.testProperty name $
-    \a -> parse parser "" (pretty a) == Right a
-
-csvRoundTrip :: TestTree
-csvRoundTrip =
-  parseAfterPrettyRoundTrip (ArbCsv <$> separatedValues comma) (prettyCsv . unArbCsv) "csv"
--}
 

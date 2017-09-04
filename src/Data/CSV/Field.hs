@@ -7,8 +7,8 @@ import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.Traversable   (Traversable (traverse))
 
-import Text.Between       (Between)
-import Text.Quote         (Quoted)
+import Text.Between       (Between, betwixt)
+import Text.Quote         (Escaped (SeparatedByEscapes), Quote, Quoted (Quoted))
 
 data Field spc s1 s2 =
     UnquotedF s1
@@ -19,6 +19,9 @@ foldField :: (s1 -> b) -> (Between spc (Quoted s2) -> b) -> Field spc s1 s2 -> b
 foldField u q fi = case fi of
   UnquotedF s -> u s
   QuotedF b -> q b
+
+unspacedField :: Monoid m => Quote -> s2 -> Field m s1 s2
+unspacedField q s = QuotedF (betwixt mempty mempty (Quoted q (SeparatedByEscapes (pure s))))
 
 instance Functor (Field spc s1) where
   fmap f = foldField UnquotedF (QuotedF . (fmap (fmap f)))
@@ -39,6 +42,7 @@ instance Bifoldable (Field spc) where
 instance Bitraversable (Field spc) where
   bitraverse f g =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
+
 
 newtype MonoField spc s =
   MonoField { getField :: Field spc s s }

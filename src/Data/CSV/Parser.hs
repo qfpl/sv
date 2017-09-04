@@ -42,7 +42,7 @@ doubleQuotedField = quotedField DoubleQuote
 quoted :: CharParsing m => Quote -> m (Escaped a) -> m (Quoted a)
 quoted q p =
   let c = char (quoteChar q)
-  in  (fmap (Quoted q)) (between c c p)
+  in  Quoted q <$> between c c p
 
 quotedField :: CharParsing m => Quote -> m (Field String a String)
 quotedField quote =

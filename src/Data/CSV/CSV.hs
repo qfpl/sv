@@ -9,11 +9,13 @@ import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid        ((<>))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.CSV.Field     (Field (UnquotedF))
+import Data.CSV.Field     (Field (UnquotedF, QuotedF))
 import Data.CSV.Record    (NonEmptyRecord (SingleFieldNER), Record)
 import Data.NonEmptyString (NonEmptyString)
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
+import Text.Between       (betwixt)
 import Text.Newline       (Newline)
+import Text.Quote         (Quote, Quoted (Quoted), Escaped, noEscape)
 
 -- | Whitespace-preserving CSV data type
 data CSV spc s1 s2 =
@@ -48,7 +50,8 @@ instance Bifoldable (CSV n) where
 instance Bitraversable (CSV n) where
   bitraverse f g (CSV s rs e) = CSV s <$> traverse g rs <*> bitraverse f g e
 
--- | Newtype for records
+
+-- | A collection of records, separated and terminated by newlines.
 newtype Records spc s =
   Records { getRecords :: Pesarated Newline (Record spc s) }
   deriving (Eq, Ord, Show)
@@ -81,6 +84,10 @@ emptyRecords = Records (Pesarated (Separated []))
 singletonRecords :: Record spc s -> Newline -> Records spc s
 singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 
+
+-- | The final record in a CSV can be optionally ended with a newline.
+--   A FinalRecord is present if the newline is not present, otherwise
+--   all records are in the @initialRecords@
 newtype FinalRecord spc s1 s2 =
   FinalRecord { unFinal :: Maybe (NonEmptyRecord spc s1 s2) }
   deriving (Eq, Ord, Show)
@@ -103,9 +110,15 @@ instance Bifoldable (FinalRecord n) where
 instance Bitraversable (FinalRecord n) where
   bitraverse f g = fmap FinalRecord . traverse (bitraverse f g) . unFinal
 
+final :: NonEmptyRecord spc s1 s2 -> FinalRecord spc s1 s2
+final = FinalRecord . Just
+
 noFinal :: FinalRecord a b c
 noFinal = FinalRecord Nothing
 
-singleFinal :: Char -> String -> FinalRecord a (NonEmptyString) c
-singleFinal c s = FinalRecord (Just (SingleFieldNER (UnquotedF (c :| s))))
+singleFinal :: Char -> String -> FinalRecord a NonEmptyString c
+singleFinal c s = final (SingleFieldNER (UnquotedF (c :| s)))
+
+quotedFinal :: Quote -> String -> FinalRecord String b String
+quotedFinal q s = final (SingleFieldNER (QuotedF (betwixt "" "" (Quoted q (noEscape s)))))
 
