@@ -2,9 +2,10 @@ module Text.Quote where
 
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString (fromString))
 import Data.Traversable (Traversable (traverse))
+
+import Text.Escaped       (Escaped)
 
 data Quote =
     SingleQuote
@@ -35,20 +36,3 @@ instance Foldable Quoted where
 
 instance Traversable Quoted where
   traverse f (Quoted q a) = Quoted q <$> traverse f a
-
-newtype Escaped a =
-  SeparatedByEscapes (NonEmpty a)
-  deriving (Eq, Ord, Show)
-
-instance Functor Escaped where
-  fmap f (SeparatedByEscapes xs) = SeparatedByEscapes (fmap f xs)
-
-instance Foldable Escaped where
-  foldMap f (SeparatedByEscapes xs) = foldMap f xs
-
-instance Traversable Escaped where
-  traverse f (SeparatedByEscapes xs) = SeparatedByEscapes <$> traverse f xs
-
-noEscape :: a -> Escaped a
-noEscape a = SeparatedByEscapes (a :| [])
-

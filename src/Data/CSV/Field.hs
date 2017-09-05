@@ -8,7 +8,8 @@ import Data.Functor       (Functor (fmap))
 import Data.Traversable   (Traversable (traverse))
 
 import Text.Between       (Between, betwixt)
-import Text.Quote         (Escaped (SeparatedByEscapes), Quote, Quoted (Quoted))
+import Text.Escaped       (Escaped (SeparatedByEscapes))
+import Text.Quote         (Quote, Quoted (Quoted))
 
 data Field spc s1 s2 =
     UnquotedF s1

@@ -16,8 +16,9 @@ import Data.CSV.Field     (Field (UnquotedF, QuotedF))
 import Data.CSV.Record    (NonEmptyRecord (SingleFieldNER), Record)
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Text.Between       (betwixt)
+import Text.Escaped       (noEscape)
 import Text.Newline       (Newline)
-import Text.Quote         (Quote, Quoted (Quoted), noEscape)
+import Text.Quote         (Quote, Quoted (Quoted))
 
 -- | Whitespace-preserving CSV data type
 data CSV spc s1 s2 =

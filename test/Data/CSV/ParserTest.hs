@@ -21,7 +21,8 @@ import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFi
 import           Data.NonEmptyString  (NonEmptyString)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
-import           Text.Quote           (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), noEscape, quoteChar)
+import           Text.Escaped         (Escaped (SeparatedByEscapes), noEscape)
+import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 test_Parser :: TestTree
 test_Parser =

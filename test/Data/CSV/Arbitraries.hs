@@ -10,8 +10,9 @@ import Data.CSV.CSV        (CSV (CSV), FinalRecord (FinalRecord), Records (Recor
 import Data.CSV.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
 import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Text.Between        (Between (Between))
+import Text.Escaped        (Escaped (SeparatedByEscapes))
 import Text.Newline        (Newline (CRLF, LF))
-import Text.Quote          (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
+import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
 genCsv :: Gen Char -> Gen spc -> Gen s1 -> Gen s2 -> Gen (CSV spc s1 s2)
 genCsv sep spc s1 s2 =

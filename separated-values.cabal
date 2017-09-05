@@ -27,6 +27,7 @@ library
                        , Data.CSV.Record
                        , Data.NonEmptyString
                        , Text.Between
+                       , Text.Escaped
                        , Text.Newline
                        , Text.Quote
   -- other-modules:

@@ -17,8 +17,9 @@ import Data.CSV.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
 import Data.CSV.Record
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between
+import Text.Escaped    (Escaped (SeparatedByEscapes))
 import Text.Newline    (Newline, newlineString)
-import Text.Quote      (Quote, Quoted (Quoted), Escaped (SeparatedByEscapes), quoteChar)
+import Text.Quote      (Quote, Quoted (Quoted), quoteChar)
 
 data PrettyConfig' f space s1 s2 m =
   PrettyConfig' {

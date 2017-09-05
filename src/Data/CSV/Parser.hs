@@ -19,8 +19,9 @@ import           Data.CSV.CSV            (CSV (CSV), FinalRecord (FinalRecord), 
 import           Data.CSV.Field          (Field (UnquotedF, QuotedF), MonoField (MonoField))
 import           Data.CSV.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields))
 import           Text.Between            (Between (Between))
+import           Text.Escaped            (Escaped (SeparatedByEscapes))
 import           Text.Newline            (Newline (CR, CRLF, LF))
-import           Text.Quote              (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
+import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
 singleQuote = '\''
