@@ -57,7 +57,7 @@ genField spc s1 s2 =
 
 genRecord :: Gen spc -> Gen s -> Gen (Record spc s)
 genRecord spc s =
-  Record <$> Gen.nonEmpty (Range.linear 1 50) (MonoField <$> genField spc s s)
+  Record <$> Gen.nonEmpty (Range.linear 1 10) (MonoField <$> genField spc s s)
 
 genNonEmptyRecord :: Gen spc -> Gen s1 -> Gen s2 -> Gen (NonEmptyRecord spc s1 s2)
 genNonEmptyRecord spc s1 s2 =
@@ -65,7 +65,7 @@ genNonEmptyRecord spc s1 s2 =
       f' = MonoField <$> genField spc s2 s2
   in  Gen.choice [
     SingleFieldNER <$> f
-  , MultiFieldNER <$> f' <*> Gen.nonEmpty (Range.linear 1 50) f'
+  , MultiFieldNER <$> f' <*> Gen.nonEmpty (Range.linear 1 10) f'
   ]
 
 genRecords :: Gen spc -> Gen str -> Gen (Records spc str)
