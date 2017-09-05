@@ -62,10 +62,10 @@ quotedFieldTest parser name quote =
       qq = Quoted quote . noEscape
   in testGroup name [
     testCase "empty" $
-      p [q,q] @?=/ (nospc (qq ""))
+      p [q,q] @?=/ nospc (qq "")
   , testCase "text" $
       p [q,"hello text",q]
-        @?=/ (nospc (qq "hello text"))
+        @?=/ nospc (qq "hello text")
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
         @?=/ QuotedF (betwixt "   " "     " (qq " spaced text  "))
@@ -167,7 +167,7 @@ separatedValuesTest sep nl =
       ps ["one", s, "two", nls] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois", nls]
-        @?=/ csv (uqaa [("one":|["two", "three"]) , "un":|["deux", "trois"]]) noFinal
+        @?=/ csv (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) noFinal
   ]
 
 csvTest, psvTest :: TestTree

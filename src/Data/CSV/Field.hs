@@ -25,7 +25,7 @@ unspacedField :: Monoid m => Quote -> s2 -> Field m s1 s2
 unspacedField q s = QuotedF (betwixt mempty mempty (Quoted q (SeparatedByEscapes (pure s))))
 
 instance Functor (Field spc s1) where
-  fmap f = foldField UnquotedF (QuotedF . (fmap (fmap f)))
+  fmap f = foldField UnquotedF (QuotedF . fmap (fmap f))
 
 instance Foldable (Field spc s1) where
   foldMap f = foldField (const mempty) (foldMap (foldMap f))
@@ -68,5 +68,5 @@ instance Bifoldable MonoField where
 
 instance Bitraversable MonoField where
   bitraverse _ g (MonoField (UnquotedF s)) = (MonoField . UnquotedF) <$> g s
-  bitraverse f g (MonoField (QuotedF b)) = (MonoField . QuotedF) <$> (bitraverse f (traverse g) b)
+  bitraverse f g (MonoField (QuotedF b)) = (MonoField . QuotedF) <$> bitraverse f (traverse g) b
 

@@ -127,7 +127,7 @@ untilLeft f x =
     Right r -> first (f r <>) <$> untilLeft f x
 
 ending :: CharParsing m => Char -> m (FinalRecord Text Text1 Text)
-ending sep = (FinalRecord <$> (optional (nonEmptyRecord sep))) <* eof
+ending sep = (FinalRecord <$> optional (nonEmptyRecord sep)) <* eof
 
 nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text Text1 Text)
 nonEmptyRecord sep =
