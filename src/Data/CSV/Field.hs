@@ -1,4 +1,9 @@
-module Data.CSV.Field where
+module Data.CSV.Field (
+  Field (UnquotedF, QuotedF)
+  , foldField
+  , unspacedField
+  , MonoField (MonoField, getField)
+) where
 
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap))

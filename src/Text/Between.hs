@@ -1,4 +1,8 @@
-module Text.Between where
+module Text.Between (
+  Between (Between)
+  , betwixt
+  , uniform
+) where
 
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import Data.Bifunctor      (Bifunctor (bimap))

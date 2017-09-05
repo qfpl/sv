@@ -1,4 +1,16 @@
-module Data.CSV.CSV where
+module Data.CSV.CSV (
+  CSV (CSV)
+  , mkCsv
+  , mkCsv'
+  , Records (Records, getRecords)
+  , emptyRecords
+  , singletonRecords
+  , FinalRecord (FinalRecord, unFinal)
+  , final
+  , noFinal
+  , singleFinal
+  , quotedFinal
+) where
 
 import Control.Lens       ((^.))
 import Data.Bifoldable    (Bifoldable (bifoldMap))

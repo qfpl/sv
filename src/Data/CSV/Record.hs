@@ -1,4 +1,7 @@
-module Data.CSV.Record where
+module Data.CSV.Record (
+  Record (Record, fields)
+  , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
+) where
 
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
@@ -60,4 +63,3 @@ instance Bifoldable (NonEmptyRecord n) where
 instance Bitraversable (NonEmptyRecord n) where
   bitraverse f g (SingleFieldNER r) = SingleFieldNER <$> bitraverse f g r
   bitraverse _ g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (bitraverse pure g) hs
-

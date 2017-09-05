@@ -1,4 +1,7 @@
-module Text.Newline where
+module Text.Newline (
+  Newline (CR, LF, CRLF)
+  , newlineString
+) where
 
 import Data.String (IsString (fromString))
 

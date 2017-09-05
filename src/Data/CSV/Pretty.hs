@@ -1,4 +1,22 @@
-module Data.CSV.Pretty where
+module Data.CSV.Pretty (
+  PrettyConfig' (PrettyConfig', separator', quote, newline, space, string1, string2)
+  , PrettyConfig
+  , PrettyConfigC
+  , setSeparator
+  , separator
+  , textConfig
+  , defaultConfig
+  , prettyField
+  , prettyRecord
+  , prettyPesarated
+  , prettyRecords
+  , prettyNewlines
+  , prettyMonoField
+  , prettyFinalRecord
+  , prettyNonEmptyRecord
+  , prettyNonEmptyString
+  , prettyCsv
+) where
 
 import Control.Lens             (review)
 import Data.Bifoldable          (Bifoldable (bifoldMap))

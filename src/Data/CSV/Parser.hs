@@ -1,6 +1,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.CSV.Parser where
+module Data.CSV.Parser (
+  comma
+  , pipe
+  , field
+  , monoField
+  , singleQuotedField
+  , doubleQuotedField
+  , unquotedField
+  , record
+  , ending
+  , separatedValues
+) where
 
 import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
 import           Control.Lens            (view)
@@ -23,13 +34,9 @@ import           Text.Escaped            (Escaped (SeparatedByEscapes))
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
-singleQuote, doubleQuote, backslash, comma, pipe, tab :: Char
-singleQuote = '\''
-doubleQuote = '"'
-backslash = '\\'
+comma, pipe :: Char
 comma = ','
 pipe = '|'
-tab = '\t'
 
 sepByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)

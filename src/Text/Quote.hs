@@ -1,4 +1,9 @@
-module Text.Quote where
+module Text.Quote (
+  Quote (SingleQuote, DoubleQuote)
+  , quoteChar
+  , quoteString
+  , Quoted (Quoted, quote, value)
+) where
 
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))

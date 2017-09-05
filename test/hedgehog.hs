@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Main where
+module Main (main) where
 
 import Control.Lens         (view)
 import Control.Monad        (unless)

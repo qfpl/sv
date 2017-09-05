@@ -1,4 +1,6 @@
-module Data.NonEmptyString where
+module Data.NonEmptyString (
+  NonEmptyString
+) where
 
 import Data.List.NonEmpty (NonEmpty)
 

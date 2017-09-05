@@ -1,4 +1,7 @@
-module Text.Escaped where
+module Text.Escaped (
+  Escaped (SeparatedByEscapes)
+  , noEscape
+) where
 
 import Data.Foldable      (Foldable (foldMap))
 import Data.Traversable   (Traversable (traverse))

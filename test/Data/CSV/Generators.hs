@@ -1,4 +1,19 @@
-module Data.CSV.Generators where
+module Data.CSV.Generators (
+  genCsv
+  , genNewline
+  , genSep
+  , genFinalRecord
+  , genBetween
+  , genQuote
+  , genEscaped
+  , genQuote
+  , genField
+  , genRecord
+  , genRecords
+  , genNonEmptyRecord
+  , genPesarated
+  , genSeparated
+) where
 
 import Control.Applicative ((<$>), liftA2, liftA3)
 import Data.Separated      (Pesarated (Pesarated), Separated (Separated))
