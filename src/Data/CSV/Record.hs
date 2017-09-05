@@ -9,7 +9,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid        ((<>))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.CSV.Field     (Field, MonoField (MonoField))
+import Data.CSV.Field     (Field, MonoField)
 
 newtype Record spc s =
   Record {
@@ -51,13 +51,13 @@ instance Traversable (NonEmptyRecord n s) where
 
 instance Bifunctor (NonEmptyRecord n) where
   bimap f g (SingleFieldNER r) = SingleFieldNER (bimap f g r)
-  bimap f g (MultiFieldNER h hs) = MultiFieldNER (fmap g h) (fmap (fmap g) hs)
+  bimap _ g (MultiFieldNER h hs) = MultiFieldNER (fmap g h) (fmap (fmap g) hs)
 
 instance Bifoldable (NonEmptyRecord n) where
   bifoldMap f g (SingleFieldNER r) = bifoldMap f g r
-  bifoldMap f g (MultiFieldNER h hs) = foldMap g h <> foldMap (bifoldMap (const mempty) g) hs
+  bifoldMap _ g (MultiFieldNER h hs) = foldMap g h <> foldMap (bifoldMap (const mempty) g) hs
 
 instance Bitraversable (NonEmptyRecord n) where
   bitraverse f g (SingleFieldNER r) = SingleFieldNER <$> bitraverse f g r
-  bitraverse f g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (bitraverse pure g) hs
+  bitraverse _ g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (bitraverse pure g) hs
 

@@ -5,7 +5,6 @@ module Main where
 
 import Control.Lens         (view)
 import Control.Monad        (unless)
-import Data.Foldable        (toList)
 import Data.Text            (Text)
 import qualified Data.Text.Lazy as Lazy
 import Data.Text.Lazy.Builder (toLazyText)
@@ -22,7 +21,6 @@ import Data.CSV.Arbitraries (genCsv)
 import Data.CSV.CSV         (CSV)
 import Data.CSV.Parser      (separatedValues)
 import Data.CSV.Pretty      (prettyCsv, defaultConfig)
-import Data.NonEmptyString  (NonEmptyString)
 
 main :: IO ()
 main = do

@@ -1,7 +1,7 @@
 module Data.CSV.Arbitraries where
 
 import Control.Applicative ((<$>), liftA2, liftA3)
-import Data.Separated      (Pesarated (Pesarated), Separated (Separated), Separated1 (Separated1))
+import Data.Separated      (Pesarated (Pesarated), Separated (Separated))
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -10,7 +10,7 @@ import Data.CSV.CSV        (CSV (CSV), FinalRecord (FinalRecord), Records (Recor
 import Data.CSV.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
 import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Text.Between        (Between (Between))
-import Text.Newline        (Newline (CR, CRLF, LF))
+import Text.Newline        (Newline (CRLF, LF))
 import Text.Quote          (Escaped (SeparatedByEscapes), Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
 genCsv :: Gen Char -> Gen spc -> Gen s1 -> Gen s2 -> Gen (CSV spc s1 s2)

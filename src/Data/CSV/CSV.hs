@@ -9,17 +9,15 @@ import Data.Functor       (Functor (fmap), (<$>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid        ((<>))
 import Data.Text          (Text)
-import Data.Text.Lens     (IsText (packed))
 import Data.Text1         (Text1, IsText1 (packed1))
 import Data.Traversable   (Traversable (traverse))
 
 import Data.CSV.Field     (Field (UnquotedF, QuotedF))
 import Data.CSV.Record    (NonEmptyRecord (SingleFieldNER), Record)
-import Data.NonEmptyString (NonEmptyString)
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Text.Between       (betwixt)
 import Text.Newline       (Newline)
-import Text.Quote         (Quote, Quoted (Quoted), Escaped, noEscape)
+import Text.Quote         (Quote, Quoted (Quoted), noEscape)
 
 -- | Whitespace-preserving CSV data type
 data CSV spc s1 s2 =

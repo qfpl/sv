@@ -11,8 +11,8 @@ import Text.Parser.Char (CharParsing)
 
 import Data.CSV.CSV     (CSV (CSV), final, noFinal)
 import Data.CSV.Field   (unspacedField)
-import Data.CSV.Parser  (comma, field, monoField)
-import Data.CSV.Pretty  (prettyField, prettyCsv, prettyMonoField, setSeparator, textConfig)
+import Data.CSV.Parser  (comma, monoField)
+import Data.CSV.Pretty  (prettyCsv, prettyMonoField, setSeparator, textConfig)
 import Data.CSV.Record  (NonEmptyRecord (SingleFieldNER))
 import Text.Quote       (Quote (SingleQuote))
 

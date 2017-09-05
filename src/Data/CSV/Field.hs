@@ -1,7 +1,7 @@
 module Data.CSV.Field where
 
 import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap), second)
+import Data.Bifunctor     (Bifunctor (bimap))
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
@@ -58,14 +58,14 @@ instance Traversable (MonoField spc) where
   traverse f = fmap MonoField . bitraverse f f . getField
 
 instance Bifunctor MonoField where
-  bimap f g (MonoField (UnquotedF s)) = MonoField (UnquotedF (g s))
+  bimap _ g (MonoField (UnquotedF s)) = MonoField (UnquotedF (g s))
   bimap f g (MonoField (QuotedF b)) = MonoField (QuotedF (bimap f (fmap g) b))
 
 instance Bifoldable MonoField where
-  bifoldMap f g (MonoField (UnquotedF s)) = g s
+  bifoldMap _ g (MonoField (UnquotedF s)) = g s
   bifoldMap f g (MonoField (QuotedF b)) = bifoldMap f (foldMap g) b
 
 instance Bitraversable MonoField where
-  bitraverse f g (MonoField (UnquotedF s)) = (MonoField . UnquotedF) <$> g s
+  bitraverse _ g (MonoField (UnquotedF s)) = (MonoField . UnquotedF) <$> g s
   bitraverse f g (MonoField (QuotedF b)) = (MonoField . QuotedF) <$> (bitraverse f (traverse g) b)
 

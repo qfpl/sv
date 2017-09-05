@@ -1,9 +1,7 @@
 module Data.CSV.Pretty where
 
-import Control.Lens             (re, review, Prism', Optic', Choice)
-import Data.Text.Lens           (IsText (packed))
+import Control.Lens             (review)
 import Data.Bifoldable          (Bifoldable (bifoldMap))
-import Data.Bifunctor           (first)
 import Data.Functor.Identity    (Identity (Identity, runIdentity))
 import Data.List.NonEmpty       ((<|))
 import Data.Monoid              ((<>))
@@ -12,13 +10,12 @@ import Data.Semigroup           (Semigroup)
 import Data.Text                (Text)
 import qualified Data.Text as Text
 import Data.Text.Lazy.Builder as Text (Builder, fromText)
-import Data.Text1               (AsText1, Text1, _Text1)
+import Data.Text1               (Text1, _Text1)
 
 import Data.CSV.CSV    (CSV (CSV), FinalRecord (unFinal), Records (getRecords))
-import Data.CSV.Field  (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
+import Data.CSV.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
 import Data.CSV.Record
 import Data.Foldable   (Foldable, fold, toList)
-import Data.NonEmptyString (NonEmptyString)
 import Text.Between
 import Text.Newline    (Newline, newlineString)
 import Text.Quote      (Quote, Quoted (Quoted), Escaped (SeparatedByEscapes), quoteChar)
