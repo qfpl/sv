@@ -9,11 +9,11 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import Text.Parsec      (parse)
 import Text.Parser.Char (CharParsing)
 
-import Data.CSV.CSV     (CSV (CSV), final, noFinal)
+import Data.CSV.CSV     (CSV (CSV))
 import Data.CSV.Field   (unspacedField)
 import Data.CSV.Parser  (comma, monoField)
 import Data.CSV.Pretty  (prettyCsv, prettyMonoField, setSeparator, textConfig)
-import Data.CSV.Record  (NonEmptyRecord (SingleFieldNER))
+import Data.CSV.Record  (NonEmptyRecord (SingleFieldNER), final, noFinal)
 import Text.Quote       (Quote (SingleQuote))
 
 test_Pretty :: TestTree

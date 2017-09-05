@@ -4,7 +4,6 @@ module Data.CSV.Generators (
   , genSep
   , genFinalRecord
   , genBetween
-  , genQuote
   , genEscaped
   , genQuote
   , genField
@@ -21,9 +20,9 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.CSV.CSV        (CSV (CSV), FinalRecord (FinalRecord), Records (Records))
+import Data.CSV.CSV        (CSV (CSV))
 import Data.CSV.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
-import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
+import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Text.Between        (Between (Between))
 import Text.Escaped        (Escaped (SeparatedByEscapes))
 import Text.Newline        (Newline (CRLF, LF))

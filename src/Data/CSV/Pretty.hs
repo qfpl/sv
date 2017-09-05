@@ -30,11 +30,11 @@ import qualified Data.Text as Text
 import Data.Text.Lazy.Builder as Text (Builder, fromText)
 import Data.Text1               (Text1, _Text1)
 
-import Data.CSV.CSV    (CSV (CSV), FinalRecord (unFinal), Records (getRecords))
+import Data.CSV.CSV    (CSV (CSV))
 import Data.CSV.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
-import Data.CSV.Record
+import Data.CSV.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
-import Text.Between
+import Text.Between    (Between (Between))
 import Text.Escaped    (Escaped (SeparatedByEscapes))
 import Text.Newline    (Newline, newlineString)
 import Text.Quote      (Quote, Quoted (Quoted), quoteChar)

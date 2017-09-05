@@ -1,5 +1,5 @@
 module Text.Between (
-  Between (Between)
+  Between (Between, before, value, after)
   , betwixt
   , uniform
 ) where
