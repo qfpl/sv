@@ -3,6 +3,7 @@ module Text.Quote where
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.String (IsString (fromString))
 import Data.Traversable (Traversable (traverse))
 
 data Quote =
@@ -15,6 +16,9 @@ quoteChar q =
   case q of
     SingleQuote -> '\''
     DoubleQuote -> '"'
+
+quoteString :: IsString s => Quote -> s
+quoteString = fromString . pure . quoteChar
 
 data Quoted a =
   Quoted {

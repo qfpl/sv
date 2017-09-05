@@ -1,14 +1,18 @@
 {-# language RankNTypes #-}
+{-# language OverloadedStrings #-}
 
 module Data.CSV.ParserTest (test_Parser) where
 
+import           Control.Lens         ((^.))
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
-import           Test.Tasty           (TestTree, testGroup)
+import           Data.Text            (Text)
+import           Data.Text1           (Text1, packed1)
+import           Test.Tasty           (TestName, TestTree, testGroup)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
 import           Text.Newline         (Newline (LF), newlineString)
 import           Text.Parser.Char     (CharParsing)
-import           Text.Parsec          (parse)
+import           Text.Parsec          (ParseError, parse)
 
 import           Data.CSV.CSV         (CSV (CSV), mkCsv', final, noFinal, emptyRecords, FinalRecord (FinalRecord), singleFinal)
 import           Data.CSV.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
@@ -47,10 +51,10 @@ uqa :: NonEmpty s -> Record spc s
 uqa = Record . fmap uq
 uqaa :: [NonEmpty s] -> [Record spc s]
 uqaa = fmap uqa
-nospc :: Quoted s2 -> Field String s1 s2
+nospc :: Quoted s2 -> Field Text s1 s2
 nospc = QuotedF . uniform ""
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field String String String)) -> String -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field Text Text Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
@@ -80,7 +84,8 @@ doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" Do
 
 fieldTest :: TestTree
 fieldTest =
-  let p = parse (field comma) ""
+  let p :: Text -> Either ParseError (Field Text Text Text)
+      p = parse (field comma) ""
   in  testGroup "field" [
     testCase "doublequoted" $
       p "\"hello\"" @?=/ nospc (qd "hello")
@@ -106,7 +111,8 @@ fieldTest =
 
 recordTest :: TestTree
 recordTest =
-  let p = parse (record comma) ""
+  let p :: Text -> Either ParseError (Record Text Text)
+      p = parse (record comma) ""
   in  testGroup "record" [
     testCase "single field" $
       p "Yes" @?=/ uqa (pure "Yes")
@@ -122,14 +128,15 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
-sqf :: String -> FinalRecord String b String
+sqf :: Text -> FinalRecord Text b Text
 sqf = final . SingleFieldNER . QuotedF . betwixt "" "" . qs
-uqf :: NonEmptyString -> FinalRecord a NonEmptyString b
-uqf = final . SingleFieldNER . UnquotedF
+uqf :: NonEmptyString -> FinalRecord a Text1 b
+uqf = final . SingleFieldNER . UnquotedF . (^. packed1)
 
 finalRecordTest :: TestTree
 finalRecordTest =
-  let p = parse (ending comma) ""
+  let p :: Text -> Either ParseError (FinalRecord Text Text1 Text)
+      p = parse (ending comma) ""
   in  testGroup "finalRecord" [
     testCase "single character" $
       p "a" @?=/ uqf ('a':|[])
@@ -139,8 +146,10 @@ finalRecordTest =
 
 separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
-  let p = parse (separatedValues sep) ""
+  let p :: Text -> Either ParseError (CSV Text Text1 Text)
+      p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
+      csv :: [Record spc s2] -> FinalRecord spc s1 s2 -> CSV spc s1 s2
       csv rs e = mkCsv' sep e $ sprinkle nl rs
       s = [sep]
       nls = newlineString nl

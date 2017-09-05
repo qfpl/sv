@@ -1,5 +1,6 @@
 module Data.CSV.CSV where
 
+import Control.Lens       ((^.))
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -7,6 +8,9 @@ import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid        ((<>))
+import Data.Text          (Text)
+import Data.Text.Lens     (IsText (packed))
+import Data.Text1         (Text1, IsText1 (packed1))
 import Data.Traversable   (Traversable (traverse))
 
 import Data.CSV.Field     (Field (UnquotedF, QuotedF))
@@ -116,9 +120,9 @@ final = FinalRecord . Just
 noFinal :: FinalRecord a b c
 noFinal = FinalRecord Nothing
 
-singleFinal :: Char -> String -> FinalRecord a NonEmptyString c
-singleFinal c s = final (SingleFieldNER (UnquotedF (c :| s)))
+singleFinal :: Char -> String -> FinalRecord a Text1 c
+singleFinal c s = final (SingleFieldNER (UnquotedF ((c :| s) ^. packed1)))
 
-quotedFinal :: Quote -> String -> FinalRecord String b String
-quotedFinal q s = final (SingleFieldNER (QuotedF (betwixt "" "" (Quoted q (noEscape s)))))
+quotedFinal :: Quote -> Text -> FinalRecord Text b Text
+quotedFinal q s = final (SingleFieldNER (QuotedF (betwixt mempty mempty (Quoted q (noEscape s)))))
 

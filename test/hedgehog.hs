@@ -3,8 +3,13 @@
 
 module Main where
 
+import Control.Lens         (view)
 import Control.Monad        (unless)
 import Data.Foldable        (toList)
+import Data.Text            (Text)
+import qualified Data.Text.Lazy as Lazy
+import Data.Text.Lazy.Builder (toLazyText)
+import Data.Text1           (Text1, packed1)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -16,7 +21,7 @@ import System.IO            (BufferMode(LineBuffering), hSetBuffering, stdout, s
 import Data.CSV.Arbitraries (genCsv)
 import Data.CSV.CSV         (CSV)
 import Data.CSV.Parser      (separatedValues)
-import Data.CSV.Pretty      (prettyCsv)
+import Data.CSV.Pretty      (prettyCsv, defaultConfig)
 import Data.NonEmptyString  (NonEmptyString)
 
 main :: IO ()
@@ -34,16 +39,17 @@ tests =
 
 prop_csv :: Property
 prop_csv =
-  let genSpace = Gen.string (Range.linear 0 5) (Gen.element [' ', '\t'])
-      genString = Gen.string (Range.linear 0 100) Gen.alphaNum
+  let genSpace = Gen.text (Range.linear 0 5) (Gen.element [' ', '\t'])
+      genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
       genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
-      gen = genCsv (pure ',') genSpace genNonEmptyString genString
-      pretty = prettyCsv toList id
-      parseCsv :: (Monad m, CharParsing m) => m (CSV String NonEmptyString String)
+      genText1 = view packed1 <$> genNonEmptyString
+      gen = genCsv (pure ',') genSpace genText1 genText
+      pretty = toLazyText . prettyCsv defaultConfig
+      parseCsv :: (Monad m, CharParsing m) => m (CSV Text Text1 Text)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen
 
-parsePretty :: (Eq a, Show a) => (forall m. (Monad m, CharParsing m) => m a) -> (a -> String) -> Gen a -> Property
+parsePretty :: (Eq a, Show a) => (forall m. (Monad m, CharParsing m) => m a) -> (a -> Lazy.Text) -> Gen a -> Property
 parsePretty parser pretty genA =
   property $ do
     c <- forAll genA

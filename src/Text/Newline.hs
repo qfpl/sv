@@ -1,12 +1,14 @@
 module Text.Newline where
 
+import Data.String (IsString (fromString))
+
 data Newline =
   CR | LF | CRLF
   deriving (Eq, Ord, Show)
 
-newlineString :: Newline -> String
+newlineString :: IsString s => Newline -> s
 newlineString n =
-  case n of
+  fromString $ case n of
     CR -> "\r"
     LF -> "\n"
     CRLF -> "\r\n"

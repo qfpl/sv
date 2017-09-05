@@ -3,13 +3,16 @@
 module Data.CSV.Parser where
 
 import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
+import           Control.Lens            (view)
 import           Data.Bifunctor          (Bifunctor (first))
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
+import           Data.Functor            (void, ($>), (<$>))
 import           Data.List.NonEmpty      (NonEmpty ((:|)), some1)
 import           Data.Monoid             ((<>))
-import           Data.Functor            (void, ($>), (<$>))
 import           Data.Separated          (pesaratedBy)
+import           Data.Text               (Text, pack)
+import           Data.Text1              (Text1, _Text1, packed1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, option, sepEndBy, skipOptional, try)
 
@@ -35,7 +38,7 @@ sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
-singleQuotedField, doubleQuotedField :: CharParsing m => m (Field String a String)
+singleQuotedField, doubleQuotedField :: CharParsing m => m (Field Text a Text)
 singleQuotedField = quotedField SingleQuote
 doubleQuotedField = quotedField DoubleQuote
 
@@ -44,11 +47,11 @@ quoted q p =
   let c = char (quoteChar q)
   in  Quoted q <$> between c c p
 
-quotedField :: CharParsing m => Quote -> m (Field String a String)
+quotedField :: CharParsing m => Quote -> m (Field Text a Text)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
-      noescape = many (notChar qc) `sepByNonEmpty` escape
+      noescape = fmap pack (many (notChar qc)) `sepByNonEmpty` escape
   in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> noescape))
 
 escapeQuote :: CharParsing m => Quote -> m Char
@@ -77,7 +80,7 @@ newline =
     <|> CR <$ char '\r'
     <|> LF <$ char '\n'
 
-generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field String (f Char) String)
+generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field Text (f Char) Text)
 generalisedField combinator sep =
   choice [
     try singleQuotedField
@@ -85,36 +88,36 @@ generalisedField combinator sep =
   , unquotedField sep combinator
   ]
 
-field :: CharParsing m => Char -> m (Field String String String)
-field1 :: CharParsing m => Char -> m (Field String NonEmptyString String)
-field = generalisedField many
-field1 = generalisedField some1
+field :: CharParsing m => Char -> m (Field Text Text Text)
+field1 :: CharParsing m => Char -> m (Field Text Text1 Text)
+field = fmap (first pack) . generalisedField many
+field1 = fmap (first (view packed1)) . generalisedField some1
 
-monoField :: CharParsing m => Char -> m (MonoField String String)
+monoField :: CharParsing m => Char -> m (MonoField Text Text)
 monoField = fmap MonoField . field
 
 horizontalSpace :: CharParsing m => m Char
 horizontalSpace = choice (fmap char [' ', '\t'])
 
-spaced :: CharParsing m => m a -> m (Between String a)
+spaced :: CharParsing m => m a -> m (Between Text a)
 spaced p =
-  let s = many horizontalSpace
+  let s = pack <$> many horizontalSpace
   in liftA3 Between s p s
 
-record :: CharParsing m => Char -> m (Record String String)
+record :: CharParsing m => Char -> m (Record Text Text)
 record sep =
   Record <$> ((MonoField <$> field sep) `sepEndByNonEmpty` char sep)
 
-separatedValues :: (Monad m, CharParsing m) => Char -> m (CSV String NonEmptyString String)
+separatedValues :: (Monad m, CharParsing m) => Char -> m (CSV Text Text1 Text)
 separatedValues sep =
   uncurry (CSV sep) <$> multiRecords sep
 
-records :: CharParsing m => Char -> m (Either (FinalRecord String NonEmptyString String) (Records String String))
+records :: CharParsing m => Char -> m (Either (FinalRecord Text Text1 Text) (Records Text Text))
 records sep =
   try (Left <$> ending sep)
   <|> (Right <$> (singletonRecords <$> record sep <*> newline))
 
-multiRecords :: (Monad m, CharParsing m) => Char -> m (Records String String, FinalRecord String NonEmptyString String)
+multiRecords :: (Monad m, CharParsing m) => Char -> m (Records Text Text, FinalRecord Text Text1 Text)
 multiRecords sep =
   untilLeft id (records sep)
 
@@ -124,10 +127,10 @@ untilLeft f x =
     Left l  -> pure (mempty, l)
     Right r -> first (f r <>) <$> untilLeft f x
 
-ending :: CharParsing m => Char -> m (FinalRecord String NonEmptyString String)
+ending :: CharParsing m => Char -> m (FinalRecord Text Text1 Text)
 ending sep = (FinalRecord <$> (optional (nonEmptyRecord sep))) <* eof
 
-nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord String NonEmptyString String)
+nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text Text1 Text)
 nonEmptyRecord sep =
   try (MultiFieldNER <$> monoField sep <* char sep <*> (fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
