@@ -1,4 +1,4 @@
-module Data.CSV.Arbitraries where
+module Data.CSV.Generators where
 
 import Control.Applicative ((<$>), liftA2, liftA3)
 import Data.Separated      (Pesarated (Pesarated), Separated (Separated))

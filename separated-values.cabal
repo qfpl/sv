@@ -83,7 +83,7 @@ test-suite             hedgehog
   main-is:
                        hedgehog.hs
   other-modules:
-                       Data.CSV.Arbitraries
+                       Data.CSV.Generators
   default-language:
                        Haskell2010
   build-depends:

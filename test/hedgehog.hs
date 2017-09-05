@@ -17,7 +17,7 @@ import Text.Parser.Char     (CharParsing)
 import System.Exit          (exitFailure)
 import System.IO            (BufferMode(LineBuffering), hSetBuffering, stdout, stderr)
 
-import Data.CSV.Arbitraries (genCsv)
+import Data.CSV.Generators  (genCsv)
 import Data.CSV.CSV         (CSV)
 import Data.CSV.Parser      (separatedValues)
 import Data.CSV.Pretty      (prettyCsv, defaultConfig)
