@@ -20,11 +20,11 @@ source-repository    head
   location:          git@github.com/qfpl/separated-values.git
 
 library
-  exposed-modules:     Data.CSV.CSV
-                       , Data.CSV.Field
-                       , Data.CSV.Parser
-                       , Data.CSV.Pretty
-                       , Data.CSV.Record
+  exposed-modules:     Data.Csv.Csv
+                       , Data.Csv.Field
+                       , Data.Csv.Parser
+                       , Data.Csv.Pretty
+                       , Data.Csv.Record
                        , Data.NonEmptyString
                        , Text.Between
                        , Text.Escaped
@@ -53,8 +53,8 @@ test-suite             tasty
   main-is:
                        tasty.hs
   other-modules:
-                       Data.CSV.PrettyTest
-                    ,  Data.CSV.ParserTest
+                       Data.Csv.PrettyTest
+                    ,  Data.Csv.ParserTest
   default-language:
                        Haskell2010
   build-depends:
@@ -83,7 +83,7 @@ test-suite             hedgehog
   main-is:
                        hedgehog.hs
   other-modules:
-                       Data.CSV.Generators
+                       Data.Csv.Generators
   default-language:
                        Haskell2010
   build-depends:

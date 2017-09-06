@@ -1,4 +1,4 @@
-module Data.CSV.Field (
+module Data.Csv.Field (
   Field (UnquotedF, QuotedF)
   , foldField
   , unspacedField

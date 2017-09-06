@@ -17,10 +17,10 @@ import Text.Parser.Char     (CharParsing)
 import System.Exit          (exitFailure)
 import System.IO            (BufferMode(LineBuffering), hSetBuffering, stdout, stderr)
 
-import Data.CSV.Generators  (genCsv)
-import Data.CSV.CSV         (CSV)
-import Data.CSV.Parser      (separatedValues)
-import Data.CSV.Pretty      (prettyCsv, defaultConfig)
+import Data.Csv.Generators  (genCsv)
+import Data.Csv.Csv         (Csv)
+import Data.Csv.Parser      (separatedValues)
+import Data.Csv.Pretty      (prettyCsv, defaultConfig)
 
 main :: IO ()
 main = do
@@ -43,7 +43,7 @@ prop_csv =
       genText1 = view packed1 <$> genNonEmptyString
       gen = genCsv (pure ',') genSpace genText1 genText
       pretty = toLazyText . prettyCsv defaultConfig
-      parseCsv :: (Monad m, CharParsing m) => m (CSV Text Text1 Text)
+      parseCsv :: (Monad m, CharParsing m) => m (Csv Text Text1 Text)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen
 

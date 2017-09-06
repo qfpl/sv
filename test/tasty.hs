@@ -2,8 +2,8 @@ module Main (main) where
 
 import Test.Tasty
 
-import Data.CSV.ParserTest (test_Parser)
-import Data.CSV.PrettyTest (test_Pretty)
+import Data.Csv.ParserTest (test_Parser)
+import Data.Csv.PrettyTest (test_Pretty)
 
 
 main :: IO ()

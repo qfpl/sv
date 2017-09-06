@@ -1,4 +1,4 @@
-module Data.CSV.Pretty (
+module Data.Csv.Pretty (
   PrettyConfig' (PrettyConfig', separator', quote, newline, space, string1, string2)
   , PrettyConfig
   , PrettyConfigC
@@ -30,9 +30,9 @@ import qualified Data.Text as Text
 import Data.Text.Lazy.Builder as Text (Builder, fromText)
 import Data.Text1               (Text1, _Text1)
 
-import Data.CSV.CSV    (CSV (CSV))
-import Data.CSV.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
-import Data.CSV.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
+import Data.Csv.Csv    (Csv (Csv))
+import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
+import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
 import Text.Escaped    (Escaped (SeparatedByEscapes))
@@ -127,8 +127,8 @@ prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> Record
 prettyRecords c =
   prettyPesarated c . getRecords
 
-prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC space s1 s2 m -> CSV space s1 s2 -> m
-prettyCsv config (CSV c rs e) =
+prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC space s1 s2 m -> Csv space s1 s2 -> m
+prettyCsv config (Csv c rs e) =
   let newConfig = setSeparator config c
   in  prettyRecords newConfig rs <> prettyFinalRecord newConfig e
 

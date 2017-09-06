@@ -1,4 +1,4 @@
-module Data.CSV.Record (
+module Data.Csv.Record (
   Record (Record, fields)
   , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
   , Records (Records, getRecords)
@@ -24,7 +24,7 @@ import Data.Text          (Text)
 import Data.Text1         (Text1, IsText1 (packed1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.CSV.Field     (Field (UnquotedF, QuotedF), MonoField)
+import Data.Csv.Field     (Field (UnquotedF, QuotedF), MonoField)
 import Text.Between       (betwixt)
 import Text.Escaped       (noEscape)
 import Text.Newline       (Newline)
@@ -115,7 +115,7 @@ singletonRecords :: Record spc s -> Newline -> Records spc s
 singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 
 
--- | The final record in a CSV can be optionally ended with a newline.
+-- | The final record in a Csv can be optionally ended with a newline.
 --   A FinalRecord is present if the newline is not present, otherwise
 --   all records are in the @initialRecords@
 newtype FinalRecord spc s1 s2 =

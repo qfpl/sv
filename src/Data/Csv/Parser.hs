@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.CSV.Parser (
+module Data.Csv.Parser (
   comma
   , pipe
   , field
@@ -26,9 +26,9 @@ import           Data.Text1              (Text1, packed1)
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
-import           Data.CSV.CSV            (CSV (CSV))
-import           Data.CSV.Field          (Field (UnquotedF, QuotedF), MonoField (MonoField))
-import           Data.CSV.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields), Records, singletonRecords, FinalRecord (FinalRecord))
+import           Data.Csv.Csv            (Csv (Csv))
+import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField (MonoField))
+import           Data.Csv.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields), Records, singletonRecords, FinalRecord (FinalRecord))
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped (SeparatedByEscapes))
 import           Text.Newline            (Newline (CR, CRLF, LF))
@@ -114,9 +114,9 @@ record :: CharParsing m => Char -> m (Record Text Text)
 record sep =
   Record <$> ((MonoField <$> field sep) `sepEndByNonEmpty` char sep)
 
-separatedValues :: (Monad m, CharParsing m) => Char -> m (CSV Text Text1 Text)
+separatedValues :: (Monad m, CharParsing m) => Char -> m (Csv Text Text1 Text)
 separatedValues sep =
-  uncurry (CSV sep) <$> multiRecords sep
+  uncurry (Csv sep) <$> multiRecords sep
 
 records :: CharParsing m => Char -> m (Either (FinalRecord Text Text1 Text) (Records Text Text))
 records sep =

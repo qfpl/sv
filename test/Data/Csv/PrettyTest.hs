@@ -1,7 +1,7 @@
 {-# language RankNTypes #-}
 {-# language OverloadedStrings #-}
 
-module Data.CSV.PrettyTest (test_Pretty) where
+module Data.Csv.PrettyTest (test_Pretty) where
 
 import Data.Text        (Text)
 import Test.Tasty       (TestName, TestTree, testGroup)
@@ -9,11 +9,11 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import Text.Parsec      (parse)
 import Text.Parser.Char (CharParsing)
 
-import Data.CSV.CSV     (CSV (CSV))
-import Data.CSV.Field   (unspacedField)
-import Data.CSV.Parser  (comma, monoField)
-import Data.CSV.Pretty  (prettyCsv, prettyMonoField, setSeparator, textConfig)
-import Data.CSV.Record  (NonEmptyRecord (SingleFieldNER), final, noFinal)
+import Data.Csv.Csv     (Csv (Csv))
+import Data.Csv.Field   (unspacedField)
+import Data.Csv.Parser  (comma, monoField)
+import Data.Csv.Pretty  (prettyCsv, prettyMonoField, setSeparator, textConfig)
+import Data.Csv.Record  (NonEmptyRecord (SingleFieldNER), final, noFinal)
 import Text.Quote       (Quote (SingleQuote))
 
 test_Pretty :: TestTree
@@ -52,10 +52,10 @@ csvPretty =
   let pretty = prettyCsv textConfig
   in  testGroup "csvPretty" [
     testCase "empty" $
-      let subject = CSV comma mempty noFinal
+      let subject = Csv comma mempty noFinal
       in  pretty subject @?= ""
   , testCase "empty quotes" $
-      let subject = CSV comma mempty (final (SingleFieldNER (unspacedField SingleQuote "")))
+      let subject = Csv comma mempty (final (SingleFieldNER (unspacedField SingleQuote "")))
       in pretty subject @?= "''"
   ]
 

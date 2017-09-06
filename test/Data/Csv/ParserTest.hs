@@ -1,7 +1,7 @@
 {-# language RankNTypes #-}
 {-# language OverloadedStrings #-}
 
-module Data.CSV.ParserTest (test_Parser) where
+module Data.Csv.ParserTest (test_Parser) where
 
 import           Control.Lens         ((^.))
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
@@ -14,10 +14,10 @@ import           Text.Newline         (Newline (LF), newlineString)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
-import           Data.CSV.CSV         (CSV, mkCsv')
-import           Data.CSV.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
-import           Data.CSV.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
-import           Data.CSV.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
+import           Data.Csv.Csv         (Csv, mkCsv')
+import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
+import           Data.Csv.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.NonEmptyString  (NonEmptyString)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
@@ -147,10 +147,10 @@ finalRecordTest =
 
 separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
-  let p :: Text -> Either ParseError (CSV Text Text1 Text)
+  let p :: Text -> Either ParseError (Csv Text Text1 Text)
       p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv :: [Record spc s2] -> FinalRecord spc s1 s2 -> CSV spc s1 s2
+      csv :: [Record spc s2] -> FinalRecord spc s1 s2 -> Csv spc s1 s2
       csv rs e = mkCsv' sep e $ sprinkle nl rs
       s = [sep]
       nls = newlineString nl

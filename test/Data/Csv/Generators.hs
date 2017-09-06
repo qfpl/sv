@@ -1,4 +1,4 @@
-module Data.CSV.Generators (
+module Data.Csv.Generators (
   genCsv
   , genNewline
   , genSep
@@ -20,19 +20,19 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.CSV.CSV        (CSV (CSV))
-import Data.CSV.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
-import Data.CSV.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
+import Data.Csv.Csv        (Csv (Csv))
+import Data.Csv.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
+import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Text.Between        (Between (Between))
 import Text.Escaped        (Escaped (SeparatedByEscapes))
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
-genCsv :: Gen Char -> Gen spc -> Gen s1 -> Gen s2 -> Gen (CSV spc s1 s2)
+genCsv :: Gen Char -> Gen spc -> Gen s1 -> Gen s2 -> Gen (Csv spc s1 s2)
 genCsv sep spc s1 s2 =
   let rs = genRecords spc s2
       e  = genFinalRecord spc s1 s2
-  in  liftA3 CSV sep rs e
+  in  liftA3 Csv sep rs e
 
 genNewline :: Gen Newline
 genNewline =
