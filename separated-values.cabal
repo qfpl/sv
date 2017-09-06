@@ -54,11 +54,13 @@ test-suite             tasty
                        tasty.hs
   other-modules:
                        Data.Csv.PrettyTest
-                    ,  Data.Csv.ParserTest
+                       , Data.Csv.ParserTest
+                       , Data.Csv.Generators
   default-language:
                        Haskell2010
   build-depends:
                        base >=4.8 && <5
+                       , hedgehog >= 0.5 && < 0.6
                        , lens >= 4 && < 5
                        , parsec >= 3.1 && < 3.2
                        , parsers >=0.12 && <0.13
@@ -67,6 +69,7 @@ test-suite             tasty
                        , separated >= 0.2.3 && < 0.3
                        , separated-values
                        , tasty >= 0.11 && < 0.12
+                       , tasty-hedgehog >= 0.1 && < 0.2
                        , tasty-hunit >= 0.9 && < 0.10
                        , tasty-quickcheck >= 0.8 && < 0.9
                        , text >= 1.0 && < 1.3
@@ -76,30 +79,3 @@ test-suite             tasty
                        -threaded
   hs-source-dirs:
                        test
-
-test-suite             hedgehog
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       hedgehog.hs
-  other-modules:
-                       Data.Csv.Generators
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , hedgehog >= 0.5 && < 0.6
-                       , lens >= 4 && < 5
-                       , parsec >= 3.1 && < 3.2
-                       , parsers >=0.12 && <0.13
-                       , semigroups >= 0.18 && < 0.19
-                       , separated >= 0.2.3 && < 0.3
-                       , separated-values
-                       , text >= 1.0 && < 1.3
-                       , text1 >= 0.0.1 && < 0.1
-  ghc-options:
-                       -Wall
-                       -threaded
-  hs-source-dirs:
-                       test
- 
