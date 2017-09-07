@@ -1,3 +1,4 @@
+-- | Datatype for a single field or "cell" of a CSV file
 module Data.Csv.Field (
   Field (UnquotedF, QuotedF)
   , foldField
@@ -16,16 +17,24 @@ import Text.Between       (Between, betwixt)
 import Text.Escaped       (Escaped (SeparatedByEscapes))
 import Text.Quote         (Quote, Quoted (Quoted))
 
+-- | A 'Field' is a single cell from a CSV document.
+--   Its value is either surrounded by quotes ('QuotedF'), or it is
+--   'UnquotedF'.
+--
+--   Any spacing around quotes is preserved.
 data Field spc s1 s2 =
     UnquotedF s1
   | QuotedF (Between spc (Quoted s2))
   deriving (Eq, Ord, Show)
 
+-- | The catamorphism for 'Field'
 foldField :: (s1 -> b) -> (Between spc (Quoted s2) -> b) -> Field spc s1 s2 -> b
 foldField u q fi = case fi of
   UnquotedF s -> u s
   QuotedF b -> q b
 
+-- | 'unspacedField' is a convenient constructor for quoted fields with
+--   no spaces surrounding the quotes.
 unspacedField :: Monoid m => Quote -> s2 -> Field m s1 s2
 unspacedField q s = QuotedF (betwixt mempty mempty (Quoted q (SeparatedByEscapes (pure s))))
 
@@ -50,6 +59,8 @@ instance Bitraversable (Field spc) where
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
 
 
+-- | Often a 'Field' will have its last two type variables the same.
+--   This newtype gives useful instances to that case.
 newtype MonoField spc s =
   MonoField { getField :: Field spc s s }
   deriving (Eq, Ord, Show)
