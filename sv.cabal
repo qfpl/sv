@@ -1,4 +1,4 @@
-name:                separated-values
+name:                sv
 version:             0.1.0.0
 license:             BSD3
 license-file:        LICENSE
@@ -8,8 +8,8 @@ copyright:           Copyright (c) 2017, Commonwealth Scientific and Industrial 
 category:            CSV
 synopsis:            Values which are separated, often by commas
 description:         Library for parsing and decoding values which are separated, often by commas
-homepage:            https://github.com/qfpl/separated-values
-bug-reports:         https://github.com/qfpl/separated-values/issues
+homepage:            https://github.com/qfpl/sv
+bug-reports:         https://github.com/qfpl/sv/issues
 build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
@@ -17,7 +17,7 @@ tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.1
 
 source-repository    head
   type:              git
-  location:          git@github.com/qfpl/separated-values.git
+  location:          git@github.com/qfpl/sv.git
 
 library
   exposed-modules:     Data.Csv.Csv
@@ -67,7 +67,7 @@ test-suite             tasty
                        , QuickCheck >= 2.9 && <2.11
                        , semigroups >= 0.18 && < 0.19
                        , separated >= 0.2.3 && < 0.3
-                       , separated-values
+                       , sv
                        , tasty >= 0.11 && < 0.12
                        , tasty-hedgehog >= 0.1 && < 0.2
                        , tasty-hunit >= 0.9 && < 0.10

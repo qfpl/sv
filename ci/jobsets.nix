@@ -5,11 +5,11 @@
     EOF
     cat > $out <<EOF
     {
-        "separated-values": {
+        "sv": {
             "enabled": 1,
             "hidden": false,
-            "description": "separated-values",
-            "nixexprinput": "separated-values",
+            "description": "sv",
+            "nixexprinput": "sv",
             "nixexprpath": "./ci/ci.nix",
             "checkinterval": 300,
             "schedulingshares": 1,
@@ -17,7 +17,7 @@
             "emailoverride": "",
             "keepnr": 5,
             "inputs": {
-                "separated-values": { "type": "git", "value": "https://github.com/qfpl/separated-values.git master", "emailresponsible": false },
+                "sv": { "type": "git", "value": "https://github.com/qfpl/sv.git master", "emailresponsible": false },
                 "nixpkgs": { "type": "git", "value": "https://github.com/NixOS/nixpkgs.git release-17.03", "emailresponsible": false }
             }
         }

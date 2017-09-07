@@ -11,7 +11,7 @@ let
     pkgs.lib.listToAttrs (
       pkgs.lib.concatMap (compiler: 
         pkgs.lib.concatMap (system: 
-          [{name = "haskell.packages." + compiler + ".separated-values." + system; value = {inherit compiler system;};}]
+          [{name = "haskell.packages." + compiler + ".sv." + system; value = {inherit compiler system;};}]
         ) supportedSystems
       ) supportedCompilers
     );
@@ -22,9 +22,9 @@ let
             compiler = configuration.compiler; 
             system = configuration.system; 
             nixpkgs = { pkgs = pkgsFor system; };
-            separated-values = import ../default.nix { inherit nixpkgs compiler; };
+            sv = import ../default.nix { inherit nixpkgs compiler; };
           in
-            separated-values
+            sv
       ) configurations;
 in
   jobs

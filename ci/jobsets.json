@@ -2,7 +2,7 @@
     "enabled": 1,
     "hidden": false,
     "description": "jobsets",
-    "nixexprinput": "separated-values",
+    "nixexprinput": "sv",
     "nixexprpath": "ci/jobsets.nix",
     "checkinterval": 300,
     "schedulingshares": 1,
@@ -10,7 +10,7 @@
     "emailoverride": "",
     "keepnr": 5,
     "inputs": {
-        "separated-values": { "type": "git", "value": "https://github.com/qfpl/separated-values.git master", "emailresponsible": false },
+        "sv": { "type": "git", "value": "https://github.com/qfpl/sv.git master", "emailresponsible": false },
         "nixpkgs": { "type": "git", "value": "https://github.com/NixOS/nixpkgs.git release-17.03", "emailresponsible": false }
     }
 }
