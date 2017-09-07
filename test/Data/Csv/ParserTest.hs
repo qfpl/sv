@@ -18,7 +18,6 @@ import           Data.Csv.Csv         (Csv, mkCsv')
 import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
 import           Data.Csv.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
-import           Data.NonEmptyString  (NonEmptyString)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
 import           Text.Escaped         (Escaped (SeparatedByEscapes), noEscape)
@@ -131,7 +130,7 @@ recordTest =
 
 sqf :: Text -> FinalRecord Text b Text
 sqf = final . SingleFieldNER . QuotedF . betwixt "" "" . qs
-uqf :: NonEmptyString -> FinalRecord a Text1 b
+uqf :: NonEmpty Char -> FinalRecord a Text1 b
 uqf = final . SingleFieldNER . UnquotedF . (^. packed1)
 
 finalRecordTest :: TestTree

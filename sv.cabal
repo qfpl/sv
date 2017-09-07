@@ -25,7 +25,6 @@ library
                        , Data.Csv.Parser
                        , Data.Csv.Pretty
                        , Data.Csv.Record
-                       , Data.NonEmptyString
                        , Text.Between
                        , Text.Escaped
                        , Text.Newline
