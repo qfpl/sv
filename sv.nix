@@ -3,7 +3,7 @@
 , tasty-quickcheck, text, text1
 }:
 mkDerivation {
-  pname = "separated-values";
+  pname = "sv";
   version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
@@ -13,7 +13,7 @@ mkDerivation {
     base bifunctors hedgehog lens parsec parsers semigroups separated tasty tasty-hunit
     tasty-quickcheck text text1
   ];
-  homepage = "https://github.com/qfpl/separated-values";
+  homepage = "https://github.com/qfpl/sv";
   description = "Values which are separated, often by commas";
   license = stdenv.lib.licenses.bsd3;
 }

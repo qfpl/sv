@@ -14,7 +14,7 @@ let
     };
   };
 
-  separated-values = modifiedHaskellPackages.callPackage ./separated-values.nix {};
+  sv = modifiedHaskellPackages.callPackage ./sv.nix {};
 
 in
-  separated-values
+  sv
