@@ -30,124 +30,106 @@ import Text.Escaped       (noEscape)
 import Text.Newline       (Newline)
 import Text.Quote         (Quote, Quoted (Quoted))
 
-newtype Record spc s =
+newtype Record s =
   Record {
-    fields :: NonEmpty (MonoField spc s)
+    fields :: NonEmpty (MonoField s)
   }
   deriving (Eq, Ord, Show)
 
-instance Functor (Record spc) where
+instance Functor Record where
   fmap f = Record . fmap (fmap f) . fields
 
-instance Foldable (Record spc) where
+instance Foldable Record where
   foldMap f = foldMap (foldMap f) . fields
 
-instance Traversable (Record spc) where
+instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . fields
 
-instance Bifunctor Record where
-  bimap f g = Record . fmap (bimap f g) . fields
-
-instance Bifoldable Record where
-  bifoldMap f g = foldMap (bifoldMap f g) . fields
-
-instance Bitraversable Record where
-  bitraverse f g = fmap Record . traverse (bitraverse f g) . fields
-
-data NonEmptyRecord spc s1 s2 =
-    SingleFieldNER (Field spc s1 s2)
-  | MultiFieldNER (MonoField spc s2) (NonEmpty (MonoField spc s2))
+data NonEmptyRecord s1 s2 =
+    SingleFieldNER (Field s1 s2)
+  | MultiFieldNER (MonoField s2) (NonEmpty (MonoField s2))
   deriving (Eq, Ord, Show)
 
-instance Functor (NonEmptyRecord n s) where
+instance Functor (NonEmptyRecord s) where
   fmap = second
 
-instance Foldable (NonEmptyRecord n s) where
+instance Foldable (NonEmptyRecord s) where
   foldMap = bifoldMap (const mempty)
 
-instance Traversable (NonEmptyRecord n s) where
+instance Traversable (NonEmptyRecord s) where
   traverse = bitraverse pure
 
-instance Bifunctor (NonEmptyRecord n) where
+instance Bifunctor NonEmptyRecord where
   bimap f g (SingleFieldNER r) = SingleFieldNER (bimap f g r)
   bimap _ g (MultiFieldNER h hs) = MultiFieldNER (fmap g h) (fmap (fmap g) hs)
 
-instance Bifoldable (NonEmptyRecord n) where
+instance Bifoldable NonEmptyRecord where
   bifoldMap f g (SingleFieldNER r) = bifoldMap f g r
-  bifoldMap _ g (MultiFieldNER h hs) = foldMap g h <> foldMap (bifoldMap (const mempty) g) hs
+  bifoldMap _ g (MultiFieldNER h hs) = foldMap g h <> foldMap (foldMap g) hs
 
-instance Bitraversable (NonEmptyRecord n) where
+instance Bitraversable NonEmptyRecord where
   bitraverse f g (SingleFieldNER r) = SingleFieldNER <$> bitraverse f g r
-  bitraverse _ g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (bitraverse pure g) hs
+  bitraverse _ g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (traverse g) hs
 
 
 -- | A collection of records, separated and terminated by newlines.
-newtype Records spc s =
-  Records { getRecords :: Pesarated Newline (Record spc s) }
+newtype Records s =
+  Records { getRecords :: Pesarated Newline (Record s) }
   deriving (Eq, Ord, Show)
 
-instance Monoid (Records spc s) where
+instance Monoid (Records s) where
   mempty = Records mempty
   mappend (Records x) (Records y) = Records (x <> y)
 
-instance Functor (Records spc) where
+instance Functor Records where
   fmap f = Records . fmap (fmap f) . getRecords
 
-instance Foldable (Records spc) where
+instance Foldable Records where
   foldMap f = foldMap (foldMap f) . getRecords
 
-instance Traversable (Records spc) where
+instance Traversable Records where
   traverse f = fmap Records . traverse (traverse f) . getRecords
 
-instance Bifunctor Records where
-  bimap f g = Records . fmap (bimap f g) . getRecords
+emptyRecords :: Records s
+emptyRecords = Records mempty
 
-instance Bifoldable Records where
-  bifoldMap f g = foldMap (bifoldMap f g) . getRecords
-
-instance Bitraversable Records where
-  bitraverse f g = fmap Records . traverse (bitraverse f g) . getRecords
-
-emptyRecords :: Records spc s
-emptyRecords = Records (Pesarated (Separated []))
-
-singletonRecords :: Record spc s -> Newline -> Records spc s
+singletonRecords :: Record s -> Newline -> Records s
 singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 
 
 -- | The final record in a Csv can be optionally ended with a newline.
 --   A FinalRecord is present if the newline is not present, otherwise
 --   all records are in the @initialRecords@
-newtype FinalRecord spc s1 s2 =
-  FinalRecord { unFinal :: Maybe (NonEmptyRecord spc s1 s2) }
+newtype FinalRecord s1 s2 =
+  FinalRecord { unFinal :: Maybe (NonEmptyRecord s1 s2) }
   deriving (Eq, Ord, Show)
 
-instance Functor (FinalRecord n a) where
+instance Functor (FinalRecord a) where
   fmap = second
 
-instance Foldable (FinalRecord n a) where
+instance Foldable (FinalRecord a) where
   foldMap = bifoldMap (const mempty)
 
-instance Traversable (FinalRecord n a) where
+instance Traversable (FinalRecord a) where
   traverse = bitraverse pure
 
-instance Bifunctor (FinalRecord n) where
+instance Bifunctor FinalRecord where
   bimap f g = FinalRecord . fmap (bimap f g) . unFinal
 
-instance Bifoldable (FinalRecord n) where
+instance Bifoldable FinalRecord where
   bifoldMap f g = foldMap (bifoldMap f g) . unFinal
 
-instance Bitraversable (FinalRecord n) where
+instance Bitraversable FinalRecord where
   bitraverse f g = fmap FinalRecord . traverse (bitraverse f g) . unFinal
 
-final :: NonEmptyRecord spc s1 s2 -> FinalRecord spc s1 s2
+final :: NonEmptyRecord s1 s2 -> FinalRecord s1 s2
 final = FinalRecord . Just
 
-noFinal :: FinalRecord a b c
+noFinal :: FinalRecord a b
 noFinal = FinalRecord Nothing
 
-singleFinal :: Char -> String -> FinalRecord a Text1 c
+singleFinal :: Char -> String -> FinalRecord Text1 c
 singleFinal c s = final (SingleFieldNER (UnquotedF ((c :| s) ^. packed1)))
 
-quotedFinal :: Quote -> Text -> FinalRecord Text b Text
+quotedFinal :: Quote -> Text -> FinalRecord b Text
 quotedFinal q s = final (SingleFieldNER (QuotedF (betwixt mempty mempty (Quoted q (noEscape s)))))

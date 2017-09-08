@@ -23,6 +23,7 @@ import Data.Csv.Generators  (genCsv)
 import Data.Csv.Parser      (comma, monoField, separatedValues)
 import Data.Csv.Pretty      (prettyCsv, defaultConfig, prettyMonoField, setSeparator, textConfig)
 import Data.Csv.Record      (NonEmptyRecord (SingleFieldNER), final, noFinal)
+import Text.Space           (Spaces (Spaces))
 import Text.Quote           (Quote (SingleQuote))
 
 test_Pretty :: TestTree
@@ -74,13 +75,13 @@ csvRoundTrip = testProperty "roundtrip" prop_csvRoundTrip
 
 prop_csvRoundTrip :: Property
 prop_csvRoundTrip =
-  let genSpace = Gen.text (Range.linear 0 5) (Gen.element [' ', '\t'])
+  let genSpace = Spaces <$> Gen.integral (Range.linear 0 10)
       genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
       genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
       genText1 = view packed1 <$> genNonEmptyString
       gen = genCsv (pure ',') genSpace genText1 genText
       pretty = toLazyText . prettyCsv defaultConfig
-      parseCsv :: (Monad m, CharParsing m) => m (Csv Text Text1 Text)
+      parseCsv :: (Monad m, CharParsing m) => m (Csv Text1 Text)
       parseCsv = separatedValues ','
   in  parsePretty parseCsv pretty gen
 

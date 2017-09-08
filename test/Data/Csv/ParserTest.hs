@@ -21,6 +21,7 @@ import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFi
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
 import           Text.Escaped         (Escaped (SeparatedByEscapes), noEscape)
+import           Text.Space           (Spaces (Spaces))
 import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 test_Parser :: TestTree
@@ -45,16 +46,16 @@ test_Parser =
 qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscape
 qs = Quoted SingleQuote . noEscape
-uq :: s -> MonoField spc s
+uq :: s -> MonoField s
 uq = MonoField . UnquotedF
-uqa :: NonEmpty s -> Record spc s
+uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
-uqaa :: [NonEmpty s] -> [Record spc s]
+uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
-nospc :: Quoted s2 -> Field Text s1 s2
-nospc = QuotedF . uniform ""
+nospc :: Quoted s2 -> Field s1 s2
+nospc = QuotedF . uniform mempty
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field Text Text Text)) -> TestName -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field Text Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [quoteChar quote]
@@ -67,7 +68,7 @@ quotedFieldTest parser name quote =
         @?=/ nospc (qq "hello text")
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
-        @?=/ QuotedF (betwixt "   " "     " (qq " spaced text  "))
+        @?=/ QuotedF (betwixt (Spaces 3) (Spaces 5) (qq " spaced text  "))
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -84,7 +85,7 @@ doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" Do
 
 fieldTest :: TestTree
 fieldTest =
-  let p :: Text -> Either ParseError (Field Text Text Text)
+  let p :: Text -> Either ParseError (Field Text Text)
       p = parse (field comma) ""
   in  testGroup "field" [
     testCase "doublequoted" $
@@ -94,9 +95,9 @@ fieldTest =
   , testCase "unquoted" $
       p "yes" @?=/ getField (uq "yes")
   , testCase "spaced doublequoted" $
-     p "       \" spaces  \"    " @?=/ QuotedF (betwixt "       " "    " (qd " spaces  "))
+     p "       \" spaces  \"    " @?=/ QuotedF (betwixt (Spaces 7) (Spaces 4) (qd " spaces  "))
   , testCase "spaced singlequoted" $
-     p "        ' more spaces ' " @?=/ QuotedF (betwixt "        " " " (qs " more spaces "))
+     p "        ' more spaces ' " @?=/ QuotedF (betwixt (Spaces 8) (Spaces 1) (qs " more spaces "))
   , testCase "spaced unquoted" $
      p "  text  " @?=/ getField (uq "  text  ")
   , testCase "fields can include the separator in single quotes" $
@@ -111,7 +112,7 @@ fieldTest =
 
 recordTest :: TestTree
 recordTest =
-  let p :: Text -> Either ParseError (Record Text Text)
+  let p :: Text -> Either ParseError (Record Text)
       p = parse (record comma) ""
   in  testGroup "record" [
     testCase "single field" $
@@ -128,14 +129,14 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
-sqf :: Text -> FinalRecord Text b Text
-sqf = final . SingleFieldNER . QuotedF . betwixt "" "" . qs
-uqf :: NonEmpty Char -> FinalRecord a Text1 b
+sqf :: Text -> FinalRecord b Text
+sqf = final . SingleFieldNER . QuotedF . pure . qs
+uqf :: NonEmpty Char -> FinalRecord Text1 b
 uqf = final . SingleFieldNER . UnquotedF . (^. packed1)
 
 finalRecordTest :: TestTree
 finalRecordTest =
-  let p :: Text -> Either ParseError (FinalRecord Text Text1 Text)
+  let p :: Text -> Either ParseError (FinalRecord Text1 Text)
       p = parse (ending comma) ""
   in  testGroup "finalRecord" [
     testCase "single character" $
@@ -146,10 +147,10 @@ finalRecordTest =
 
 separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
-  let p :: Text -> Either ParseError (Csv Text Text1 Text)
+  let p :: Text -> Either ParseError (Csv Text1 Text)
       p = parse (separatedValues sep) ""
       ps = parse (separatedValues sep) "" . concat
-      csv :: [Record spc s2] -> FinalRecord spc s1 s2 -> Csv spc s1 s2
+      csv :: [Record s2] -> FinalRecord s1 s2 -> Csv s1 s2
       csv rs e = mkCsv' sep e $ sprinkle nl rs
       s = [sep]
       nls = newlineString nl

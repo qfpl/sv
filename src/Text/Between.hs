@@ -1,6 +1,7 @@
 module Text.Between (
   Between (Between, before, value, after)
   , betwixt
+  , empty
   , uniform
 ) where
 
@@ -23,6 +24,10 @@ data Between str a =
 instance Functor (Between str) where
   fmap f (Between b a t) = Between b (f a) t
 
+instance Monoid s => Applicative (Between s) where
+  pure = empty
+  Between b f t <*> Between b' a t' = Between (b <> b') (f a) (t' <> t)
+
 instance Foldable (Between str) where
   foldMap f = f . value
 
@@ -40,6 +45,9 @@ instance Bitraversable Between where
 
 betwixt :: s -> s -> a-> Between s a
 betwixt b t a = Between b a t
+
+empty :: Monoid s => a -> Between s a
+empty a = uniform mempty a
 
 uniform :: s -> a -> Between s a
 uniform s a = Between s a s

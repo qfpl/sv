@@ -28,6 +28,7 @@ library
                        , Text.Between
                        , Text.Escaped
                        , Text.Newline
+                       , Text.Space
                        , Text.Quote
   -- other-modules:
   -- other-extensions:    

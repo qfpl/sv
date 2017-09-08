@@ -17,34 +17,35 @@ import Data.Separated     (Pesarated)
 import Text.Newline       (Newline)
 
 -- | Whitespace-preserving Csv data type
-data Csv spc s1 s2 =
+data Csv s1 s2 =
   Csv {
     separator :: Char
-  , initialRecords :: Records spc s2
-  , finalRecord :: FinalRecord spc s1 s2
+  , initialRecords :: Records s2
+  , finalRecord :: FinalRecord s1 s2
   }
   deriving (Eq, Ord, Show)
 
-mkCsv :: Char -> FinalRecord spc s1 s2 -> Records spc s2 -> Csv spc s1 s2
+mkCsv :: Char -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
 mkCsv c ns rs = Csv c rs ns
 
-mkCsv' :: Char -> FinalRecord spc s1 s2 -> Pesarated Newline (Record spc s2) -> Csv spc s1 s2
+mkCsv' :: Char -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
 mkCsv' c ns = mkCsv c ns . Records
 
-instance Functor (Csv n spc) where
+instance Functor (Csv s) where
   fmap = second
 
-instance Foldable (Csv n spc) where
+instance Foldable (Csv s) where
   foldMap = bifoldMap (const mempty)
 
-instance Traversable (Csv n spc) where
+instance Traversable (Csv s) where
   traverse = bitraverse pure
 
-instance Bifunctor (Csv n) where
+instance Bifunctor Csv where
   bimap f g (Csv s rs e) = Csv s (fmap g rs) (bimap f g e)
 
-instance Bifoldable (Csv n) where
+instance Bifoldable Csv where
   bifoldMap f g (Csv _ rs e) = foldMap g rs <> bifoldMap f g e
 
-instance Bitraversable (Csv n) where
+instance Bitraversable Csv where
   bitraverse f g (Csv s rs e) = Csv s <$> traverse g rs <*> bitraverse f g e
+

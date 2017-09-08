@@ -13,8 +13,8 @@ import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.Traversable   (Traversable (traverse))
 
-import Text.Between       (Between, betwixt)
 import Text.Escaped       (Escaped (SeparatedByEscapes))
+import Text.Space         (Spaced)
 import Text.Quote         (Quote, Quoted (Quoted))
 
 -- | A 'Field' is a single cell from a CSV document.
@@ -22,67 +22,55 @@ import Text.Quote         (Quote, Quoted (Quoted))
 --   'UnquotedF'.
 --
 --   Any spacing around quotes is preserved.
-data Field spc s1 s2 =
+data Field s1 s2 =
     UnquotedF s1
-  | QuotedF (Between spc (Quoted s2))
+  | QuotedF (Spaced (Quoted s2))
   deriving (Eq, Ord, Show)
 
 -- | The catamorphism for 'Field'
-foldField :: (s1 -> b) -> (Between spc (Quoted s2) -> b) -> Field spc s1 s2 -> b
+foldField :: (s1 -> b) -> (Spaced (Quoted s2) -> b) -> Field s1 s2 -> b
 foldField u q fi = case fi of
   UnquotedF s -> u s
   QuotedF b -> q b
 
 -- | 'unspacedField' is a convenient constructor for quoted fields with
 --   no spaces surrounding the quotes.
-unspacedField :: Monoid m => Quote -> s2 -> Field m s1 s2
-unspacedField q s = QuotedF (betwixt mempty mempty (Quoted q (SeparatedByEscapes (pure s))))
+unspacedField :: Quote -> s2 -> Field s1 s2
+unspacedField q s = QuotedF (pure (Quoted q (SeparatedByEscapes (pure s))))
 
-instance Functor (Field spc s1) where
+instance Functor (Field s1) where
   fmap f = foldField UnquotedF (QuotedF . fmap (fmap f))
 
-instance Foldable (Field spc s1) where
+instance Foldable (Field s1) where
   foldMap f = foldField (const mempty) (foldMap (foldMap f))
 
-instance Traversable (Field spc s1) where
+instance Traversable (Field s1) where
   traverse f =
     foldField (pure . UnquotedF) (fmap QuotedF . traverse (traverse f))
 
-instance Bifunctor (Field spc) where
+instance Bifunctor Field where
   bimap f g = foldField (UnquotedF . f) (QuotedF . fmap (fmap g))
 
-instance Bifoldable (Field spc) where
+instance Bifoldable Field where
   bifoldMap f g = foldField f (foldMap (foldMap g))
 
-instance Bitraversable (Field spc) where
+instance Bitraversable Field where
   bitraverse f g =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
 
 
 -- | Often a 'Field' will have its last two type variables the same.
 --   This newtype gives useful instances to that case.
-newtype MonoField spc s =
-  MonoField { getField :: Field spc s s }
+newtype MonoField s =
+  MonoField { getField :: Field s s }
   deriving (Eq, Ord, Show)
 
-instance Functor (MonoField spc) where
+instance Functor MonoField where
   fmap f = MonoField . bimap f f . getField
 
-instance Foldable (MonoField spc) where
+instance Foldable MonoField where
   foldMap f = bifoldMap (const mempty) f . getField
 
-instance Traversable (MonoField spc) where
+instance Traversable MonoField where
   traverse f = fmap MonoField . bitraverse f f . getField
-
-instance Bifunctor MonoField where
-  bimap _ g (MonoField (UnquotedF s)) = MonoField (UnquotedF (g s))
-  bimap f g (MonoField (QuotedF b)) = MonoField (QuotedF (bimap f (fmap g) b))
-
-instance Bifoldable MonoField where
-  bifoldMap _ g (MonoField (UnquotedF s)) = g s
-  bifoldMap f g (MonoField (QuotedF b)) = bifoldMap f (foldMap g) b
-
-instance Bitraversable MonoField where
-  bitraverse _ g (MonoField (UnquotedF s)) = (MonoField . UnquotedF) <$> g s
-  bitraverse f g (MonoField (QuotedF b)) = (MonoField . QuotedF) <$> bitraverse f (traverse g) b
 

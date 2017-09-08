@@ -32,6 +32,7 @@ import           Data.Csv.Record         (NonEmptyRecord (MultiFieldNER, SingleF
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped (SeparatedByEscapes))
 import           Text.Newline            (Newline (CR, CRLF, LF))
+import           Text.Space              (Spaced, single)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 comma, pipe :: Char
@@ -44,7 +45,7 @@ sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
-singleQuotedField, doubleQuotedField :: CharParsing m => m (Field Text a Text)
+singleQuotedField, doubleQuotedField :: CharParsing m => m (Field a Text)
 singleQuotedField = quotedField SingleQuote
 doubleQuotedField = quotedField DoubleQuote
 
@@ -53,7 +54,7 @@ quoted q p =
   let c = char (quoteChar q)
   in  Quoted q <$> between c c p
 
-quotedField :: CharParsing m => Quote -> m (Field Text a Text)
+quotedField :: CharParsing m => Quote -> m (Field a Text)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
@@ -68,7 +69,7 @@ escapeQuote q =
 two :: a -> [a]
 two a = [a,a]
 
-unquotedField :: CharParsing m => Char -> (m Char -> m (f Char)) -> m (Field a (f Char) b)
+unquotedField :: CharParsing m => Char -> (m Char -> m (f Char)) -> m (Field (f Char) b)
 unquotedField sep combinator = UnquotedF <$> combinator (fieldChar sep)
 
 fieldChar :: CharParsing m => Char -> m Char
@@ -86,7 +87,7 @@ newline =
     <|> CR <$ char '\r'
     <|> LF <$ char '\n'
 
-generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field Text (f Char) Text)
+generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field (f Char) Text)
 generalisedField combinator sep =
   choice [
     try singleQuotedField
@@ -94,36 +95,33 @@ generalisedField combinator sep =
   , unquotedField sep combinator
   ]
 
-field :: CharParsing m => Char -> m (Field Text Text Text)
-field1 :: CharParsing m => Char -> m (Field Text Text1 Text)
+field :: CharParsing m => Char -> m (Field Text Text)
+field1 :: CharParsing m => Char -> m (Field Text1 Text)
 field = fmap (first pack) . generalisedField many
 field1 = fmap (first (view packed1)) . generalisedField some1
 
-monoField :: CharParsing m => Char -> m (MonoField Text Text)
+monoField :: CharParsing m => Char -> m (MonoField Text)
 monoField = fmap MonoField . field
 
-horizontalSpace :: CharParsing m => m Char
-horizontalSpace = choice (fmap char [' ', '\t'])
-
-spaced :: CharParsing m => m a -> m (Between Text a)
+spaced :: CharParsing m => m a -> m (Spaced a)
 spaced p =
-  let s = pack <$> many horizontalSpace
+  let s = foldMap (const single) <$> many (char ' ')
   in liftA3 Between s p s
 
-record :: CharParsing m => Char -> m (Record Text Text)
+record :: CharParsing m => Char -> m (Record Text)
 record sep =
   Record <$> ((MonoField <$> field sep) `sepEndByNonEmpty` char sep)
 
-separatedValues :: (Monad m, CharParsing m) => Char -> m (Csv Text Text1 Text)
+separatedValues :: (Monad m, CharParsing m) => Char -> m (Csv Text1 Text)
 separatedValues sep =
   uncurry (Csv sep) <$> multiRecords sep
 
-records :: CharParsing m => Char -> m (Either (FinalRecord Text Text1 Text) (Records Text Text))
+records :: CharParsing m => Char -> m (Either (FinalRecord Text1 Text) (Records Text))
 records sep =
   try (Left <$> ending sep)
   <|> (Right <$> (singletonRecords <$> record sep <*> newline))
 
-multiRecords :: (Monad m, CharParsing m) => Char -> m (Records Text Text, FinalRecord Text Text1 Text)
+multiRecords :: (Monad m, CharParsing m) => Char -> m (Records Text, FinalRecord Text1 Text)
 multiRecords sep =
   untilLeft id (records sep)
 
@@ -133,10 +131,10 @@ untilLeft f x =
     Left l  -> pure (mempty, l)
     Right r -> first (f r <>) <$> untilLeft f x
 
-ending :: CharParsing m => Char -> m (FinalRecord Text Text1 Text)
+ending :: CharParsing m => Char -> m (FinalRecord Text1 Text)
 ending sep = (FinalRecord <$> optional (nonEmptyRecord sep)) <* eof
 
-nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text Text1 Text)
+nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text1 Text)
 nonEmptyRecord sep =
   try (MultiFieldNER <$> monoField sep <* char sep <*> (fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep

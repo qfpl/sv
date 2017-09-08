@@ -37,19 +37,20 @@ import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
 import Text.Escaped    (Escaped (SeparatedByEscapes))
 import Text.Newline    (Newline, newlineString)
+import Text.Space      (Spaces, spaces)
 import Text.Quote      (Quote, Quoted (Quoted), quoteChar)
 
-data PrettyConfig' f space s1 s2 m =
+data PrettyConfig' f s1 s2 m =
   PrettyConfig' {
     separator' :: f m
   , quote     :: Quote -> m
   , newline   :: Newline -> m
-  , space     :: space -> m
+  , space     :: Spaces -> m
   , string1   :: s1 -> m
   , string2   :: s2 -> m
   }
 
-instance Functor f => Functor (PrettyConfig' f space s1 s2) where
+instance Functor f => Functor (PrettyConfig' f s1 s2) where
   fmap f (PrettyConfig' s q n sp s1 s2) =
     PrettyConfig' {
       separator' = fmap f s
@@ -63,28 +64,28 @@ instance Functor f => Functor (PrettyConfig' f space s1 s2) where
 type PrettyConfig = PrettyConfig' Identity
 type PrettyConfigC = PrettyConfig' ((->) Char)
 
-setSeparator :: PrettyConfigC space s1 s2 m -> Char -> PrettyConfig space s1 s2 m
+setSeparator :: PrettyConfigC s1 s2 m -> Char -> PrettyConfig s1 s2 m
 setSeparator (PrettyConfig' s q n sp s1 s2) c =
   PrettyConfig' (Identity (s c)) q n sp s1 s2
 
-separator :: PrettyConfig space s1 s2 m -> m
+separator :: PrettyConfig s1 s2 m -> m
 separator = runIdentity . separator'
 
-textConfig :: PrettyConfigC Text Text1 Text Text
+textConfig :: PrettyConfigC Text1 Text Text
 textConfig =
   PrettyConfig' {
     separator' = Text.singleton
   , quote = Text.singleton . quoteChar
   , newline = Text.pack . newlineString
-  , space = id
+  , space = spaces
   , string1 = review _Text1
   , string2 = id
   }
 
-defaultConfig :: PrettyConfigC Text Text1 Text Text.Builder
+defaultConfig :: PrettyConfigC Text1 Text Text.Builder
 defaultConfig = fmap fromText textConfig
 
-prettyField :: (Monoid m, Semigroup m) => PrettyConfig space s1 s2 m -> Field space s1 s2 -> m
+prettyField :: (Monoid m, Semigroup m) => PrettyConfig s1 s2 m -> Field s1 s2 -> m
 prettyField config f =
   case f of
     QuotedF (Between b (Quoted q (SeparatedByEscapes ss)) t) ->
@@ -95,21 +96,21 @@ prettyField config f =
       in  fold [spc b, c, s, c, spc t]
     UnquotedF s -> string1 config s
 
-prettyMonoField :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> MonoField space s2 -> m
+prettyMonoField :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> MonoField s2 -> m
 prettyMonoField c =
   prettyField c {string1 = string2 c} . getField
 
 prettyNewlines :: Foldable f => f Newline -> String
 prettyNewlines = foldMap newlineString
 
-prettyFinalRecord :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> FinalRecord space s1 s2 -> m
+prettyFinalRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> FinalRecord s1 s2 -> m
 prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . unFinal
 
-prettyPesarated :: (Bifoldable p, Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> p Newline (Record space s2) -> m
+prettyPesarated :: (Bifoldable p, Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> p Newline (Record s2) -> m
 prettyPesarated c =
   bifoldMap (newline c) (prettyRecord c)
 
-prettyRecord :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> Record space s2 -> m
+prettyRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Record s2 -> m
 prettyRecord c (Record fs) =
   let sep = separator c
   in  intercalate1 sep (fmap (prettyMonoField c) fs)
@@ -117,17 +118,17 @@ prettyRecord c (Record fs) =
 prettyNonEmptyString :: Foldable f => f Char -> String
 prettyNonEmptyString = toList
 
-prettyNonEmptyRecord :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> NonEmptyRecord space s1 s2 -> m
+prettyNonEmptyRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> NonEmptyRecord s1 s2 -> m
 prettyNonEmptyRecord c (SingleFieldNER f) =
   prettyField c f
 prettyNonEmptyRecord c (MultiFieldNER f fs) =
   prettyRecord c (Record (f <| fs))
 
-prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig space s1 s2 m -> Records space s2 -> m
+prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Records s2 -> m
 prettyRecords c =
   prettyPesarated c . getRecords
 
-prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC space s1 s2 m -> Csv space s1 s2 -> m
+prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s1 s2 m -> Csv s1 s2 -> m
 prettyCsv config (Csv c rs e) =
   let newConfig = setSeparator config c
   in  prettyRecords newConfig rs <> prettyFinalRecord newConfig e
