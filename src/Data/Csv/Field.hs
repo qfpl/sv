@@ -3,19 +3,22 @@ module Data.Csv.Field (
   Field (UnquotedF, QuotedF)
   , foldField
   , unspacedField
-  , MonoField (MonoField, getField)
+  , MonoField
+  , downmix
+  , upmix
 ) where
 
-import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap))
-import Data.Bitraversable (Bitraversable (bitraverse))
-import Data.Foldable      (Foldable (foldMap))
-import Data.Functor       (Functor (fmap))
-import Data.Traversable   (Traversable (traverse))
+import Data.Bifoldable     (Bifoldable (bifoldMap))
+import Data.Bifunctor      (Bifunctor (bimap))
+import Data.Bifunctor.Join (Join (Join), runJoin)
+import Data.Bitraversable  (Bitraversable (bitraverse))
+import Data.Foldable       (Foldable (foldMap))
+import Data.Functor        (Functor (fmap))
+import Data.Traversable    (Traversable (traverse))
 
-import Text.Escaped       (Escaped (SeparatedByEscapes))
-import Text.Space         (Spaced)
-import Text.Quote         (Quote, Quoted (Quoted))
+import Text.Escaped        (Escaped (SeparatedByEscapes))
+import Text.Space          (Spaced)
+import Text.Quote          (Quote, Quoted (Quoted))
 
 -- | A 'Field' is a single cell from a CSV document.
 --   Its value is either surrounded by quotes ('QuotedF'), or it is
@@ -61,16 +64,11 @@ instance Bitraversable Field where
 
 -- | Often a 'Field' will have its last two type variables the same.
 --   This newtype gives useful instances to that case.
-newtype MonoField s =
-  MonoField { getField :: Field s s }
-  deriving (Eq, Ord, Show)
+type MonoField s = Join Field s
 
-instance Functor MonoField where
-  fmap f = MonoField . bimap f f . getField
+downmix :: Field s s -> MonoField s
+downmix = Join
 
-instance Foldable MonoField where
-  foldMap f = bifoldMap (const mempty) f . getField
-
-instance Traversable MonoField where
-  traverse f = fmap MonoField . bitraverse f f . getField
+upmix :: MonoField s -> Field s s
+upmix = runJoin
 

@@ -27,7 +27,7 @@ import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet,
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
 import           Data.Csv.Csv            (Csv (Csv))
-import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField (MonoField))
+import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField, downmix)
 import           Data.Csv.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields), Records, singletonRecords, FinalRecord (FinalRecord))
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped (SeparatedByEscapes))
@@ -101,7 +101,7 @@ field = fmap (first pack) . generalisedField many
 field1 = fmap (first (view packed1)) . generalisedField some1
 
 monoField :: CharParsing m => Char -> m (MonoField Text)
-monoField = fmap MonoField . field
+monoField = fmap downmix . field
 
 spaced :: CharParsing m => m a -> m (Spaced a)
 spaced p =
@@ -110,7 +110,7 @@ spaced p =
 
 record :: CharParsing m => Char -> m (Record Text)
 record sep =
-  Record <$> ((MonoField <$> field sep) `sepEndByNonEmpty` char sep)
+  Record <$> ((downmix <$> field sep) `sepEndByNonEmpty` char sep)
 
 separatedValues :: (Monad m, CharParsing m) => Char -> m (Csv Text1 Text)
 separatedValues sep =

@@ -15,7 +15,7 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
 import           Data.Csv.Csv         (Csv, mkCsv')
-import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField (MonoField, getField))
+import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField, downmix, upmix)
 import           Data.Csv.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
@@ -47,7 +47,7 @@ qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscape
 qs = Quoted SingleQuote . noEscape
 uq :: s -> MonoField s
-uq = MonoField . UnquotedF
+uq = downmix . UnquotedF
 uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
@@ -93,21 +93,21 @@ fieldTest =
   , testCase "singlequoted" $
       p "'goodbye'" @?=/ nospc (qs "goodbye")
   , testCase "unquoted" $
-      p "yes" @?=/ getField (uq "yes")
+      p "yes" @?=/ upmix (uq "yes")
   , testCase "spaced doublequoted" $
      p "       \" spaces  \"    " @?=/ QuotedF (betwixt (Spaces 7) (Spaces 4) (qd " spaces  "))
   , testCase "spaced singlequoted" $
      p "        ' more spaces ' " @?=/ QuotedF (betwixt (Spaces 8) (Spaces 1) (qs " more spaces "))
   , testCase "spaced unquoted" $
-     p "  text  " @?=/ getField (uq "  text  ")
+     p "  text  " @?=/ upmix (uq "  text  ")
   , testCase "fields can include the separator in single quotes" $
      p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $
      p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
   , testCase "unquoted fields stop at the separator (1)" $
-     p "close,to,the,edge" @?=/ getField (uq "close")
+     p "close,to,the,edge" @?=/ upmix (uq "close")
   , testCase "unquoted fields stop at the separator (2)" $
-     p ",close,to,the,edge" @?=/ getField (uq "")
+     p ",close,to,the,edge" @?=/ upmix (uq "")
   ]
 
 recordTest :: TestTree

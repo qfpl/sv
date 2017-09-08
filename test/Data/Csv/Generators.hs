@@ -21,7 +21,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Data.Csv.Csv        (Csv (Csv))
-import Data.Csv.Field      (Field (QuotedF, UnquotedF), MonoField (MonoField))
+import Data.Csv.Field      (Field (QuotedF, UnquotedF), downmix)
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Text.Between        (Between (Between))
 import Text.Escaped        (Escaped (SeparatedByEscapes))
@@ -73,12 +73,12 @@ genField spc s1 s2 =
 
 genRecord :: Gen Spaces -> Gen s -> Gen (Record s)
 genRecord spc s =
-  Record <$> Gen.nonEmpty (Range.linear 1 10) (MonoField <$> genField spc s s)
+  Record <$> Gen.nonEmpty (Range.linear 1 10) (downmix <$> genField spc s s)
 
 genNonEmptyRecord :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (NonEmptyRecord s1 s2)
 genNonEmptyRecord spc s1 s2 =
   let f  = genField spc s1 s2
-      f' = MonoField <$> genField spc s2 s2
+      f' = downmix <$> genField spc s2 s2
   in  Gen.choice [
     SingleFieldNER <$> f
   , MultiFieldNER <$> f' <*> Gen.nonEmpty (Range.linear 1 10) f'

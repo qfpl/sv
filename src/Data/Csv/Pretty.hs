@@ -31,7 +31,7 @@ import Data.Text.Lazy.Builder as Text (Builder, fromText)
 import Data.Text1               (Text1, _Text1)
 
 import Data.Csv.Csv    (Csv (Csv))
-import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField (getField))
+import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
 import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
@@ -98,7 +98,7 @@ prettyField config f =
 
 prettyMonoField :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> MonoField s2 -> m
 prettyMonoField c =
-  prettyField c {string1 = string2 c} . getField
+  prettyField c {string1 = string2 c} . upmix
 
 prettyNewlines :: Foldable f => f Newline -> String
 prettyNewlines = foldMap newlineString
