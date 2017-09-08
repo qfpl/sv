@@ -95,5 +95,5 @@ genPesarated spc s =
 
 genSeparated :: Gen a -> Gen b -> Gen (Separated a b)
 genSeparated a b =
-  Separated <$> Gen.list (Range.linear 0 100) (liftA2 (,) a b)
+  Separated <$> Gen.list (Range.linear 0 1000) (liftA2 (,) a b)
 
