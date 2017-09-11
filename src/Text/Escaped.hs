@@ -1,24 +1,39 @@
 module Text.Escaped (
-  Escaped (SeparatedByEscapes)
+  Escaped
+  , Escape
   , noEscape
+  , escaped
 ) where
 
-import Data.Foldable      (Foldable (foldMap))
-import Data.Traversable   (Traversable (traverse))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Semigroup     (Semigroup ((<>)))
+import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1), sprinkle, singlePesarated)
 
-newtype Escaped a =
-  SeparatedByEscapes (NonEmpty a)
+-- | A trivial type to be our separator. The actual value of the escape is
+-- determined externally.
+data Escape =
+  Escape
   deriving (Eq, Ord, Show)
 
-instance Functor Escaped where
-  fmap f (SeparatedByEscapes xs) = SeparatedByEscapes (fmap f xs)
+instance Semigroup Escape where
+  Escape <> Escape = Escape
 
-instance Foldable Escaped where
-  foldMap f (SeparatedByEscapes xs) = foldMap f xs
+instance Monoid Escape where
+  mappend = (<>)
+  mempty = Escape
 
-instance Traversable Escaped where
-  traverse f (SeparatedByEscapes xs) = SeparatedByEscapes <$> traverse f xs
+-- | Escaped is for representing text containing zero or more occurances of an
+-- escape sequence. This representation only works when there is one escape
+-- sequence, as it does not contain any information about which escape sequence
+-- occured. The @Pesarated1@ type could be used directly for that purpose.
+type Escaped a =
+  Pesarated1 Escape a
 
+-- | noEscape is a dramatically-named singleton constructor for Escaped.
 noEscape :: a -> Escaped a
-noEscape a = SeparatedByEscapes (a :| [])
+noEscape = singlePesarated
+
+escaped :: NonEmpty a -> Escaped a
+escaped (a:|as) =
+  Pesarated1 (Separated1 a (sprinkle Escape as))
+

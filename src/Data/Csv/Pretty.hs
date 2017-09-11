@@ -35,7 +35,6 @@ import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
 import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
-import Text.Escaped    (Escaped (SeparatedByEscapes))
 import Text.Newline    (Newline, newlineString)
 import Text.Space      (Spaces, spaces)
 import Text.Quote      (Quote, Quoted (Quoted), quoteChar)
@@ -88,11 +87,17 @@ defaultConfig = fmap fromText textConfig
 prettyField :: (Monoid m, Semigroup m) => PrettyConfig s1 s2 m -> Field s1 s2 -> m
 prettyField config f =
   case f of
-    QuotedF (Between b (Quoted q (SeparatedByEscapes ss)) t) ->
+    QuotedF (Between b (Quoted q ss) t) ->
       let c = quote config q
           cc = c <> c
           spc = space config
-          s = intercalate1 cc (fmap (string2 config) ss)
+{-
+          -- This can be deleted when separated gets Foldable1
+          ss' = case ss of
+            Pesarated1 (Separated1 y (Separated xys)) -> y :| fmap snd xys
+          s = intercalate1 cc (fmap (string2 config) ss')
+-}
+          s = bifoldMap (const cc) (string2 config) ss
       in  fold [spc b, c, s, c, spc t]
     UnquotedF s -> string1 config s
 

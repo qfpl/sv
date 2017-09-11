@@ -30,7 +30,7 @@ import           Data.Csv.Csv            (Csv (Csv))
 import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField, downmix)
 import           Data.Csv.Record         (NonEmptyRecord (MultiFieldNER, SingleFieldNER), Record (Record, fields), Records, singletonRecords, FinalRecord (FinalRecord))
 import           Text.Between            (Between (Between))
-import           Text.Escaped            (Escaped (SeparatedByEscapes))
+import           Text.Escaped            (Escaped, escaped)
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Space              (Spaced, single)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
@@ -58,8 +58,8 @@ quotedField :: CharParsing m => Quote -> m (Field a Text)
 quotedField quote =
   let qc = quoteChar quote
       escape = escapeQuote quote
-      noescape = fmap pack (many (notChar qc)) `sepByNonEmpty` escape
-  in  QuotedF <$> spaced (quoted quote (SeparatedByEscapes <$> noescape))
+      chunks = fmap pack (many (notChar qc)) `sepByNonEmpty` escape
+  in  QuotedF <$> spaced (quoted quote (escaped <$> chunks))
 
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =

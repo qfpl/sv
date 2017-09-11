@@ -16,7 +16,7 @@ import Data.Foldable       (Foldable (foldMap))
 import Data.Functor        (Functor (fmap))
 import Data.Traversable    (Traversable (traverse))
 
-import Text.Escaped        (Escaped (SeparatedByEscapes))
+import Text.Escaped        (noEscape)
 import Text.Space          (Spaced)
 import Text.Quote          (Quote, Quoted (Quoted))
 
@@ -39,7 +39,7 @@ foldField u q fi = case fi of
 -- | 'unspacedField' is a convenient constructor for quoted fields with
 --   no spaces surrounding the quotes.
 unspacedField :: Quote -> s2 -> Field s1 s2
-unspacedField q s = QuotedF (pure (Quoted q (SeparatedByEscapes (pure s))))
+unspacedField q s = QuotedF (pure (Quoted q (noEscape s)))
 
 instance Functor (Field s1) where
   fmap f = foldField UnquotedF (QuotedF . fmap (fmap f))

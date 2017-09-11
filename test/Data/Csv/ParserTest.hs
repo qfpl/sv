@@ -20,7 +20,7 @@ import           Data.Csv.Parser      (comma, ending, field, pipe, doubleQuotedF
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)
-import           Text.Escaped         (Escaped (SeparatedByEscapes), noEscape)
+import           Text.Escaped         (escaped, noEscape)
 import           Text.Space           (Spaces (Spaces))
 import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
@@ -76,7 +76,7 @@ quotedFieldTest parser name quote =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (SeparatedByEscapes ("yes" :| ["no"])))
+     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (escaped ("yes" :| ["no"])))
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
