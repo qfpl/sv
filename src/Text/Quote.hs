@@ -1,3 +1,4 @@
+-- | A sum type for quote characters
 module Text.Quote (
   Quote (SingleQuote, DoubleQuote)
   , quoteChar
@@ -12,20 +13,27 @@ import Data.Traversable (Traversable (traverse))
 
 import Text.Escaped       (Escaped)
 
+-- | A sum type for quote characters. Either single or double quotes.
 data Quote =
     SingleQuote
   | DoubleQuote
   deriving (Eq, Ord, Show)
 
+-- | Convert a Quote to the Char it represents.
 quoteChar :: Quote -> Char
 quoteChar q =
   case q of
     SingleQuote -> '\''
     DoubleQuote -> '"'
+-- TODO replace this with a prism
 
+-- | Convert a @Quote@ into a String.
+-- Useful when concatenating strings
 quoteString :: IsString s => Quote -> s
 quoteString = fromString . pure . quoteChar
+-- TODO probably replace this with a prism?
 
+-- | A 'Quoted a' is a collection of 'a's separated by escapes given by 'quote'
 data Quoted a =
   Quoted {
     quote :: Quote
@@ -41,3 +49,4 @@ instance Foldable Quoted where
 
 instance Traversable Quoted where
   traverse f (Quoted q a) = Quoted q <$> traverse f a
+
