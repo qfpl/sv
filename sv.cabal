@@ -11,7 +11,7 @@ description:         Library for parsing and decoding values which are separated
 homepage:            https://github.com/qfpl/sv
 bug-reports:         https://github.com/qfpl/sv/issues
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  changelog.md
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.1
 
