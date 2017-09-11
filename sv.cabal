@@ -67,7 +67,7 @@ test-suite             tasty
                        , parsers >=0.12 && <0.13
                        , QuickCheck >= 2.9 && <2.11
                        , semigroups >= 0.18 && < 0.19
-                       , separated >= 0.4 && < 0.4
+                       , separated >= 0.3 && < 0.4
                        , sv
                        , tasty >= 0.11 && < 0.12
                        , tasty-hedgehog >= 0.1 && < 0.2
