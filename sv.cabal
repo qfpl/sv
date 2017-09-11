@@ -23,6 +23,7 @@ library
   exposed-modules:     Data.Csv.Csv
                        , Data.Csv.Field
                        , Data.Csv.Parser
+                       , Data.Csv.Parser.Internal
                        , Data.Csv.Pretty
                        , Data.Csv.Record
                        , Text.Between

@@ -1,3 +1,5 @@
+-- | This file contains datatypes for Records. A record is a "line" or "row"
+-- of a CSV document
 module Data.Csv.Record (
   Record (Record, fields)
   , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
@@ -30,6 +32,8 @@ import Text.Escaped       (noEscape)
 import Text.Newline       (Newline)
 import Text.Quote         (Quote, Quoted (Quoted))
 
+-- | A @Record@ is a non-empty collection of Fields, implicitly separated
+-- by commas.
 newtype Record s =
   Record {
     fields :: NonEmpty (MonoField s)

@@ -1,3 +1,6 @@
+-- | This file defines a datatype for a complete CSV document.
+-- The datatype preserves information so that the original CSV
+-- text can be recovered.
 module Data.Csv.Csv (
   Csv (Csv, separator, initialRecords, finalRecord)
   , mkCsv
@@ -25,9 +28,11 @@ data Csv s1 s2 =
   }
   deriving (Eq, Ord, Show)
 
+-- | Convenience constructor for CSV
 mkCsv :: Char -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
 mkCsv c ns rs = Csv c rs ns
 
+-- | Convenience constructor for CSV
 mkCsv' :: Char -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
 mkCsv' c ns = mkCsv c ns . Records
 

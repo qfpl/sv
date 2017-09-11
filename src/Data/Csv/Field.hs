@@ -61,14 +61,15 @@ instance Bitraversable Field where
   bitraverse f g =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
 
-
 -- | Often a 'Field' will have its last two type variables the same.
 --   This newtype gives useful instances to that case.
 type MonoField s = Join Field s
 
+-- | @downmix@ turns a Field into a @MonoField@
 downmix :: Field s s -> MonoField s
 downmix = Join
 
+-- | @upmix@ turns a @MonoField@ back into a regular field.
 upmix :: MonoField s -> Field s s
 upmix = runJoin
 

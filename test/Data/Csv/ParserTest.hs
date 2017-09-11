@@ -16,7 +16,7 @@ import           Text.Parsec          (ParseError, parse)
 
 import           Data.Csv.Csv         (Csv, mkCsv')
 import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField, downmix, upmix)
-import           Data.Csv.Parser      (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Parser.Internal (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (betwixt, uniform)

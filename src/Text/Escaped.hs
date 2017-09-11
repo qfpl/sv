@@ -1,3 +1,4 @@
+-- | Chunks of text separated by escape sequences
 module Text.Escaped (
   Escaped
   , Escape
@@ -23,7 +24,9 @@ instance Monoid Escape where
   mempty = Escape
 
 -- | Escaped is for representing text containing zero or more occurances of an
--- escape sequence. This representation only works when there is one escape
+-- escape sequence.
+--
+-- This representation only works when there is one escape
 -- sequence, as it does not contain any information about which escape sequence
 -- occured. The @Pesarated1@ type could be used directly for that purpose.
 type Escaped a =
@@ -33,6 +36,7 @@ type Escaped a =
 noEscape :: a -> Escaped a
 noEscape = singlePesarated
 
+-- | Put escape sequences in between the elements of a non-empty list.
 escaped :: NonEmpty a -> Escaped a
 escaped (a:|as) =
   Pesarated1 (Separated1 a (sprinkle Escape as))
