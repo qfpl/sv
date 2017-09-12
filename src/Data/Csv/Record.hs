@@ -14,7 +14,8 @@ module Data.Csv.Record (
   , emptyRecords
   , singletonRecords
   , multiFieldNER
-  , FinalRecord (FinalRecord, unFinal)
+  , FinalRecord (FinalRecord, _maybeNer)
+  , HasFinalRecord (finalRecord, maybeNer)
   , final
   , noFinal
   , singleFinal
@@ -162,8 +163,19 @@ singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 --   A FinalRecord is present if the newline is not present, otherwise
 --   all records are in the @initialRecords@
 newtype FinalRecord s1 s2 =
-  FinalRecord { unFinal :: Maybe (NonEmptyRecord s1 s2) }
+  FinalRecord { _maybeNer :: Maybe (NonEmptyRecord s1 s2) }
   deriving (Eq, Ord, Show)
+
+class HasFinalRecord c s1 s2 | c -> s1 s2 where
+  finalRecord :: Lens' c (FinalRecord s1 s2)
+  maybeNer :: Lens' c (Maybe (NonEmptyRecord s1 s2))
+  {-# INLINE maybeNer #-}
+  maybeNer = finalRecord . maybeNer
+instance HasFinalRecord (FinalRecord s1 s2) s1 s2 where
+  {-# INLINE maybeNer #-}
+  finalRecord = id
+  maybeNer = iso _maybeNer FinalRecord
+
 
 instance Functor (FinalRecord a) where
   fmap = second
@@ -175,13 +187,13 @@ instance Traversable (FinalRecord a) where
   traverse = bitraverse pure
 
 instance Bifunctor FinalRecord where
-  bimap f g = FinalRecord . fmap (bimap f g) . unFinal
+  bimap f g = FinalRecord . fmap (bimap f g) . view maybeNer
 
 instance Bifoldable FinalRecord where
-  bifoldMap f g = foldMap (bifoldMap f g) . unFinal
+  bifoldMap f g = foldMap (bifoldMap f g) . view maybeNer
 
 instance Bitraversable FinalRecord where
-  bitraverse f g = fmap FinalRecord . traverse (bitraverse f g) . unFinal
+  bitraverse f g = fmap FinalRecord . traverse (bitraverse f g) . view maybeNer
 
 final :: NonEmptyRecord s1 s2 -> FinalRecord s1 s2
 final = FinalRecord . Just
@@ -194,3 +206,4 @@ singleFinal c s = final (SingleFieldNER (UnquotedF ((c :| s) ^. packed1)))
 
 quotedFinal :: Quote -> Text -> FinalRecord b Text
 quotedFinal q s = final (SingleFieldNER (QuotedF (betwixt mempty mempty (Quoted q (noEscape s)))))
+

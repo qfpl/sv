@@ -31,7 +31,7 @@ import Data.Text1               (Text1, _Text1)
 
 import Data.Csv.Csv    (Csv (Csv))
 import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
-import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
+import Data.Csv.Record (Record (Record), FinalRecord, HasFinalRecord (maybeNer), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
 import Text.Newline    (Newline, newlineString)
@@ -102,7 +102,7 @@ prettyNewlines :: Foldable f => f Newline -> String
 prettyNewlines = foldMap newlineString
 
 prettyFinalRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> FinalRecord s1 s2 -> m
-prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . unFinal
+prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . view maybeNer
 
 prettyPesarated :: (Bifoldable p, Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> p Newline (Record s2) -> m
 prettyPesarated c =
