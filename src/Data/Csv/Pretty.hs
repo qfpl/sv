@@ -91,12 +91,6 @@ prettyField config f =
       let c = quote config q
           cc = c <> c
           spc = space config
-{-
-          -- This can be deleted when separated gets Foldable1
-          ss' = case ss of
-            Pesarated1 (Separated1 y (Separated xys)) -> y :| fmap snd xys
-          s = intercalate1 cc (fmap (string2 config) ss')
--}
           s = bifoldMap (const cc) (string2 config) ss
       in  fold [spc b, c, s, c, spc t]
     UnquotedF s -> string1 config s
