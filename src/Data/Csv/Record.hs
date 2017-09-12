@@ -9,7 +9,8 @@ module Data.Csv.Record (
   , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
   -- Optics
   , HasRecord (record, fields)
-  , Records (Records, getRecords)
+  , HasRecords (records, theRecords)
+  , Records (Records, _theRecords)
   , emptyRecords
   , singletonRecords
   , multiFieldNER
@@ -20,7 +21,7 @@ module Data.Csv.Record (
   , quotedFinal
 ) where
 
-import Control.Lens       ((^.), Lens', Iso, iso)
+import Control.Lens       ((^.), Lens', Prism', prism, Iso, iso, view)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -71,10 +72,31 @@ instance Foldable Record where
 instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . _fields
 
+-- | A records which is guaranteed not the be the empty string.
+-- `s1` is the non-empty string type (Text1 or NonEmpty Char) and `s1` is the
+-- corresponding empty-capable type (Text or [Char])
 data NonEmptyRecord s1 s2 =
     SingleFieldNER (Field s1 s2)
   | MultiFieldNER (AtLeastTwo (MonoField s2))
   deriving (Eq, Ord, Show)
+
+class AsNonEmptyRecord r s1 s2 | r -> s1 s2 where
+  _NonEmptyRecord :: Prism' r (NonEmptyRecord s1 s2)
+  _SingleFieldNER :: Prism' r (Field s1 s2)
+  _MultiFieldNER :: Prism' r (AtLeastTwo (MonoField s2))
+  _SingleFieldNER = _NonEmptyRecord . _SingleFieldNER
+  _MultiFieldNER = _NonEmptyRecord . _MultiFieldNER
+
+instance AsNonEmptyRecord (NonEmptyRecord s1 s2) s1 s2 where
+  _NonEmptyRecord = id
+  _SingleFieldNER =
+    prism SingleFieldNER $ \x -> case x of
+      SingleFieldNER y -> Right y
+      _ -> Left x
+  _MultiFieldNER =
+    prism MultiFieldNER $ \x -> case x of
+      MultiFieldNER y -> Right y
+      _ -> Left x
 
 instance Functor (NonEmptyRecord s) where
   fmap = second
@@ -102,21 +124,32 @@ multiFieldNER x xs = MultiFieldNER (AtLeastTwo x xs)
 
 -- | A collection of records, separated and terminated by newlines.
 newtype Records s =
-  Records { getRecords :: Pesarated Newline (Record s) }
+  Records { _theRecords :: Pesarated Newline (Record s) }
   deriving (Eq, Ord, Show)
+
+class HasRecords s a | s -> a where
+  records :: Lens' s (Records a)
+  theRecords :: Lens' s (Pesarated Newline (Record a))
+  {-# INLINE theRecords #-}
+  theRecords = records . theRecords
+
+instance HasRecords (Records s) s where
+  {-# INLINE theRecords #-}
+  records = id
+  theRecords = iso _theRecords Records
 
 instance Monoid (Records s) where
   mempty = Records mempty
   mappend (Records x) (Records y) = Records (x <> y)
 
 instance Functor Records where
-  fmap f = Records . fmap (fmap f) . getRecords
+  fmap f = Records . fmap (fmap f) . view theRecords
 
 instance Foldable Records where
-  foldMap f = foldMap (foldMap f) . getRecords
+  foldMap f = foldMap (foldMap f) . view theRecords
 
 instance Traversable Records where
-  traverse f = fmap Records . traverse (traverse f) . getRecords
+  traverse f = fmap Records . traverse (traverse f) . view theRecords
 
 emptyRecords :: Records s
 emptyRecords = Records mempty

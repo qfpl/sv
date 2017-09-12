@@ -18,7 +18,7 @@ module Data.Csv.Pretty (
   , prettyCsv
 ) where
 
-import Control.Lens             (review)
+import Control.Lens             (review, view)
 import Data.Bifoldable          (Bifoldable (bifoldMap))
 import Data.Functor.Identity    (Identity (Identity, runIdentity))
 import Data.Monoid              ((<>))
@@ -31,7 +31,7 @@ import Data.Text1               (Text1, _Text1)
 
 import Data.Csv.Csv    (Csv (Csv))
 import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
-import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records (getRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
+import Data.Csv.Record (Record (Record), FinalRecord (unFinal), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
 import Text.Newline    (Newline, newlineString)
@@ -124,7 +124,7 @@ prettyNonEmptyRecord c (MultiFieldNER fs) =
 
 prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Records s2 -> m
 prettyRecords c =
-  prettyPesarated c . getRecords
+  prettyPesarated c . view theRecords
 
 prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s1 s2 m -> Csv s1 s2 -> m
 prettyCsv config (Csv c rs e) =
