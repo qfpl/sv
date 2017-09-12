@@ -10,7 +10,6 @@ module Data.Csv.Pretty (
   , prettyRecord
   , prettyPesarated
   , prettyRecords
-  , prettyNewlines
   , prettyMonoField
   , prettyFinalRecord
   , prettyNonEmptyRecord
@@ -34,7 +33,7 @@ import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
 import Data.Csv.Record (Record (Record), FinalRecord, HasFinalRecord (maybeNer), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
-import Text.Newline    (Newline, newlineString)
+import Text.Newline    (Newline, newlineText)
 import Text.Space      (Spaces, spaces)
 import Text.Quote      (Quote, Quoted (Quoted), quoteChar)
 
@@ -74,7 +73,7 @@ textConfig =
   PrettyConfig' {
     separator' = Text.singleton
   , quote = Text.singleton . quoteChar
-  , newline = Text.pack . newlineString
+  , newline = newlineText
   , space = spaces
   , string1 = review _Text1
   , string2 = id
@@ -97,9 +96,6 @@ prettyField config f =
 prettyMonoField :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> MonoField s2 -> m
 prettyMonoField c =
   prettyField c {string1 = string2 c} . upmix
-
-prettyNewlines :: Foldable f => f Newline -> String
-prettyNewlines = foldMap newlineString
 
 prettyFinalRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> FinalRecord s1 s2 -> m
 prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . view maybeNer

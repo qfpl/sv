@@ -1,22 +1,58 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | A sum type for line endings
 module Text.Newline (
   Newline (CR, LF, CRLF)
-  , newlineString
+  , newlineText
+  , parseNewline
 ) where
 
-import Data.String (IsString (fromString))
+import Control.Lens (Prism', prism, prism')
+import Data.Text (Text)
 
 -- | Sum type for line endings
 data Newline =
   CR | LF | CRLF
   deriving (Eq, Ord, Show)
 
--- | @newlineStirng@ produces the textual representation of a @Newline@
--- TODO replace this with a prism
-newlineString :: IsString s => Newline -> s
-newlineString n =
-  fromString $ case n of
+class AsNewline r where
+  _Newline :: Prism' r Newline
+  _CR :: Prism' r ()
+  _LF :: Prism' r ()
+  _CRLF :: Prism' r ()
+  _CR = _Newline . _CR
+  _LF = _Newline . _LF
+  _CRLF = _Newline . _CRLF
+
+instance AsNewline Newline where
+  _Newline = id
+  _CR =
+    prism (const CR) $ \x -> case x of
+      CR -> Right ()
+      _  -> Left x
+  _LF =
+    prism (const LF) $ \x -> case x of
+      LF -> Right ()
+      _  -> Left x
+  _CRLF =
+    prism (const CRLF) $ \x -> case x of
+      CRLF -> Right ()
+      _    -> Left x
+
+instance AsNewline Text where
+  _Newline = prism' newlineText parseNewline
+
+newlineText :: Newline -> Text
+newlineText n =
+  case n of
     CR -> "\r"
     LF -> "\n"
     CRLF -> "\r\n"
+
+parseNewline :: Text -> Maybe Newline
+parseNewline ""   = Nothing
+parseNewline "\r" = Just CR
+parseNewline "\n" = Just LF
+parseNewline "\r\n" = Just CRLF
+parseNewline _ = Nothing
 

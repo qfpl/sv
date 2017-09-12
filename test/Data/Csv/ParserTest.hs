@@ -6,11 +6,13 @@ module Data.Csv.ParserTest (test_Parser) where
 import           Control.Lens         ((^.))
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
+import           Data.Foldable        (fold)
 import           Data.Text            (Text)
+import qualified Data.Text as Text    (singleton)
 import           Data.Text1           (Text1, packed1)
 import           Test.Tasty           (TestName, TestTree, testGroup)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
-import           Text.Newline         (Newline (LF), newlineString)
+import           Text.Newline         (Newline (LF), newlineText)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
@@ -149,11 +151,11 @@ separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
   let p :: Text -> Either ParseError (Csv Text1 Text)
       p = parse (separatedValues sep) ""
-      ps = parse (separatedValues sep) "" . concat
+      ps = parse (separatedValues sep) "" . fold
       csv :: [Record s2] -> FinalRecord s1 s2 -> Csv s1 s2
       csv rs e = mkCsv' sep e $ sprinkle nl rs
-      s = [sep]
-      nls = newlineString nl
+      s = Text.singleton sep
+      nls = newlineText nl
   in  testGroup "separatedValues" [
     testCase "empty" $
       p "" @?=/ csv [] noFinal
