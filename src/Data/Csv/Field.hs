@@ -7,6 +7,7 @@ module Data.Csv.Field (
   Field (UnquotedF, QuotedF)
   -- Optics
   , AsField (_Field, _UnquotedF, _QuotedF)
+  , mono
   -- Functions
   , foldField
   , unspacedField
@@ -15,7 +16,7 @@ module Data.Csv.Field (
   , upmix
 ) where
 
-import Control.Lens        (Prism', prism)
+import Control.Lens        (Iso, iso, Prism', prism)
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import Data.Bifunctor      (Bifunctor (bimap))
 import Data.Bifunctor.Join (Join (Join), runJoin)
@@ -98,4 +99,7 @@ downmix = Join
 -- | @upmix@ turns a @MonoField@ back into a regular field.
 upmix :: MonoField s -> Field s s
 upmix = runJoin
+
+mono :: Iso (Field s s) (Field t t) (MonoField s) (MonoField t)
+mono = iso downmix upmix
 
