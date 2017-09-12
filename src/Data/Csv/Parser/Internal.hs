@@ -28,7 +28,7 @@ import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, 
 
 import           Data.Csv.Csv            (Csv (Csv))
 import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField, downmix)
-import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record, fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
+import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped, escaped)
 import           Text.Newline            (Newline (CR, CRLF, LF))
@@ -142,6 +142,6 @@ ending sep = (FinalRecord <$> optional (nonEmptyRecord sep)) <* eof
 
 nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text1 Text)
 nonEmptyRecord sep =
-  try (multiFieldNER <$> monoField sep <* char sep <*> (fields <$> record sep))
+  try (multiFieldNER <$> monoField sep <* char sep <*> (view fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
 

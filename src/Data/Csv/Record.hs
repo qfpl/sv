@@ -1,8 +1,14 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- | This file contains datatypes for Records. A record is a "line" or "row"
 -- of a CSV document
 module Data.Csv.Record (
-  Record (Record, fields)
+  Record (Record, _fields)
   , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
+  -- Optics
+  , HasRecord (record, fields)
   , Records (Records, getRecords)
   , emptyRecords
   , singletonRecords
@@ -14,7 +20,7 @@ module Data.Csv.Record (
   , quotedFinal
 ) where
 
-import Control.Lens       ((^.))
+import Control.Lens       ((^.), Lens', Iso, iso)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -38,18 +44,32 @@ import Text.Quote         (Quote, Quoted (Quoted))
 -- by commas.
 newtype Record s =
   Record {
-    fields :: NonEmpty (MonoField s)
+    _fields :: NonEmpty (MonoField s)
   }
   deriving (Eq, Ord, Show)
 
+fields' :: Iso (Record s) (Record a) (NonEmpty (MonoField s)) (NonEmpty (MonoField a))
+fields' = iso _fields Record
+
+class HasRecord s t | s -> t where
+  record :: Lens' s (Record t)
+  fields :: Lens' s (NonEmpty (MonoField t))
+  {-# INLINE fields #-}
+  fields = record . fields
+
+instance HasRecord (Record s) s where
+  record = id
+  {-# INLINE fields #-}
+  fields = fields'
+
 instance Functor Record where
-  fmap f = Record . fmap (fmap f) . fields
+  fmap f = Record . fmap (fmap f) . _fields
 
 instance Foldable Record where
-  foldMap f = foldMap (foldMap f) . fields
+  foldMap f = foldMap (foldMap f) . _fields
 
 instance Traversable Record where
-  traverse f = fmap Record . traverse (traverse f) . fields
+  traverse f = fmap Record . traverse (traverse f) . _fields
 
 data NonEmptyRecord s1 s2 =
     SingleFieldNER (Field s1 s2)
