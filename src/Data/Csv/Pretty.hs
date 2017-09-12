@@ -21,9 +21,8 @@ module Data.Csv.Pretty (
 import Control.Lens             (review)
 import Data.Bifoldable          (Bifoldable (bifoldMap))
 import Data.Functor.Identity    (Identity (Identity, runIdentity))
-import Data.List.NonEmpty       ((<|))
 import Data.Monoid              ((<>))
-import Data.Semigroup.Foldable  (intercalate1)
+import Data.Semigroup.Foldable  (intercalate1, toNonEmpty)
 import Data.Semigroup           (Semigroup)
 import Data.Text                (Text)
 import qualified Data.Text as Text
@@ -120,8 +119,8 @@ prettyNonEmptyString = toList
 prettyNonEmptyRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> NonEmptyRecord s1 s2 -> m
 prettyNonEmptyRecord c (SingleFieldNER f) =
   prettyField c f
-prettyNonEmptyRecord c (MultiFieldNER f fs) =
-  prettyRecord c (Record (f <| fs))
+prettyNonEmptyRecord c (MultiFieldNER fs) =
+  prettyRecord c (Record (toNonEmpty fs))
 
 prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Records s2 -> m
 prettyRecords c =

@@ -26,6 +26,7 @@ library
                        , Data.Csv.Parser.Internal
                        , Data.Csv.Pretty
                        , Data.Csv.Record
+                       , Data.List.AtLeastTwo
                        , Text.Between
                        , Text.Escaped
                        , Text.Newline

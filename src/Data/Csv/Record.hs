@@ -6,6 +6,7 @@ module Data.Csv.Record (
   , Records (Records, getRecords)
   , emptyRecords
   , singletonRecords
+  , multiFieldNER
   , FinalRecord (FinalRecord, unFinal)
   , final
   , noFinal
@@ -20,6 +21,7 @@ import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
 import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Data.Text          (Text)
@@ -51,7 +53,7 @@ instance Traversable Record where
 
 data NonEmptyRecord s1 s2 =
     SingleFieldNER (Field s1 s2)
-  | MultiFieldNER (MonoField s2) (NonEmpty (MonoField s2))
+  | MultiFieldNER (AtLeastTwo (MonoField s2))
   deriving (Eq, Ord, Show)
 
 instance Functor (NonEmptyRecord s) where
@@ -65,16 +67,18 @@ instance Traversable (NonEmptyRecord s) where
 
 instance Bifunctor NonEmptyRecord where
   bimap f g (SingleFieldNER r) = SingleFieldNER (bimap f g r)
-  bimap _ g (MultiFieldNER h hs) = MultiFieldNER (fmap g h) (fmap (fmap g) hs)
+  bimap _ g (MultiFieldNER hs) = MultiFieldNER (fmap (fmap g) hs)
 
 instance Bifoldable NonEmptyRecord where
   bifoldMap f g (SingleFieldNER r) = bifoldMap f g r
-  bifoldMap _ g (MultiFieldNER h hs) = foldMap g h <> foldMap (foldMap g) hs
+  bifoldMap _ g (MultiFieldNER hs) = foldMap (foldMap g) hs
 
 instance Bitraversable NonEmptyRecord where
   bitraverse f g (SingleFieldNER r) = SingleFieldNER <$> bitraverse f g r
-  bitraverse _ g (MultiFieldNER h hs) = MultiFieldNER <$> traverse g h <*> traverse (traverse g) hs
+  bitraverse _ g (MultiFieldNER hs) = MultiFieldNER <$> traverse (traverse g) hs
 
+multiFieldNER :: MonoField a -> NonEmpty (MonoField a) -> NonEmptyRecord s a
+multiFieldNER x xs = MultiFieldNER (AtLeastTwo x xs)
 
 -- | A collection of records, separated and terminated by newlines.
 newtype Records s =
