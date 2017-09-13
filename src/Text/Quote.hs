@@ -10,6 +10,7 @@ module Text.Quote (
   , quoteString
   , Quoted (Quoted, _quote, _value)
   , HasQuoted (quoted, quote, value)
+  , expand
 ) where
 
 import Control.Lens (Lens', Prism', prism)
@@ -95,4 +96,5 @@ instance Traversable Quoted where
 -- because of its instances of Bitraversable and friends.
 expand :: Quoted a -> WithEscapes Quote a
 expand (Quoted q v) = first (const q) v
+-- TODO maybe make this a prism
 

@@ -1,11 +1,17 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- | Something between two other things
 module Text.Between (
-  Between (Between, before, value, after)
+  Between (Between, _before, _value, _after)
+  , HasBetween (between, before, after, value)
   , betwixt
   , empty
   , uniform
 ) where
 
+import Control.Lens        (Lens')
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import Data.Bifunctor      (Bifunctor (bimap))
 import Data.Bitraversable  (Bitraversable (bitraverse))
@@ -20,11 +26,32 @@ import Data.Traversable    (Traversable (traverse))
 -- This is useful for things like quotes around strings.
 data Between s a =
   Between {
-    before :: s
-  , value :: a
-  , after :: s
+    _before :: s
+  , _value :: a
+  , _after :: s
   }
   deriving (Eq, Ord, Show)
+
+class HasBetween c s a | c -> s a where
+  between :: Lens' c (Between s a)
+  after :: Lens' c s
+  {-# INLINE after #-}
+  before :: Lens' c s
+  {-# INLINE before #-}
+  value :: Lens' c a
+  {-# INLINE value #-}
+  after = between . after
+  before = between . before
+  value = between . value
+
+instance HasBetween (Between s a) s a where
+  {-# INLINE after #-}
+  {-# INLINE before #-}
+  {-# INLINE value #-}
+  between = id
+  before f (Between x y z) = fmap (\w -> Between w y z) (f x)
+  value f (Between x y z) = fmap (\w -> Between x w z) (f y)
+  after f (Between x y z) = fmap (Between x y) (f z)
 
 instance Functor (Between s) where
   fmap f (Between b a t) = Between b (f a) t
@@ -37,7 +64,7 @@ instance Monoid s => Applicative (Between s) where
   Between b f t <*> Between b' a t' = Between (b <> b') (f a) (t' <> t)
 
 instance Foldable (Between s) where
-  foldMap f = f . value
+  foldMap f = f . _value
 
 instance Traversable (Between s) where
   traverse f (Between b a t) = fmap (betwixt b t) (f a)
