@@ -4,6 +4,7 @@ module Text.Escaped (
   , Escape
   , noEscape
   , escaped
+  , WithEscapes
 ) where
 
 import Data.Bifoldable    (Bifoldable (bifoldMap))
