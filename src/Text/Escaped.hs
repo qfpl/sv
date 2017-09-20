@@ -1,12 +1,18 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- | Chunks of text separated by escape sequences
 module Text.Escaped (
   Escaped
+  , HasWithEscapes
   , Escape
   , noEscape
   , escaped
   , WithEscapes
 ) where
 
+import Control.Lens       (Lens', iso)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap))
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -24,9 +30,23 @@ import Data.Traversable   (Traversable (traverse))
 --
 -- 'e' is the escape sequence, which should be represented by a bespoke sum
 -- type rather than something like 'Text'.
+--
+-- The 'bifoldMap' is particularly useful for this type, as it can turn the
+-- whole thing back into a single textual value.
 newtype WithEscapes e a =
   WithEscapes { _escapeList :: [Either e a]}
   deriving (Eq, Ord, Show)
+
+class HasWithEscapes c e a | c -> e a where
+  withEscapes :: Lens' c (WithEscapes e a)
+  escapeList :: Lens' c [Either e a]
+  {-# INLINE escapeList #-}
+  escapeList = withEscapes . escapeList
+
+instance HasWithEscapes (WithEscapes e a) e a where
+  {-# INLINE escapeList #-}
+  withEscapes = id
+  escapeList = iso _escapeList WithEscapes
 
 instance Semigroup (WithEscapes e a) where
   WithEscapes x <> WithEscapes y = WithEscapes (x <> y)
