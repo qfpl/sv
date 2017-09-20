@@ -1,12 +1,18 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances#-}
+
 -- | This file defines a datatype for a complete CSV document.
 -- The datatype preserves information so that the original CSV
 -- text can be recovered.
 module Data.Csv.Csv (
-  Csv (Csv, separator, initialRecords, finalRecord)
+  Csv (Csv, _separator, _initialRecords, _finalRecord)
+  , HasCsv (csv, finalRecord, initialRecords, separator)
   , mkCsv
   , mkCsv'
 ) where
 
+import Control.Lens       (Lens')
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -19,14 +25,41 @@ import Data.Csv.Record    (Record, Records (Records), FinalRecord)
 import Data.Separated     (Pesarated)
 import Text.Newline       (Newline)
 
--- | Whitespace-preserving Csv data type
+-- | 'Csv' is a whitespace-preserving data type for separated values.
+--   Often the separator is a comma, but this type does not make that
+--   assumption so that it can be used for pipe- or tab-separated values
+--   as well.
 data Csv s1 s2 =
   Csv {
-    separator :: Char
-  , initialRecords :: Records s2
-  , finalRecord :: FinalRecord s1 s2
+    _separator :: Char
+  , _initialRecords :: Records s2
+  , _finalRecord :: FinalRecord s1 s2
   }
   deriving (Eq, Ord, Show)
+
+class HasCsv c s1 s2 | c -> s1 s2 where
+  csv :: Lens' c (Csv s1 s2)
+  finalRecord :: Lens' c (FinalRecord s1 s2)
+  {-# INLINE finalRecord #-}
+  initialRecords :: Lens' c (Records s2)
+  {-# INLINE initialRecords #-}
+  separator :: Lens' c Char
+  {-# INLINE separator #-}
+  finalRecord = csv . finalRecord
+  initialRecords = csv . initialRecords
+  separator = csv . separator
+
+instance HasCsv (Csv s1 s2) s1 s2 where
+  {-# INLINE finalRecord #-}
+  {-# INLINE initialRecords #-}
+  {-# INLINE separator #-}
+  csv = id
+  finalRecord f (Csv x1 x2 x3)
+    = fmap (Csv x1 x2) (f x3)
+  initialRecords f (Csv x1 x2 x3)
+    = fmap (\y -> Csv x1 y x3) (f x2)
+  separator f (Csv x1 x2 x3)
+    = fmap (\y -> Csv y x2 x3) (f x1)
 
 -- | Convenience constructor for CSV
 mkCsv :: Char -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
