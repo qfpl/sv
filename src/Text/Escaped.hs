@@ -5,11 +5,11 @@
 -- | Chunks of text separated by escape sequences
 module Text.Escaped (
   Escaped
-  , HasWithEscapes
+  , HasEscaped (escaped, escapeList)
   , Escape
+  , Escaped'
   , noEscape
-  , escaped
-  , WithEscapes
+  , escapeNel
 ) where
 
 import Control.Lens       (Lens', iso)
@@ -23,73 +23,72 @@ import Data.Monoid        (Monoid (mappend, mempty))
 import Data.Semigroup     (Semigroup ((<>)))
 import Data.Traversable   (Traversable (traverse))
 
--- | @WithEscapes e a@ is a list of characters separated by escape sequences.
+-- | 'Escaped e a' is a list of characters separated by escape sequences.
 --
--- 'a' can happily be 'Char', but you could just as easily use 'Text' to make
+-- @a@ can happily be 'Char', but you could just as easily use 'Text' to make
 -- sure tricky characters work properly.
 --
--- 'e' is the escape sequence, which should be represented by a bespoke sum
+-- @e@ is the escape sequence, which should be represented by a bespoke sum
 -- type rather than something like 'Text'.
 --
 -- The 'bifoldMap' is particularly useful for this type, as it can turn the
 -- whole thing back into a single textual value.
-newtype WithEscapes e a =
-  WithEscapes { _escapeList :: [Either e a]}
+newtype Escaped e a =
+  Escaped { _escapeList :: [Either e a]}
   deriving (Eq, Ord, Show)
 
-class HasWithEscapes c e a | c -> e a where
-  withEscapes :: Lens' c (WithEscapes e a)
+class HasEscaped c e a | c -> e a where
+  escaped :: Lens' c (Escaped e a)
   escapeList :: Lens' c [Either e a]
   {-# INLINE escapeList #-}
-  escapeList = withEscapes . escapeList
+  escapeList = escaped . escapeList
 
-instance HasWithEscapes (WithEscapes e a) e a where
+instance HasEscaped (Escaped e a) e a where
   {-# INLINE escapeList #-}
-  withEscapes = id
-  escapeList = iso _escapeList WithEscapes
+  escaped = id
+  escapeList = iso _escapeList Escaped
 
-instance Semigroup (WithEscapes e a) where
-  WithEscapes x <> WithEscapes y = WithEscapes (x <> y)
+instance Semigroup (Escaped e a) where
+  Escaped x <> Escaped y = Escaped (x <> y)
 
-instance Monoid (WithEscapes e a) where
+instance Monoid (Escaped e a) where
   mappend = (<>)
-  mempty = WithEscapes mempty
+  mempty = Escaped mempty
 
-instance Functor (WithEscapes e) where
+instance Functor (Escaped e) where
   fmap = bimap id
 
-instance Foldable (WithEscapes e) where
+instance Foldable (Escaped e) where
   foldMap = bifoldMap (const mempty)
 
-instance Traversable (WithEscapes e) where
+instance Traversable (Escaped e) where
   traverse = bitraverse pure
 
-instance Bifunctor WithEscapes where
-  bimap f g = WithEscapes . fmap (bimap f g) . _escapeList
+instance Bifunctor Escaped where
+  bimap f g = Escaped . fmap (bimap f g) . _escapeList
 
-instance Bifoldable WithEscapes where
+instance Bifoldable Escaped where
   bifoldMap f g = foldMap (bifoldMap f g) . _escapeList
 
-instance Bitraversable WithEscapes where
-  bitraverse f g = fmap WithEscapes . traverse (bitraverse f g) . _escapeList
+instance Bitraversable Escaped where
+  bitraverse f g = fmap Escaped . traverse (bitraverse f g) . _escapeList
 
--- | @Escaped@ is for text which only has one valid escape sequence
+-- | 'Escaped'' is for text which only has one valid escape sequence
 --
 -- This representation only works when there is one escape
 -- sequence, as it does not contain any information about which escape sequence
--- occured. The @WithEscapes@ type is used directly for that purpose.
-type Escaped a =
-  WithEscapes Escape a
+-- occured. The @Escaped@ type is used directly for that purpose.
+type Escaped' = Escaped Escape
 
 -- | noEscape is a dramatically-named singleton constructor for Escaped.
-noEscape :: a -> Escaped a
-noEscape = WithEscapes . pure . pure
+noEscape :: a -> Escaped' a
+noEscape = Escaped . pure . pure
 
 -- | Put escape sequences in between the elements of a non-empty list.
-escaped :: NonEmpty a -> Escaped a
-escaped as = case as of
+escapeNel :: NonEmpty a -> Escaped' a
+escapeNel as = case as of
   (a :|   []) -> noEscape a
-  (a :| x:xs) -> WithEscapes $ Right a : Left Escape : _escapeList (escaped (x:|xs))
+  (a :| x:xs) -> Escaped $ Right a : Left Escape : _escapeList (escapeNel (x:|xs))
 
 -- | A trivial type to be our sole escape sequence. The actual value of the escape is
 -- determined externally.

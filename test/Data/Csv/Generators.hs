@@ -25,7 +25,7 @@ import Data.Csv.Field      (Field (QuotedF, UnquotedF), downmix)
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
 import Text.Between        (Between (Between))
-import Text.Escaped        (Escaped, escaped)
+import Text.Escaped        (Escaped', escapeNel)
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced)
 import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
@@ -57,9 +57,9 @@ genQuote :: Gen Quote
 genQuote =
   Gen.element [SingleQuote, DoubleQuote]
 
-genEscaped :: Gen a -> Gen (Escaped a)
+genEscaped :: Gen a -> Gen (Escaped' a)
 genEscaped a =
-  escaped <$> Gen.nonEmpty (Range.linear 1 5) a
+  escapeNel <$> Gen.nonEmpty (Range.linear 1 5) a
 
 genQuoted :: Gen a -> Gen (Quoted a)
 genQuoted =

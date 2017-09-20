@@ -20,7 +20,7 @@ import Data.Functor (Functor (fmap), (<$>))
 import Data.String (IsString (fromString))
 import Data.Traversable (Traversable (traverse))
 
-import Text.Escaped       (Escaped, WithEscapes)
+import Text.Escaped       (Escaped, Escaped')
 
 -- | A sum type for quote characters. Either single or double quotes.
 data Quote =
@@ -62,7 +62,7 @@ quoteString = fromString . pure . quoteChar
 data Quoted a =
   Quoted {
     _quote :: Quote
-  , _value :: Escaped a
+  , _value :: Escaped' a
   }
   deriving (Eq, Ord, Show)
 
@@ -70,7 +70,7 @@ class HasQuoted c a | c -> a where
   quoted :: Lens' c (Quoted a)
   quote :: Lens' c Quote
   {-# INLINE quote #-}
-  value :: Lens' c (Escaped a)
+  value :: Lens' c (Escaped' a)
   {-# INLINE value #-}
   quote = quoted . quote
   value = quoted . value
@@ -94,7 +94,7 @@ instance Traversable Quoted where
 -- | Expands a Quoted, which is compact with all quotes the same, into a
 -- WithEscapes Quote, which is often a useful representation, particularly
 -- because of its instances of Bitraversable and friends.
-expand :: Quoted a -> WithEscapes Quote a
+expand :: Quoted a -> Escaped Quote a
 expand (Quoted q v) = first (const q) v
 -- TODO maybe make this a prism
 
