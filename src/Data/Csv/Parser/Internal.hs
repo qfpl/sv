@@ -14,7 +14,7 @@ module Data.Csv.Parser.Internal (
 ) where
 
 import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
-import           Control.Lens            (view)
+import           Control.Lens            (review, view)
 import           Data.Bifunctor          (Bifunctor (first))
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
@@ -57,19 +57,19 @@ doubleQuotedField = quotedField DoubleQuote
 
 quoted :: CharParsing m => Quote -> m (Escaped' a) -> m (Quoted a)
 quoted q p =
-  let c = char (quoteChar q)
+  let c = char (review quoteChar q)
   in  Quoted q <$> between c c p
 
 quotedField :: CharParsing m => Quote -> m (Field a Text)
 quotedField quote =
-  let qc = quoteChar quote
+  let qc = review quoteChar quote
       escape = escapeQuote quote
       chunks = fmap pack (many (notChar qc)) `sepByNonEmpty` escape
   in  QuotedF <$> spaced (quoted quote (escapeNel <$> chunks))
 
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
-  let c = quoteChar q
+  let c = review quoteChar q
   in  try (string (two c)) $> c
 
 two :: a -> [a]

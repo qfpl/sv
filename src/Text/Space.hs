@@ -1,9 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Large chunks of only space characters, represented efficiently as integers
 module Text.Space where
 
+import Control.Lens     (Prism', prism')
 import Data.Monoid      (Monoid (mappend, mempty))
 import Data.Semigroup   (Semigroup ((<>)))
-import Data.String      (IsString (fromString))
+import Data.Text        (Text)
+import qualified Data.Text as Text (replicate, unpack)
 
 import Text.Between     (Between, betwixt)
 
@@ -26,13 +30,19 @@ instance Monoid Spaces where
 single :: Spaces
 single = Spaces 1
 
--- | Turn @Spaces@ into a string
--- TODO replace this with a prism
-spaces :: IsString s => Spaces -> s
-spaces s = fromString (replicate (countSpaces s) ' ')
+-- | Parse 'Text' into 'Spaces', or turn spaces into text
+spaces :: Prism' Text Spaces
+spaces =
+  prism'
+    (\s -> (Text.replicate (countSpaces s) " "))
+    (foldMap c2s . Text.unpack)
 
--- | An `a` between spaces is @Spaced@
-type Spaced a = Between Spaces a 
+c2s :: Char -> Maybe Spaces
+c2s ' ' = Just single
+c2s _   = Nothing
+
+-- | Something between spaces is 'Spaced'
+type Spaced = Between Spaces
 
 -- | Alias for @Text.Between.betwixt@
 spaced :: Spaces -> Spaces -> a -> Spaced a

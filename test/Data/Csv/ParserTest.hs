@@ -3,7 +3,7 @@
 
 module Data.Csv.ParserTest (test_Parser) where
 
-import           Control.Lens         ((^.))
+import           Control.Lens         ((^.), review)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
@@ -60,7 +60,7 @@ nospc = QuotedF . uniform mempty
 quotedFieldTest :: (forall m . CharParsing m => m (Field Text Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
-      q = [quoteChar quote]
+      q = [review quoteChar quote]
       qq = Quoted quote . noEscape
   in testGroup name [
     testCase "empty" $

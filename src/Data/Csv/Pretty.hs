@@ -35,7 +35,7 @@ import Data.Foldable   (Foldable, fold, toList)
 import Text.Between    (Between (Between))
 import Text.Newline    (Newline, newlineText)
 import Text.Space      (Spaces, spaces)
-import Text.Quote      (Quote, Quoted (Quoted), quoteChar)
+import Text.Quote      (Quote, Quoted (Quoted), quoteText)
 
 data PrettyConfig' f s1 s2 m =
   PrettyConfig' {
@@ -72,9 +72,9 @@ textConfig :: PrettyConfigC Text1 Text Text
 textConfig =
   PrettyConfig' {
     separator' = Text.singleton
-  , quote = Text.singleton . quoteChar
+  , quote = review quoteText
   , newline = newlineText
-  , space = spaces
+  , space = review spaces
   , string1 = review _Text1
   , string2 = id
   }

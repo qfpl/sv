@@ -7,17 +7,19 @@ module Text.Quote (
   Quote (SingleQuote, DoubleQuote)
   , AsQuote (_Quote, _SingleQuote, _DoubleQuote)
   , quoteChar
-  , quoteString
+  , quoteText
   , Quoted (Quoted, _quote, _value)
   , HasQuoted (quoted, quote, value)
   , expand
 ) where
 
-import Control.Lens (Lens', Prism', prism)
+import Control.Lens (Lens', Prism', prism, prism')
+import Control.Monad ((>=>))
 import Data.Bifunctor (first)
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
-import Data.String (IsString (fromString))
+import Data.Text (Text)
+import qualified Data.Text as Text (null, singleton, uncons)
 import Data.Traversable (Traversable (traverse))
 
 import Text.Escaped       (Escaped, Escaped')
@@ -45,18 +47,27 @@ instance AsQuote Quote where
     DoubleQuote -> Right ()
 
 -- | Convert a Quote to the Char it represents.
-quoteChar :: Quote -> Char
-quoteChar q =
-  case q of
-    SingleQuote -> '\''
-    DoubleQuote -> '"'
--- TODO replace this with a prism
+quoteChar :: Prism' Char Quote
+quoteChar =
+  prism'
+    (\q -> case q of
+      SingleQuote -> '\''
+      DoubleQuote -> '"')
+    (\c -> case c of
+      '\'' -> Just SingleQuote
+      '"'  -> Just DoubleQuote
+      _    -> Nothing)
 
--- | Convert a @Quote@ into a String.
+singletonText :: Prism' Text Char
+singletonText =
+  prism'
+    Text.singleton
+    (Text.uncons >=> \(h,tl) -> if Text.null tl then Just h else Nothing)
+
+-- | Convert a 'Quote' into a String.
 -- Useful when concatenating strings
-quoteString :: IsString s => Quote -> s
-quoteString = fromString . pure . quoteChar
--- TODO probably replace this with a prism?
+quoteText :: Prism' Text Quote
+quoteText = singletonText . quoteChar
 
 -- | A 'Quoted a' is a collection of 'a's separated by escapes given by 'quote'
 data Quoted a =
