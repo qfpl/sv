@@ -4,7 +4,13 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TupleSections #-}
 
-module Data.Csv.Headed where
+module Data.Csv.Headed (
+  Header (Header, _record)
+  , headerRecord
+  , HasHeader (header)
+  , Headed (Headed, _header, _data)
+  , makeHeaded
+) where
 
 import Control.Lens    (Iso, Lens', Prism', iso, lens)
 
@@ -46,4 +52,3 @@ makeHeaded p c =
   fmap make (unconsRecord p c)
     where
     make ((r, mn), c') = Headed (Header r) (fmap (,c') mn)
-
