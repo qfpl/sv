@@ -5,14 +5,14 @@
 
 module Data.List.AtLeastTwo where
 
-import Control.Lens (Lens', _Wrapped)
+import Control.Lens (Lens', _Wrapped, Prism', prism')
 import Control.Lens.Tuple (Field1 (_1), Field2 (_2))
-import Data.Foldable (Foldable (foldMap))
+import Data.Foldable (Foldable (foldMap), toList)
 import Data.Functor (Functor (fmap))
 import Data.Functor.Apply ((<.>))
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup ((<>))
-import Data.Semigroup.Foldable (Foldable1 (foldMap1))
+import Data.Semigroup.Foldable (Foldable1 (foldMap1), toNonEmpty)
 import Data.Semigroup.Traversable (Traversable1 (traverse1))
 import Data.Traversable (Traversable (traverse))
 
@@ -46,6 +46,9 @@ instance Field1 (AtLeastTwo a) (AtLeastTwo a) a a where
 instance Field2 (AtLeastTwo a) (AtLeastTwo a) a a where
   _2 = cadr
 
+mkAtLeastTwo :: a -> a -> [a] -> AtLeastTwo a
+mkAtLeastTwo x y ys = AtLeastTwo x (y:|ys)
+
 class HasAtLeastTwo s a | s -> a where
   atLeastTwo :: Lens' s (AtLeastTwo a)
   car :: Lens' s a
@@ -68,4 +71,21 @@ instance HasAtLeastTwo (AtLeastTwo a) a where
     = fmap (AtLeastTwo x) (f y)
   cadr =
     cdr . _Wrapped . _1
+
+class AsAtLeastTwo s a | s -> a where
+  _AtLeastTwo :: Prism' s (AtLeastTwo a)
+
+instance AsAtLeastTwo (AtLeastTwo a) a where
+  _AtLeastTwo = id
+
+instance AsAtLeastTwo [a] a where
+  _AtLeastTwo = prism' toList $ \xs -> case xs of
+    [] -> Nothing
+    _:[] -> Nothing
+    x:y:ys -> Just (AtLeastTwo x (y:|ys))
+
+instance AsAtLeastTwo (NonEmpty a) a where
+  _AtLeastTwo = prism' toNonEmpty $ \xs -> case xs of
+    _:|[] -> Nothing
+    x:|y:ys -> Just (AtLeastTwo x (y:|ys))
 

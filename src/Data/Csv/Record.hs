@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- | This file contains datatypes for Records. A record is a "line" or "row"
 -- of a CSV document
@@ -9,11 +10,13 @@ module Data.Csv.Record (
   , NonEmptyRecord (SingleFieldNER, MultiFieldNER)
   -- Optics
   , HasRecord (record, fields)
+  , fieldsIso
   , HasRecords (records, theRecords)
   , Records (Records, _theRecords)
   , emptyRecords
   , singletonRecords
   , multiFieldNER
+  , nonEmptyRecord
   , FinalRecord (FinalRecord, _maybeNer)
   , HasFinalRecord (finalRecord, maybeNer)
   , final
@@ -22,21 +25,22 @@ module Data.Csv.Record (
   , quotedFinal
 ) where
 
-import Control.Lens       ((^.), Lens', Prism', prism, Iso, iso, view)
+import Control.Lens       ((^.), Lens', Prism', prism, prism', Iso, iso, view, review, preview)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap), second)
+import Data.Bifunctor     (Bifunctor (bimap), first, second)
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
+import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo), AsAtLeastTwo (_AtLeastTwo))
 import Data.Monoid        ((<>))
+import Data.Semigroup.Foldable (toNonEmpty)
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Data.Text          (Text)
 import Data.Text1         (Text1, IsText1 (packed1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Field     (Field (UnquotedF, QuotedF), MonoField)
+import Data.Csv.Field     (Field (UnquotedF, QuotedF), MonoField, downmix)
 import Text.Between       (betwixt)
 import Text.Escaped       (noEscape)
 import Text.Newline       (Newline)
@@ -50,8 +54,8 @@ newtype Record s =
   }
   deriving (Eq, Ord, Show)
 
-fields' :: Iso (Record s) (Record a) (NonEmpty (MonoField s)) (NonEmpty (MonoField a))
-fields' = iso _fields Record
+fieldsIso :: Iso (Record s) (Record a) (NonEmpty (MonoField s)) (NonEmpty (MonoField a))
+fieldsIso = iso _fields Record
 
 class HasRecord s t | s -> t where
   record :: Lens' s (Record t)
@@ -62,7 +66,7 @@ class HasRecord s t | s -> t where
 instance HasRecord (Record s) s where
   record = id
   {-# INLINE fields #-}
-  fields = fields'
+  fields = fieldsIso
 
 instance Functor Record where
   fmap f = Record . fmap (fmap f) . _fields
@@ -72,6 +76,9 @@ instance Foldable Record where
 
 instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . _fields
+
+singleton :: Field s s -> Record s
+singleton = Record . pure . downmix
 
 -- | A records which is guaranteed not the be the empty string.
 -- `s1` is the non-empty string type (Text1 or NonEmpty Char) and `s1` is the
@@ -123,6 +130,14 @@ instance Bitraversable NonEmptyRecord where
 multiFieldNER :: MonoField a -> NonEmpty (MonoField a) -> NonEmptyRecord s a
 multiFieldNER x xs = MultiFieldNER (AtLeastTwo x xs)
 
+nonEmptyRecord :: Prism' s2 s1 -> Prism' (Record s2) (NonEmptyRecord s1 s2)
+nonEmptyRecord p =
+  prism'
+    (\ner -> case ner of
+      SingleFieldNER r -> singleton (first (review p) r)
+      MultiFieldNER zs -> Record (toNonEmpty zs))
+    (\r -> MultiFieldNER <$> preview _AtLeastTwo (r ^. fields))
+
 -- | A collection of records, separated and terminated by newlines.
 newtype Records s =
   Records { _theRecords :: Pesarated Newline (Record s) }
@@ -158,7 +173,6 @@ emptyRecords = Records mempty
 singletonRecords :: Record s -> Newline -> Records s
 singletonRecords s n = Records (Pesarated (Separated [(s,n)]))
 
-
 -- | The final record in a Csv can be optionally ended with a newline.
 --   A FinalRecord is present if the newline is not present, otherwise
 --   all records are in the @initialRecords@
@@ -175,7 +189,6 @@ instance HasFinalRecord (FinalRecord s1 s2) s1 s2 where
   {-# INLINE maybeNer #-}
   finalRecord = id
   maybeNer = iso _maybeNer FinalRecord
-
 
 instance Functor (FinalRecord a) where
   fmap = second
