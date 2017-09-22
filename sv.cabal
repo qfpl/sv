@@ -26,6 +26,8 @@ library
                        , Data.Csv.Parser
                        , Data.Csv.Parser.Internal
                        , Data.Csv.Pretty
+                       , Data.Csv.Pretty.Config
+                       , Data.Csv.Pretty.Internal
                        , Data.Csv.Record
                        , Data.Csv.Record.Final
                        , Data.Csv.Record.NonEmpty
