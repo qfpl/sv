@@ -12,6 +12,8 @@ module Data.Csv.Generators (
   , genNonEmptyRecord
   , genPesarated
   , genSeparated
+  , genHeaded
+  , genHeader
 ) where
 
 import Control.Applicative ((<$>), liftA2, liftA3)
@@ -22,6 +24,7 @@ import qualified Hedgehog.Range as Range
 
 import Data.Csv.Csv        (Csv (Csv))
 import Data.Csv.Field      (Field (QuotedF, UnquotedF), downmix)
+import Data.Csv.Headed     (Header (Header), Headed (Headed))
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
 import Text.Between        (Between (Between))
@@ -100,4 +103,13 @@ genPesarated spc s =
 genSeparated :: Gen a -> Gen b -> Gen (Separated a b)
 genSeparated a b =
   Separated <$> Gen.list (Range.linear 0 1000) (liftA2 (,) a b)
+
+genHeader :: Gen Spaces -> Gen s -> Gen (Header s)
+genHeader spc s = Header <$> genRecord spc s
+
+genHeaded :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Headed s1 s2)
+genHeaded spc s1 s2 =
+  let hdr = genHeader spc s2
+      csv = genCsv genSep spc s1 s2
+  in Headed <$> hdr <*> Gen.maybe (liftA2 (,) genNewline csv)
 

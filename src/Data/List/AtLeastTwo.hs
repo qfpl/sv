@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -81,7 +80,7 @@ instance AsAtLeastTwo (AtLeastTwo a) a where
 instance AsAtLeastTwo [a] a where
   _AtLeastTwo = prism' toList $ \xs -> case xs of
     [] -> Nothing
-    _:[] -> Nothing
+    [_] -> Nothing
     x:y:ys -> Just (AtLeastTwo x (y:|ys))
 
 instance AsAtLeastTwo (NonEmpty a) a where

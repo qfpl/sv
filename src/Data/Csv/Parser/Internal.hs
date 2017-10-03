@@ -2,6 +2,8 @@
 
 module Data.Csv.Parser.Internal (
   separatedValues
+  , header
+  , headed
   , comma
   , pipe
   , field
@@ -13,7 +15,7 @@ module Data.Csv.Parser.Internal (
   , ending
 ) where
 
-import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
+import           Control.Applicative     (Alternative, (<|>), liftA2, liftA3, optional)
 import           Control.Lens            (review, view)
 import           Data.Bifunctor          (Bifunctor (first))
 import           Data.CharSet            (CharSet)
@@ -28,6 +30,7 @@ import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, 
 
 import           Data.Csv.Csv            (Csv (Csv))
 import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField, downmix)
+import           Data.Csv.Headed         (Header (Header), Headed (Headed))
 import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped', escapeNel)
@@ -144,4 +147,10 @@ nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text1 Text)
 nonEmptyRecord sep =
   try (multiFieldNER <$> monoField sep <* char sep <*> (view fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
+
+header :: CharParsing m => Char -> m (Header Text)
+header = fmap Header . record
+
+headed :: (Monad m, CharParsing m) => Char -> m (Headed Text1 Text)
+headed c = Headed <$> header c <*> optional (liftA2 (,) newline (separatedValues c))
 

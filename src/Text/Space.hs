@@ -34,7 +34,7 @@ single = Spaces 1
 spaces :: Prism' Text Spaces
 spaces =
   prism'
-    (\s -> (Text.replicate (countSpaces s) " "))
+    (\s -> Text.replicate (countSpaces s) " ")
     (foldMap c2s . Text.unpack)
 
 c2s :: Char -> Maybe Spaces
