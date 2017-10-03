@@ -12,7 +12,7 @@ import qualified Data.Text as Text    (singleton)
 import           Data.Text1           (Text1, packed1)
 import           Test.Tasty           (TestName, TestTree, testGroup)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
-import           Text.Newline         (Newline (LF), newlineText)
+import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
@@ -164,7 +164,7 @@ separatedValuesTest sep nl =
   , testCase "single field, single record" $
       p "one" @?=/ csv [] (singleFinal 'o' "ne")
   , testCase "single field, multiple records" $
-      p "one\nun" @?=/ csv [uqa (pure "one")] (singleFinal 'u' "n")
+      ps ["one",nls,"un"] @?=/ csv [uqa (pure "one")] (singleFinal 'u' "n")
   , testCase "multiple fields, single record" $
       ps ["one", s, "two", nls] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
   , testCase "multiple fields, multiple records" $
@@ -173,6 +173,9 @@ separatedValuesTest sep nl =
   ]
 
 csvTest, psvTest :: TestTree
-csvTest = separatedValuesTest comma LF
-psvTest = separatedValuesTest pipe LF
+csvTest =
+  testGroup "csv" $ fmap (separatedValuesTest comma) [CR, LF, CRLF]
+
+psvTest =
+  testGroup "psv" $ fmap (separatedValuesTest pipe) [CR, LF, CRLF]
 
