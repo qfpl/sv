@@ -1,44 +1,67 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Large chunks of only space characters, represented efficiently as integers
-module Text.Space where
+module Text.Space
+  ( HorizontalSpace (Space, Tab)
+  , Spaces
+  , single
+  , manySpaces
+  , tab
+  , spaceChar
+  , space
+  , spaces
+  , Spaced
+  , spaced
+  )
+where
 
 import Control.Lens     (Prism', prism')
-import Data.Monoid      (Monoid (mappend, mempty))
-import Data.Semigroup   (Semigroup ((<>)))
 import Data.Text        (Text)
-import qualified Data.Text as Text (replicate, unpack)
+import qualified Data.Text as Text
 
 import Text.Between     (Between, betwixt)
 
--- | Large chunks of only space characters, represented efficiently as integers.
--- A convenient monoid instance is included.
-newtype Spaces =
-  Spaces { countSpaces :: Int }
+data HorizontalSpace =
+  Space
+  | Tab
   deriving (Eq, Ord, Show)
 
-instance Semigroup Spaces where
-  Spaces x <> Spaces y = Spaces (x + y)
+-- TODO Others?
 
--- | The addition monoid for integers is chosen for `Spaces`
--- so that conversion to string types is a monoid homomorphism
-instance Monoid Spaces where
-  mempty = Spaces 0
-  mappend = (<>)
+type Spaces = [HorizontalSpace]
 
 -- | One space
 single :: Spaces
-single = Spaces 1
+single = [Space]
+
+manySpaces :: Int -> Spaces
+manySpaces = flip replicate Space
+
+tab :: Spaces
+tab = [Tab]
+
+spaceChar :: HorizontalSpace -> Char
+spaceChar Space = ' '
+spaceChar Tab = '\t'
+
+space :: Prism' Char HorizontalSpace
+space =
+  prism' spaceChar $ \c ->
+    case c of
+      ' '  -> Just Space
+      '\t' -> Just Tab
+      _    -> Nothing
 
 -- | Parse 'Text' into 'Spaces', or turn spaces into text
 spaces :: Prism' Text Spaces
 spaces =
   prism'
-    (\s -> Text.replicate (countSpaces s) " ")
+    (Text.pack . foldMap (pure . spaceChar))
     (foldMap c2s . Text.unpack)
 
 c2s :: Char -> Maybe Spaces
 c2s ' ' = Just single
+c2s '\t' = Just tab
 c2s _   = Nothing
 
 -- | Something between spaces is 'Spaced'

@@ -35,7 +35,7 @@ import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Recor
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped', escapeNel)
 import           Text.Newline            (Newline (CR, CRLF, LF))
-import           Text.Space              (Spaced, single)
+import           Text.Space              (HorizontalSpace (Space, Tab), Spaced)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 -- | The comma character
@@ -112,10 +112,14 @@ field1 = fmap (first (view packed1)) . generalisedField some1
 monoField :: CharParsing m => Char -> m (MonoField Text)
 monoField = fmap downmix . field
 
+space :: CharParsing m => m HorizontalSpace
+space = char ' ' $> Space <|> char '\t' $> Tab
+
+spaces :: CharParsing m => m [HorizontalSpace]
+spaces = many space
+
 spaced :: CharParsing m => m a -> m (Spaced a)
-spaced p =
-  let s = foldMap (const single) <$> many (char ' ')
-  in liftA3 Between s p s
+spaced p = liftA3 Between spaces p spaces
 
 record :: CharParsing m => Char -> m (Record Text)
 record sep =

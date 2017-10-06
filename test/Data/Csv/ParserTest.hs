@@ -21,9 +21,9 @@ import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField, do
 import           Data.Csv.Parser.Internal (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
-import           Text.Between         (betwixt, uniform)
+import           Text.Between         (uniform)
 import           Text.Escaped         (escapeNel, noEscape)
-import           Text.Space           (Spaces (Spaces))
+import           Text.Space           (manySpaces, spaced)
 import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
 
 test_Parser :: TestTree
@@ -70,7 +70,7 @@ quotedFieldTest parser name quote =
         @?=/ nospc (qq "hello text")
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
-        @?=/ QuotedF (betwixt (Spaces 3) (Spaces 5) (qq " spaced text  "))
+        @?=/ QuotedF (spaced (manySpaces 3) (manySpaces 5) (qq " spaced text  "))
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -97,9 +97,9 @@ fieldTest =
   , testCase "unquoted" $
       p "yes" @?=/ upmix (uq "yes")
   , testCase "spaced doublequoted" $
-     p "       \" spaces  \"    " @?=/ QuotedF (betwixt (Spaces 7) (Spaces 4) (qd " spaces  "))
+     p "       \" spaces  \"    " @?=/ QuotedF (spaced (manySpaces 7) (manySpaces 4) (qd " spaces  "))
   , testCase "spaced singlequoted" $
-     p "        ' more spaces ' " @?=/ QuotedF (betwixt (Spaces 8) (Spaces 1) (qs " more spaces "))
+     p "        ' more spaces ' " @?=/ QuotedF (spaced (manySpaces 8) (manySpaces 1) (qs " more spaces "))
   , testCase "spaced unquoted" $
      p "  text  " @?=/ upmix (uq "  text  ")
   , testCase "fields can include the separator in single quotes" $
