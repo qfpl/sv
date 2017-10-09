@@ -13,7 +13,8 @@ module Data.Csv.Pretty.Internal (
 import Control.Lens             (view)
 import Data.Bifoldable          (Bifoldable (bifoldMap))
 import Data.Monoid              ((<>))
-import Data.Semigroup.Foldable  (intercalate1, toNonEmpty)
+import Data.Semigroup.Foldable  (intercalate1)
+import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Semigroup           (Semigroup)
 
 import Data.Csv.Csv    (Csv (Csv))

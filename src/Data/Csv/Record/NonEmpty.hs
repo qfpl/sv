@@ -17,7 +17,7 @@ import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty)
-import Data.Semigroup.Foldable (toNonEmpty)
+import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Traversable   (Traversable (traverse))
 
 import Data.Csv.Field         (Field, MonoField)

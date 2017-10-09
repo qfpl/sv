@@ -33,6 +33,7 @@ library
                        , Data.Csv.Record.NonEmpty
                        , Data.Csv.Record.Simple
                        , Data.List.AtLeastTwo
+                       , Data.Semigroup.Foldable.Extra
                        , Text.Between
                        , Text.Escaped
                        , Text.Newline
