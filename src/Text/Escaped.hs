@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Chunks of text separated by escape sequences
 module Text.Escaped (
@@ -8,11 +9,13 @@ module Text.Escaped (
   , HasEscaped (escaped, escapeList)
   , Escape
   , Escaped'
+  , escapedRights
+  , escapedLefts
   , noEscape
   , escapeNel
 ) where
 
-import Control.Lens       (Lens', iso)
+import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), _Wrapped, Unwrapped, Rewrapped, Traversal, _Left, _Right)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap))
 import Data.Bitraversable (Bitraversable (bitraverse))
@@ -36,6 +39,24 @@ import Data.Traversable   (Traversable (traverse))
 newtype Escaped e a =
   Escaped { _escapeList :: [Either e a]}
   deriving (Eq, Ord, Show)
+
+instance Escaped e1 a1 ~ t => Rewrapped (Escaped e2 a2) t
+
+instance Wrapped (Escaped e a) where
+  type Unwrapped (Escaped e a) =
+    [Either e a]
+  _Wrapped' =
+    iso (\ (Escaped x) -> x) Escaped
+
+escapedRights ::
+  Traversal (Escaped e a) (Escaped e b) a b
+escapedRights =
+  _Wrapped . traverse . _Right
+
+escapedLefts ::
+  Traversal (Escaped e a) (Escaped f a) e f
+escapedLefts =
+  _Wrapped . traverse . _Left
 
 class HasEscaped c e a | c -> e a where
   escaped :: Lens' c (Escaped e a)
