@@ -12,6 +12,7 @@ module Text.Space
   , spaces
   , Spaced
   , spaced
+  , unspace
   )
 where
 
@@ -19,7 +20,7 @@ import Control.Lens     (Prism', prism')
 import Data.Text        (Text)
 import qualified Data.Text as Text
 
-import Text.Between     (Between, betwixt)
+import Text.Between     (Between, betwixt, _value)
 
 data HorizontalSpace =
   Space
@@ -70,4 +71,7 @@ type Spaced = Between Spaces
 -- | Alias for @Text.Between.betwixt@
 spaced :: Spaces -> Spaces -> a -> Spaced a
 spaced = betwixt
+
+unspace :: Spaced a -> Spaced a
+unspace = betwixt mempty mempty . _value
 
