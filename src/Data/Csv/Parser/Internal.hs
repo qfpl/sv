@@ -29,7 +29,7 @@ import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet,
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
 import           Data.Csv.Csv            (Csv (Csv))
-import           Data.Csv.Field          (Field (UnquotedF, QuotedF), MonoField, downmix)
+import           Data.Csv.Field          (Field' (UnquotedF, QuotedF), MonoField, downmix)
 import           Data.Csv.Headed         (Header (Header), Headed (Headed))
 import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Text.Between            (Between (Between))
@@ -54,7 +54,7 @@ sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
-singleQuotedField, doubleQuotedField :: CharParsing m => m (Field a Text)
+singleQuotedField, doubleQuotedField :: CharParsing m => m (Field' a Text)
 singleQuotedField = quotedField SingleQuote
 doubleQuotedField = quotedField DoubleQuote
 
@@ -63,7 +63,7 @@ quoted q p =
   let c = char (review quoteChar q)
   in  Quoted q <$> between c c p
 
-quotedField :: CharParsing m => Quote -> m (Field a Text)
+quotedField :: CharParsing m => Quote -> m (Field' a Text)
 quotedField quote =
   let qc = review quoteChar quote
       escape = escapeQuote quote
@@ -78,7 +78,7 @@ escapeQuote q =
 two :: a -> [a]
 two a = [a,a]
 
-unquotedField :: CharParsing m => Char -> (m Char -> m (f Char)) -> m (Field (f Char) b)
+unquotedField :: CharParsing m => Char -> (m Char -> m (f Char)) -> m (Field' (f Char) b)
 unquotedField sep combinator = UnquotedF <$> combinator (fieldChar sep)
 
 fieldChar :: CharParsing m => Char -> m Char
@@ -96,7 +96,7 @@ newline =
     <|> CR <$ char '\r'
     <|> LF <$ char '\n'
 
-generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field (f Char) Text)
+generalisedField :: CharParsing m => (m Char -> m (f Char)) -> Char -> m (Field' (f Char) Text)
 generalisedField combinator sep =
   choice [
     try singleQuotedField
@@ -104,8 +104,8 @@ generalisedField combinator sep =
   , unquotedField sep combinator
   ]
 
-field :: CharParsing m => Char -> m (Field Text Text)
-field1 :: CharParsing m => Char -> m (Field Text1 Text)
+field :: CharParsing m => Char -> m (Field' Text Text)
+field1 :: CharParsing m => Char -> m (Field' Text1 Text)
 field = fmap (first pack) . generalisedField many
 field1 = fmap (first (view packed1)) . generalisedField some1
 

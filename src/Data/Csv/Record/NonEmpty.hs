@@ -20,7 +20,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Field         (Field, MonoField)
+import Data.Csv.Field         (Field', MonoField)
 import Data.Csv.Record.Simple (Record (Record), fields, singleton)
 import Data.List.AtLeastTwo   (AtLeastTwo (AtLeastTwo), AsAtLeastTwo (_AtLeastTwo))
 
@@ -28,13 +28,13 @@ import Data.List.AtLeastTwo   (AtLeastTwo (AtLeastTwo), AsAtLeastTwo (_AtLeastTw
 -- `s1` is the non-empty string type (Text1 or NonEmpty Char) and `s1` is the
 -- corresponding empty-capable type (Text or [Char])
 data NonEmptyRecord s1 s2 =
-    SingleFieldNER (Field s1 s2)
+    SingleFieldNER (Field' s1 s2)
   | MultiFieldNER (AtLeastTwo (MonoField s2))
   deriving (Eq, Ord, Show)
 
 class AsNonEmptyRecord r s1 s2 | r -> s1 s2 where
   _NonEmptyRecord :: Prism' r (NonEmptyRecord s1 s2)
-  _SingleFieldNER :: Prism' r (Field s1 s2)
+  _SingleFieldNER :: Prism' r (Field' s1 s2)
   _MultiFieldNER :: Prism' r (AtLeastTwo (MonoField s2))
   _SingleFieldNER = _NonEmptyRecord . _SingleFieldNER
   _MultiFieldNER = _NonEmptyRecord . _MultiFieldNER

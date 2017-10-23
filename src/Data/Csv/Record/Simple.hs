@@ -25,7 +25,7 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Field     (Field, MonoField, downmix)
+import Data.Csv.Field     (Field', MonoField, downmix)
 import Text.Newline       (Newline)
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
@@ -59,7 +59,7 @@ instance Foldable Record where
 instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . _fields
 
-singleton :: Field s s -> Record s
+singleton :: Field' s s -> Record s
 singleton = Record . pure . downmix
 
 -- | A collection of records, separated and terminated by newlines.

@@ -17,7 +17,7 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
 import           Data.Csv.Csv         (Csv, mkCsv')
-import           Data.Csv.Field       (Field (QuotedF, UnquotedF), MonoField, downmix, upmix)
+import           Data.Csv.Field       (Field' (QuotedF, UnquotedF), MonoField, downmix, upmix)
 import           Data.Csv.Parser.Internal (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
@@ -54,10 +54,10 @@ uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
-nospc :: Quoted s2 -> Field s1 s2
+nospc :: Quoted s2 -> Field' s1 s2
 nospc = QuotedF . uniform mempty
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field Text Text)) -> TestName -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field' Text Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
   let p = parse parser "" . concat
       q = [review quoteChar quote]
@@ -87,7 +87,7 @@ doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" Do
 
 fieldTest :: TestTree
 fieldTest =
-  let p :: Text -> Either ParseError (Field Text Text)
+  let p :: Text -> Either ParseError (Field' Text Text)
       p = parse (field comma) ""
   in  testGroup "field" [
     testCase "doublequoted" $

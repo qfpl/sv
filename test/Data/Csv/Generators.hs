@@ -23,7 +23,7 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Data.Csv.Csv        (Csv (Csv))
-import Data.Csv.Field      (Field (QuotedF, UnquotedF), downmix)
+import Data.Csv.Field      (Field' (QuotedF, UnquotedF), downmix)
 import Data.Csv.Headed     (Header (Header), Headed (Headed))
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
@@ -71,7 +71,7 @@ genQuoted =
 genAtLeastTwo :: Range Int -> Gen a -> Gen (AtLeastTwo a)
 genAtLeastTwo r a = AtLeastTwo <$> a <*> Gen.nonEmpty r a
 
-genField :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Field s1 s2)
+genField :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Field' s1 s2)
 genField spc s1 s2 =
   Gen.choice [
     UnquotedF <$> s1

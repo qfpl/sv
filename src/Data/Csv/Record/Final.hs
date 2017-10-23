@@ -21,7 +21,7 @@ import Data.Text1         (Text1, IsText1 (packed1))
 import Data.Traversable   (Traversable (traverse))
 import Text.Quote         (Quote, Quoted (Quoted))
 
-import Data.Csv.Field     (Field (UnquotedF, QuotedF))
+import Data.Csv.Field     (Field' (UnquotedF, QuotedF))
 import Data.Csv.Record.NonEmpty (NonEmptyRecord (SingleFieldNER))
 import Text.Between       (betwixt)
 import Text.Escaped       (noEscape)

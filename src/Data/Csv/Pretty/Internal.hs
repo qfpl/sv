@@ -18,7 +18,7 @@ import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Semigroup           (Semigroup)
 
 import Data.Csv.Csv    (Csv (Csv))
-import Data.Csv.Field  (Field (QuotedF, UnquotedF), MonoField, upmix)
+import Data.Csv.Field  (Field' (QuotedF, UnquotedF), MonoField, upmix)
 import Data.Csv.Pretty.Config (PrettyConfigC, PrettyConfig, string1, string2, setSeparator, separator, newline, space, quote)
 import Data.Csv.Record (Record (Record), FinalRecord, HasFinalRecord (maybeNer), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
 import Data.Foldable   (Foldable, fold, toList)
@@ -26,7 +26,7 @@ import Text.Between    (Between (Between))
 import Text.Newline    (Newline)
 import Text.Quote      (Quoted (Quoted))
 
-prettyField :: (Monoid m, Semigroup m) => PrettyConfig s1 s2 m -> Field s1 s2 -> m
+prettyField :: (Monoid m, Semigroup m) => PrettyConfig s1 s2 m -> Field' s1 s2 -> m
 prettyField config f =
   case f of
     QuotedF (Between b (Quoted q ss) t) ->

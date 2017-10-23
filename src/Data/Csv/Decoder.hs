@@ -1,7 +1,7 @@
 module Data.Csv.Decoder where
 
 import Control.Applicative (Applicative (pure, (<*>)), liftA2)
-import Data.Csv.Field (Field)
+import Data.Csv.Field (Field')
 import Data.Csv.Record (Record)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply ((<.>)))
@@ -13,7 +13,7 @@ newtype Decode e s a =
   Decode { runDecode :: s -> AccValidation e a }
 
 newtype FieldDecode e s1 s2 a =
-  FieldDecode { runFieldDecode :: Decode e (Field s1 s2) a }
+  FieldDecode { runFieldDecode :: Decode e (Field' s1 s2) a }
 
 newtype RowDecode e s a =
   RowDecode { runRowDecode :: Decode e (Record s) a }
