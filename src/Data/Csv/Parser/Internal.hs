@@ -7,7 +7,7 @@ module Data.Csv.Parser.Internal (
   , comma
   , pipe
   , field
-  , monoField
+  , field'
   , singleQuotedField
   , doubleQuotedField
   , unquotedField
@@ -29,7 +29,7 @@ import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet,
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
 import           Data.Csv.Csv            (Csv (Csv))
-import           Data.Csv.Field          (Field' (UnquotedF, QuotedF), MonoField, downmix)
+import           Data.Csv.Field          (Field, Field' (UnquotedF, QuotedF), downmix)
 import           Data.Csv.Headed         (Header (Header), Headed (Headed))
 import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Text.Between            (Between (Between))
@@ -104,13 +104,13 @@ generalisedField combinator sep =
   , unquotedField sep combinator
   ]
 
-field :: CharParsing m => Char -> m (Field' Text Text)
+field' :: CharParsing m => Char -> m (Field' Text Text)
 field1 :: CharParsing m => Char -> m (Field' Text1 Text)
-field = fmap (first pack) . generalisedField many
+field' = fmap (first pack) . generalisedField many
 field1 = fmap (first (view packed1)) . generalisedField some1
 
-monoField :: CharParsing m => Char -> m (MonoField Text)
-monoField = fmap downmix . field
+field :: CharParsing m => Char -> m (Field Text)
+field = fmap downmix . field'
 
 space :: CharParsing m => m HorizontalSpace
 space = char ' ' $> Space <|> char '\t' $> Tab
@@ -123,7 +123,7 @@ spaced p = liftA3 Between spaces p spaces
 
 record :: CharParsing m => Char -> m (Record Text)
 record sep =
-  Record <$> ((downmix <$> field sep) `sepEndByNonEmpty` char sep)
+  Record <$> (field sep `sepEndByNonEmpty` char sep)
 
 separatedValues :: (Monad m, CharParsing m) => Char -> m (Csv Text1 Text)
 separatedValues sep =
@@ -149,7 +149,7 @@ ending sep = (FinalRecord <$> optional (nonEmptyRecord sep)) <* eof
 
 nonEmptyRecord :: CharParsing m => Char -> m (NonEmptyRecord Text1 Text)
 nonEmptyRecord sep =
-  try (multiFieldNER <$> monoField sep <* char sep <*> (view fields <$> record sep))
+  try (multiFieldNER <$> field sep <* char sep <*> (view fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
 
 header :: CharParsing m => Char -> m (Header Text)

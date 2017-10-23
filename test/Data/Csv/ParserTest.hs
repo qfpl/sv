@@ -17,8 +17,8 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
 import           Data.Csv.Csv         (Csv, mkCsv')
-import           Data.Csv.Field       (Field' (QuotedF, UnquotedF), MonoField, downmix, upmix)
-import           Data.Csv.Parser.Internal (comma, ending, field, pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Field       (Field, Field' (QuotedF, UnquotedF), downmix, upmix)
+import           Data.Csv.Parser.Internal (comma, ending, field', pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (uniform)
@@ -48,7 +48,7 @@ test_Parser =
 qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscape
 qs = Quoted SingleQuote . noEscape
-uq :: s -> MonoField s
+uq :: s -> Field s
 uq = downmix . UnquotedF
 uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
@@ -88,7 +88,7 @@ doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" Do
 fieldTest :: TestTree
 fieldTest =
   let p :: Text -> Either ParseError (Field' Text Text)
-      p = parse (field comma) ""
+      p = parse (field' comma) ""
   in  testGroup "field" [
     testCase "doublequoted" $
       p "\"hello\"" @?=/ nospc (qd "hello")

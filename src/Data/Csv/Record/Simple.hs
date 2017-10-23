@@ -25,23 +25,23 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Field     (Field', MonoField, downmix)
+import Data.Csv.Field     (Field', Field, downmix)
 import Text.Newline       (Newline)
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
 -- by commas.
 newtype Record s =
   Record {
-    _fields :: NonEmpty (MonoField s)
+    _fields :: NonEmpty (Field s)
   }
   deriving (Eq, Ord, Show)
 
-fieldsIso :: Iso (Record s) (Record a) (NonEmpty (MonoField s)) (NonEmpty (MonoField a))
+fieldsIso :: Iso (Record s) (Record a) (NonEmpty (Field s)) (NonEmpty (Field a))
 fieldsIso = iso _fields Record
 
 class HasRecord s t | s -> t where
   record :: Lens' s (Record t)
-  fields :: Lens' s (NonEmpty (MonoField t))
+  fields :: Lens' s (NonEmpty (Field t))
   {-# INLINE fields #-}
   fields = record . fields
 

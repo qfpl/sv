@@ -1,6 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Datatype for a single field or "cell" of a CSV file
 module Data.Csv.Field (
@@ -11,12 +13,13 @@ module Data.Csv.Field (
   -- Functions
   , foldField
   , unspacedField
-  , MonoField
+  , Field
   , downmix
   , upmix
 ) where
 
-import Control.Lens        (Iso, iso, Prism', prism)
+import Control.Lens        (Iso, iso, Prism', prism, from)
+import Control.Lens.Wrapped (Wrapped (_Wrapped', Unwrapped))
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import Data.Bifunctor      (Bifunctor (bimap))
 import Data.Bifunctor.Join (Join (Join), runJoin)
@@ -88,18 +91,30 @@ instance Bitraversable Field' where
   bitraverse f g =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse g))
 
--- | Often a 'Field' will have its last two type variables the same.
+-- | Often a @Field'@ will have its last two type variables the same.
 --   This newtype gives useful instances to that case.
-type MonoField s = Join Field' s
+newtype Field s =
+  Field { unField :: Join Field' s }
+  deriving (Eq, Ord, Show, Functor, Foldable)
 
--- | @downmix@ turns a Field into a @MonoField@
-downmix :: Field' s s -> MonoField s
-downmix = Join
+instance Traversable Field where
+  traverse f (Field j) = Field <$> traverse f j
 
--- | @upmix@ turns a @MonoField@ back into a regular field.
-upmix :: MonoField s -> Field' s s
-upmix = runJoin
+instance AsField (Field s) s s where
+  _Field = from mono
 
-mono :: Iso (Field' s s) (Field' t t) (MonoField s) (MonoField t)
+instance Wrapped (Field s) where
+  type Unwrapped (Field s) = Field' s s
+  _Wrapped' = from mono
+
+-- | @downmix@ turns a Field' into a @Field@
+downmix :: Field' s s -> Field s
+downmix = Field . Join
+
+-- | @upmix@ turns a @Field@ back into a Field'.
+upmix :: Field s -> Field' s s
+upmix = runJoin . unField
+
+mono :: Iso (Field' s s) (Field' t t) (Field s) (Field t)
 mono = iso downmix upmix
 

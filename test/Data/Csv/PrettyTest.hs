@@ -20,9 +20,9 @@ import Text.Parser.Char     (CharParsing)
 import Data.Csv.Csv         (Csv (Csv))
 import Data.Csv.Field       (unspacedField)
 import Data.Csv.Generators  (genCsv)
-import Data.Csv.Parser.Internal (comma, monoField, separatedValues)
+import Data.Csv.Parser.Internal (comma, field, separatedValues)
 import Data.Csv.Pretty      (prettyCsv, defaultConfig, setSeparator, textConfig)
-import Data.Csv.Pretty.Internal (prettyMonoField)
+import Data.Csv.Pretty.Internal (prettyField)
 import Data.Csv.Record      (NonEmptyRecord (SingleFieldNER), final, noFinal)
 import Text.Space           (HorizontalSpace (Space, Tab))
 import Text.Quote           (Quote (SingleQuote))
@@ -44,7 +44,7 @@ fieldRoundTrip :: TestTree
 fieldRoundTrip =
   let sep = comma
       config = setSeparator textConfig sep
-      test = prettyAfterParseRoundTrip (monoField sep) (prettyMonoField config)
+      test = prettyAfterParseRoundTrip (field sep) (prettyField config)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
