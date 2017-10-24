@@ -21,7 +21,7 @@ source-repository    head
 
 library
   exposed-modules:     Data.Csv.Csv
-                       , Data.Csv.Decoder
+                       , Data.Csv.Decode
                        , Data.Csv.Field
                        , Data.Csv.Headed
                        , Data.Csv.Parser

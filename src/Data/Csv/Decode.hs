@@ -1,19 +1,25 @@
-module Data.Csv.Decoder where
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+
+module Data.Csv.Decode where
 
 import Control.Applicative (Applicative (pure, (<*>)), liftA2)
-import Data.Csv.Field (Field')
+import Control.Lens (view)
+import Data.Csv.Field (Field)
 import Data.Csv.Record (Record)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply ((<.>)))
 import Data.Profunctor (Profunctor (dimap))
 import Data.Semigroup (Semigroup)
-import Data.Validation (AccValidation)
+import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, Validate)
 
 newtype Decode e s a =
   Decode { runDecode :: s -> AccValidation e a }
 
-newtype FieldDecode e s1 s2 a =
-  FieldDecode { runFieldDecode :: Decode e (Field' s1 s2) a }
+newtype FieldDecode e s a =
+  FieldDecode { runFieldDecode :: Decode e (Field s) a }
 
 newtype RowDecode e s a =
   RowDecode { runRowDecode :: Decode e (Record s) a }
@@ -49,4 +55,25 @@ instance Alt (RowDecode e s) where
 
 instance Profunctor (RowDecode e) where
   dimap f g (RowDecode d) = RowDecode (dimap (fmap f) g d)
+
+decoder :: Validate v => (s -> v e a) -> Decode e s a
+decoder f = Decode (view _AccValidation . f)
+
+failure :: e -> Decode e s a
+failure = decoder . const . AccFailure
+
+success :: a -> Decode e s a
+success = decoder . const . AccSuccess
+
+class RunDecode d s a | d -> s a where
+  run :: d -> s -> a
+
+instance RunDecode (Decode e s a) s (AccValidation e a) where
+  run = runDecode
+
+instance RunDecode (FieldDecode e s a) (Field s) (AccValidation e a) where
+  run = run . runFieldDecode
+
+instance RunDecode (RowDecode e s a) (Record s) (AccValidation e a) where
+  run = run . runRowDecode
 
