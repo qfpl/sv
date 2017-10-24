@@ -46,6 +46,7 @@ library
                        , bifunctors >= 5.1 && < 6
                        , charset >=0.3 && <=0.4
                        , lens >= 4 && < 5
+                       , mtl >= 2.0.1 && < 2.3
                        , parsers >=0.12 && <0.13
                        , profunctors >= 5.2.1 && < 6
                        , semigroupoids >= 5 && <6
