@@ -13,7 +13,7 @@ module Data.Csv.Field (
   -- Functions
   , foldField
   , unspacedField
-  , Field
+  , Field (Field)
   , downmix
   , upmix
 ) where

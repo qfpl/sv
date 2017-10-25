@@ -5,9 +5,9 @@
 
 -- | Chunks of text separated by escape sequences
 module Text.Escaped (
-  Escaped
+  Escaped (Escaped, _escapeList)
   , HasEscaped (escaped, escapeList)
-  , Escape
+  , Escape (Escape)
   , Escaped'
   , escapedRights
   , escapedLefts
