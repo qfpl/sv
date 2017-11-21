@@ -16,21 +16,32 @@ module Data.Csv.Field (
   , Field (Field)
   , downmix
   , upmix
+  , FieldContents (expandQuotes)
+  , contents
 ) where
 
-import Control.Lens        (Iso, iso, Prism', prism, from)
+import Control.Lens        (Iso, iso, Prism', prism, from, review, view)
 import Control.Lens.Wrapped (Wrapped (_Wrapped', Unwrapped))
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import Data.Bifunctor      (Bifunctor (bimap))
 import Data.Bifunctor.Join (Join (Join), runJoin)
 import Data.Bitraversable  (Bitraversable (bitraverse))
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Builder as BS
+import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable       (Foldable (foldMap))
 import Data.Functor        (Functor (fmap))
+import Data.Monoid         (Monoid)
+import Data.Profunctor     (Profunctor (dimap))
+import Data.Text           (Text)
+import qualified Data.Text.Lazy as Lazy
+import Data.Text.Lazy.Builder as TB (Builder, fromText, fromLazyText, singleton, toLazyText)
 import Data.Traversable    (Traversable (traverse))
 
+import Text.Between        (value)
 import Text.Escaped        (noEscape)
 import Text.Space          (Spaced)
-import Text.Quote          (Quote, Quoted (Quoted))
+import Text.Quote          (Quote, Quoted (Quoted), quoteChar)
 
 -- | A @Field'@ is a single cell from a CSV document.
 --   Its value is either surrounded by quotes (@QuotedF@), or it is
@@ -118,3 +129,43 @@ upmix = runJoin . unField
 mono :: Iso (Field' s s) (Field' t t) (Field s) (Field t)
 mono = iso downmix upmix
 
+class FieldContents a where
+  expandQuotes :: Quoted a -> a
+
+contents :: FieldContents s => Field s -> s
+contents = foldField id (expandQuotes . view value) . review mono
+
+instance FieldContents String where
+  expandQuotes (Quoted q v) =
+    let c = review quoteChar q
+    in  bifoldMap (const [c]) id v
+
+instance FieldContents TB.Builder where
+  expandQuotes = expandQuotesTB
+
+instance FieldContents Lazy.Text where
+  expandQuotes = dimap (fmap fromLazyText) toLazyText expandQuotesTB
+
+instance FieldContents Text where
+  expandQuotes = dimap (fmap fromText) (Lazy.toStrict . toLazyText) expandQuotesTB
+
+instance FieldContents BS.Builder where
+  expandQuotes = expandQuotesBSB
+
+instance FieldContents BS.ByteString where
+  expandQuotes = dimap (fmap BS.byteString) (LBS.toStrict . BS.toLazyByteString) expandQuotesBSB
+
+instance FieldContents LBS.ByteString where
+  expandQuotes = dimap (fmap BS.lazyByteString) BS.toLazyByteString expandQuotesBSB
+
+expandQuotes_ :: Monoid a => (Quote -> a) -> Quoted a -> a
+expandQuotes_ qb (Quoted q v) =
+  bifoldMap (const (qb q)) id v
+
+expandQuotesBSB :: Quoted BS.Builder -> BS.Builder
+expandQuotesBSB =
+  expandQuotes_ (BS.char7 . review quoteChar)
+
+expandQuotesTB :: Quoted TB.Builder -> TB.Builder
+expandQuotesTB =
+  expandQuotes_ (singleton . review quoteChar)
