@@ -100,4 +100,3 @@ unconsRecord p (Csv sep initial final) =
       Nothing -> Nothing
       Just r -> Just ((review (nonEmptyRecord p) r, Nothing), empty sep)
     Pesarated (Separated ((r,n):rs)) -> Just ((r,Just n), Csv sep (Records (Pesarated (Separated rs))) final)
-

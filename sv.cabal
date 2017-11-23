@@ -38,6 +38,7 @@ library
                        , Data.Functor.Compose.Extra
                        , Data.List.AtLeastTwo
                        , Data.Semigroup.Foldable.Extra
+                       , Data.String.Babel
                        , Text.Between
                        , Text.Escaped
                        , Text.Newline
