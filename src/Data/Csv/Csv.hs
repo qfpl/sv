@@ -13,19 +13,21 @@ module Data.Csv.Csv (
   , mkCsv'
   , empty
   , unconsRecord
+  , records
 ) where
 
-import Control.Lens       ((^.), Lens', Prism', review)
+import Control.Lens       ((^.), Lens', review)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
+import Data.List.NonEmpty.Extra (AsNonEmpty (_NonEmpty))
 import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated (Pesarated), Separated (Separated))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Record    (Record, Records (Records), HasRecords (theRecords), FinalRecord, HasFinalRecord (maybeNer), noFinal, nonEmptyRecord)
+import Data.Csv.Record    (Record, Records (Records), HasRecords (theRecords), FinalRecord (FinalRecord), HasFinalRecord (maybeNer), noFinal, nonEmptyRecord)
 import Text.Newline       (Newline)
 
 -- | 'Csv' is a whitespace-preserving data type for separated values.
@@ -93,10 +95,16 @@ instance Bifoldable Csv where
 instance Bitraversable Csv where
   bitraverse f g (Csv s rs e) = Csv s <$> traverse g rs <*> bitraverse f g e
 
-unconsRecord :: Prism' s2 s1 -> Csv s1 s2 -> Maybe ((Record s2, Maybe Newline), Csv s1 s2)
-unconsRecord p (Csv sep initial final) =
+unconsRecord :: AsNonEmpty s1 s2 => Csv s1 s2 -> Maybe ((Record s2, Maybe Newline), Csv s1 s2)
+unconsRecord (Csv sep initial final) =
   case initial ^. theRecords of
     Pesarated (Separated []) -> case final ^. maybeNer of
       Nothing -> Nothing
-      Just r -> Just ((review (nonEmptyRecord p) r, Nothing), empty sep)
+      Just r -> Just ((review nonEmptyRecord r, Nothing), empty sep)
     Pesarated (Separated ((r,n):rs)) -> Just ((r,Just n), Csv sep (Records (Pesarated (Separated rs))) final)
+
+-- TODO this can be a lot faster. Should it be list? Probably not.
+records :: AsNonEmpty s1 s2 => Csv s1 s2 -> [Record s2]
+records (Csv _ (Records initial) (FinalRecord final)) =
+  foldr (:) final' initial
+  where final' = foldMap (pure . review _NonEmpty) final

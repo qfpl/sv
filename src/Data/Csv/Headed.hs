@@ -12,10 +12,11 @@ module Data.Csv.Headed (
   , makeHeaded
 ) where
 
-import Control.Lens    (Iso, Lens', Prism', iso, lens)
+import Control.Lens    (Iso, Lens', iso, lens)
 
 import Data.Csv.Csv    (Csv, unconsRecord)
 import Data.Csv.Record (HasRecord (record), Record)
+import Data.List.NonEmpty.Extra (AsNonEmpty)
 import Text.Newline    (Newline)
 
 newtype Header s =
@@ -47,9 +48,9 @@ instance HasRecord (Headed s1 s2) s2 where
 instance HasHeader (Headed s1 s2) s2 where
   header = lens _header (\(Headed _ d) h -> Headed h d)
 
-makeHeaded :: Prism' s2 s1 -> Csv s1 s2 -> Maybe (Headed s1 s2)
-makeHeaded p c =
-  fmap make (unconsRecord p c)
+makeHeaded :: AsNonEmpty s1 s2 => Csv s1 s2 -> Maybe (Headed s1 s2)
+makeHeaded c =
+  fmap make (unconsRecord c)
     where
     make ((r, mn), c') = Headed (Header r) (fmap (,c') mn)
 

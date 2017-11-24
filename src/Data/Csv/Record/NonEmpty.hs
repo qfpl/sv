@@ -6,23 +6,20 @@
 module Data.Csv.Record.NonEmpty (
   NonEmptyRecord (SingleFieldNER, MultiFieldNER)
   , multiFieldNER
-  , nonEmptyRecord
 )
 where
 
-import Control.Lens       ((^.), Prism', prism, prism', review, preview)
+import Control.Lens       (Prism', prism)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap), first, second)
+import Data.Bifunctor     (Bifunctor (bimap), second)
 import Data.Bitraversable (Bitraversable (bitraverse))
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty)
-import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Traversable   (Traversable (traverse))
 
 import Data.Csv.Field         (Field, Field')
-import Data.Csv.Record.Simple (Record (Record), fields, singleton)
-import Data.List.AtLeastTwo   (AtLeastTwo (AtLeastTwo), AsAtLeastTwo (_AtLeastTwo))
+import Data.List.AtLeastTwo   (AtLeastTwo (AtLeastTwo))
 
 -- | A records which is guaranteed not the be the empty string.
 -- `s1` is the non-empty string type (Text1 or NonEmpty Char) and `s1` is the
@@ -73,12 +70,3 @@ instance Bitraversable NonEmptyRecord where
 
 multiFieldNER :: Field a -> NonEmpty (Field a) -> NonEmptyRecord s a
 multiFieldNER x xs = MultiFieldNER (AtLeastTwo x xs)
-
-nonEmptyRecord :: Prism' s2 s1 -> Prism' (Record s2) (NonEmptyRecord s1 s2)
-nonEmptyRecord p =
-  prism'
-    (\ner -> case ner of
-      SingleFieldNER r -> singleton (first (review p) r)
-      MultiFieldNER zs -> Record (toNonEmpty zs))
-    (\r -> MultiFieldNER <$> preview _AtLeastTwo (r ^. fields))
-

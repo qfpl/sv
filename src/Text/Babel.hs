@@ -1,18 +1,34 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Data.String.Babel where
+module Text.Babel 
+  (
+    Textual (..)
+  , retext
+  , showT
+  -- reexports
+  , IsString (fromString)
+  , IsString1 (fromString1)
+  )
+where
 
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LBC
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString (fromString))
+import Data.Semigroup (Semigroup)
 import qualified Data.Text as T
+import qualified Data.Text1 as T1
+import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
 
-class (Monoid a, IsString a) => Textual a where
+import qualified Data.ByteString1 as B1
+
+class (Semigroup a, IsString a) => Textual a where
   toString :: a -> String
   toByteString :: a -> B.ByteString
   fromByteString :: B.ByteString -> a
@@ -59,6 +75,17 @@ instance Textual LT.Text where
   toLazyText = id
   fromLazyText = id
 
+instance Textual TB.Builder where
+  toString = toString . toLazyText
+  toByteString = toByteString . toLazyText
+  fromByteString = TB.fromText . toText
+  toLazyByteString = toLazyByteString . toLazyText
+  fromLazyByteString = TB.fromLazyText . toLazyText
+  toText = toText . toLazyText
+  fromText = TB.fromText
+  toLazyText = TB.toLazyText
+  fromLazyText = TB.fromLazyText
+
 instance Textual B.ByteString where
   toString = BC.unpack
   toByteString = id
@@ -80,3 +107,29 @@ instance Textual LB.ByteString where
   fromText = toLazyByteString
   toLazyText = fromLazyByteString
   fromLazyText = toLazyByteString
+
+instance Textual BSB.Builder where
+  toString = toString . toLazyByteString
+  toByteString = toByteString . toLazyByteString
+  fromByteString = BSB.byteString
+  toLazyByteString = BSB.toLazyByteString
+  fromLazyByteString = BSB.lazyByteString
+  toText = toText . toLazyByteString
+  fromText = fromByteString . toByteString
+  toLazyText = toLazyText . toLazyByteString
+  fromLazyText = fromLazyByteString . toLazyByteString
+
+showT :: (Show a, Textual t) => a -> t
+showT = fromString . show
+
+class IsString1 a where
+  fromString1 :: NonEmpty Char -> a
+
+instance (a ~ Char) => IsString1 (NonEmpty a) where
+  fromString1 = id
+
+instance IsString1 T1.Text1 where
+  fromString1 (c:|cs) = T1.Text1 c (T.pack cs)
+
+instance IsString1 B1.ByteString1 where
+  fromString1 (c:|cs) = B1.ByteString1 (BC.cons c (fromString cs))

@@ -38,6 +38,7 @@ import qualified Data.Text.Lazy as Lazy
 import Data.Text.Lazy.Builder as TB (Builder, fromText, fromLazyText, singleton, toLazyText)
 import Data.Traversable    (Traversable (traverse))
 
+import Text.Babel
 import Text.Between        (value)
 import Text.Escaped        (noEscape)
 import Text.Space          (Spaced)
@@ -129,7 +130,7 @@ upmix = runJoin . unField
 mono :: Iso (Field' s s) (Field' t t) (Field s) (Field t)
 mono = iso downmix upmix
 
-class FieldContents a where
+class Textual a => FieldContents a where
   expandQuotes :: Quoted a -> a
 
 contents :: FieldContents s => Field s -> s
@@ -144,10 +145,10 @@ instance FieldContents TB.Builder where
   expandQuotes = expandQuotesTB
 
 instance FieldContents Lazy.Text where
-  expandQuotes = dimap (fmap fromLazyText) toLazyText expandQuotesTB
+  expandQuotes = dimap (fmap TB.fromLazyText) TB.toLazyText expandQuotesTB
 
 instance FieldContents Text where
-  expandQuotes = dimap (fmap fromText) (Lazy.toStrict . toLazyText) expandQuotesTB
+  expandQuotes = dimap (fmap TB.fromText) (Lazy.toStrict . TB.toLazyText) expandQuotesTB
 
 instance FieldContents BS.Builder where
   expandQuotes = expandQuotesBSB

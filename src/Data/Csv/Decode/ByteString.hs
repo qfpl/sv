@@ -4,15 +4,16 @@
 module Data.Csv.Decode.ByteString where
 
 import Control.Lens.Wrapped
-import Data.Bifunctor (second)
+import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Char8 (pack, unpack)
 import Data.Char (toUpper)
 import Data.Functor.Alt ((<!>))
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (listToMaybe)
 import Data.Monoid (First (First))
-import Data.Semigroup (Semigroup ((<>)))
+import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Set
 import Data.String (fromString)
 import Data.Text (Text)
@@ -23,6 +24,7 @@ import Text.Read (readMaybe)
 import Data.Csv.Field (FieldContents)
 import Data.Csv.Decode (FieldDecode, contentsD, decodeMay', (>>==))
 import Data.Csv.Decode.Error
+import Text.Babel
 
 byteString :: Semigroup e => FieldDecode e ByteString ByteString
 byteString = contentsD
@@ -61,7 +63,7 @@ eitherD a b = fmap Left a <!> fmap Right b
 withDefault :: Semigroup e => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
 withDefault b a = eitherD (pure a) b
 
-categorical :: forall a s. (FieldContents s, Ord s) => [(a, [s])] -> FieldDecode ByteString s a
+categorical :: forall a s e. (FieldContents s, Ord s, Semigroup e, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
 categorical as =
   let as' :: [(a, Set s)]
       as' = fmap (second fromList) as
@@ -70,24 +72,26 @@ categorical as =
         if s `member` set
         then Just a
         else Nothing
-  in  contentsD >>== \s -> decodeMay' undefined $ alaf First foldMap (go s) as'
+  in  contentsD >>== \s ->
+  decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
+    alaf First foldMap (go s) as'
 
-decodeRead :: Read a => FieldDecode ByteString ByteString a
-decodeRead = decodeReadWith ("Couldn't parse " <>)
+decodeRead :: (Read a, FieldContents s, Textual e, Semigroup e) => FieldDecode e s a
+decodeRead = decodeReadWith ((<>) "Couldn't parse " . retext)
 
-decodeRead' :: (Semigroup e, Read a) => e -> FieldDecode e ByteString a
+decodeRead' :: (Textual e, Semigroup e, Read a) => e -> FieldDecode e ByteString a
 decodeRead' e = decodeReadWith (const e)
 
-decodeReadWith :: (Semigroup e, Read a) => (ByteString -> e) -> FieldDecode e ByteString a
-decodeReadWith e = contentsD >>== \bs -> 
-  maybe (badDecode (e bs)) pure . readMaybe . unpack $ bs
+decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Read a) => (s -> e) -> FieldDecode e s a
+decodeReadWith e = contentsD >>== \bs ->
+  maybe (badDecode (e bs)) pure . readMaybe . toString $ bs
 
-named :: Read a => ByteString -> FieldDecode ByteString ByteString a
+named :: (Read a, FieldContents s, Textual e) => s -> FieldDecode e s a
 named name =
   let vs' = ['a','e','i','o','u']
       vs  = fmap toUpper vs' ++ vs'
       n c = if c `elem` vs then "n" else ""
       n' = foldMap n . listToMaybe
-      n'' = fromString (n' (unpack name))
+      n'' = fromString (n' (toString name))
       space = " "
-  in  decodeReadWith (\bs -> mconcat ["Couldn't parse \"", bs, "\" as a", n'', space, name])
+  in  decodeReadWith (\bs -> sconcat ("Couldn't parse \"" :| [retext bs, "\" as a", n'', space, retext name]))

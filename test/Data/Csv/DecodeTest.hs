@@ -1,0 +1,65 @@
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+module Data.Csv.DecodeTest (test_Decode) where
+
+import Test.Tasty       (TestName, TestTree, testGroup)
+import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@?=))
+
+import Data.ByteString
+import Data.Csv.Csv
+import Data.Csv.Decode
+import Data.Csv.Decode.Error
+import Data.Csv.Decode.ByteString
+import Data.Functor.Alt
+import Data.Semigroup
+import Data.Text (Text)
+import Data.Text1 (Text1)
+import Text.Trifecta (Result(Success, Failure))
+
+test_Decode :: TestTree
+test_Decode =
+  testGroup "Decode" [
+    intOrStringTest
+  ]
+
+data IntOrString =
+  I Int | S String
+  deriving (Eq, Ord, Show)
+
+intOrString :: FieldDecode ByteString ByteString IntOrString
+intOrString = I <$> int <!> S <$> string
+
+data V3 a =
+  V3 a a a
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+
+v3 :: Semigroup e => FieldDecode e s a -> FieldDecode e s (V3 a)
+v3 f = sequenceA (V3 f f f)
+
+v3ios :: RowDecode ByteString ByteString (V3 IntOrString)
+v3ios = row (v3 intOrString)
+
+csv1 :: ByteString
+csv1 = intercalate "\r\n" [
+    "\"3\", \"4\", \"5\""
+  , "\"quoted text\", unquoted text, 100"
+  , "7, unquoted text, 5"
+  ]
+
+csv1' :: [V3 IntOrString]
+csv1' =
+  [ I <$> V3 3 4 5
+  , V3 (S "quoted text") (S "unquoted text") (I 100)
+  , V3 (I 7) (S "unquoted text") (I 5)
+  ]
+
+intOrStringTest :: TestTree
+intOrStringTest = testGroup "intOrString" [
+    testCase "parse successfully" $
+      case parseDecode v3ios csv1 of
+        Failure _ -> assertFailure "Parse failed"
+        Success z -> z @?= pure csv1'
+  ]
