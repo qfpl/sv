@@ -5,19 +5,16 @@
 
 module Data.Csv.DecodeTest (test_Decode) where
 
-import Test.Tasty       (TestName, TestTree, testGroup)
-import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@?=))
+import Test.Tasty       (TestTree, testGroup)
+import Test.Tasty.HUnit (assertBool, assertFailure, testCase, (@?=))
 
 import Data.ByteString
-import Data.Csv.Csv
 import Data.Csv.Decode
-import Data.Csv.Decode.Error
 import Data.Csv.Decode.ByteString
 import Data.Functor.Alt
 import Data.Semigroup
-import Data.Text (Text)
-import Data.Text1 (Text1)
 import Text.Trifecta (Result(Success, Failure))
+import Data.Validation (AccValidation (AccSuccess, AccFailure))
 
 test_Decode :: TestTree
 test_Decode =
@@ -52,14 +49,14 @@ csv1 = intercalate "\r\n" [
 csv1' :: [V3 IntOrString]
 csv1' =
   [ I <$> V3 3 4 5
-  , V3 (S "quoted text") (S "unquoted text") (I 100)
-  , V3 (I 7) (S "unquoted text") (I 5)
+  , V3 (S "quoted text") (S " unquoted text") (I 100)
+  , V3 (I 7) (S " unquoted text") (I 5)
   ]
 
 intOrStringTest :: TestTree
-intOrStringTest = testGroup "intOrString" [
+intOrStringTest =
     testCase "parse successfully" $
       case parseDecode v3ios csv1 of
         Failure _ -> assertFailure "Parse failed"
         Success z -> z @?= pure csv1'
-  ]
+

@@ -6,12 +6,12 @@ module Data.Csv.Decode where
 
 import Control.Lens (view)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
-import Control.Monad.State (MonadState, State, runState, state)
+import Control.Monad.State (MonadIO, MonadState, State, runState, state)
 import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Compose (Compose (Compose, getCompose))
-import Data.Functor.Compose.Extra (injl, rmapC)
+import Data.Functor.Compose.Extra (rmapC)
 import Data.Semigroup (Semigroup)
 import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, bindValidation)
 
@@ -64,12 +64,6 @@ decodeState = DecodeState . state
 runDecodeState :: DecodeState s a -> [Field s] -> (a, [Field s])
 runDecodeState = runState . getDecodeState
 
-drop1 :: DecodeState s ()
-drop1 = DecodeState (state $ \l -> ((), drop 1 l))
-
-drop1D :: Semigroup e => FieldDecode e s ()
-drop1D = FieldDecode (injl drop1)
-
 fieldDecode_ :: (Field s -> DecodeValidation e a) -> FieldDecode e s a
 fieldDecode_ f = FieldDecode . Compose . state $ \l ->
   case l of
@@ -77,7 +71,7 @@ fieldDecode_ f = FieldDecode . Compose . state $ \l ->
     (x:xs) -> (f x, xs)
 
 fieldDecode :: (FieldContents s, Semigroup e) => (s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode f = fieldDecode_ (f . contents) <* drop1D
+fieldDecode f = fieldDecode_ (f . contents)
 
 contentsD :: (FieldContents s, Semigroup e) => FieldDecode e s s
 contentsD = fieldDecode AccSuccess
@@ -106,16 +100,19 @@ row a = rowDecode $ \rs ->
 
 (<&>) :: (Textual s, Textual e, Semigroup e) => FieldDecode e s (a -> b) -> FieldDecode e s a -> RowDecode e s b
 (<&>) ab a = row (ab <*> a)
+infixl 4 <&>
 
 decodeCsv :: AsNonEmpty t s => RowDecode e s a -> Csv t s -> DecodeValidation e [a]
 decodeCsv r = traverse (runRowDecode r) . records
 
-parseDecode :: forall s t e a .
+parseDecode ::
   (Textual s, AsNonEmpty t s, IsString1 t)
   => RowDecode e s a
   -> s
   -> Result (DecodeValidation e [a])
-parseDecode d s =
-  let z :: Result (Csv t s)
-      z = parseByteString (separatedValues ',') mempty (toByteString s)
-  in  fmap (decodeCsv d) z
+parseDecode d =
+  fmap (decodeCsv d) . parseByteString (separatedValues ',') mempty . toByteString
+
+fileDecode :: (MonadIO m, AsNonEmpty t s, Textual s, IsString1 t) => RowDecode e s a -> FilePath -> m (Result (DecodeValidation e [a]))
+fileDecode d =
+  fmap (fmap (decodeCsv d)) . parseFromFileEx (separatedValues ',')
