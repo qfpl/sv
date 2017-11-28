@@ -6,10 +6,8 @@ module Data.Csv.Decode.ByteString where
 import Control.Lens.Wrapped
 import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Char8 as BSC
-import Data.Char (toUpper, isSpace)
+import Data.Char (toUpper)
 import Data.Functor.Alt ((<!>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (listToMaybe)
@@ -20,7 +18,7 @@ import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as LT
 import Data.Text.Encoding (decodeUtf8')
-import Text.Read (readMaybe)
+import Data.Readable (Readable (fromBS))
 
 import Data.Csv.Field (FieldContents)
 import Data.Csv.Decode (FieldDecode, contents, decodeMay', (>>==))
@@ -46,12 +44,8 @@ lazyText = LT.fromStrict <$> text
 text :: FieldContents s => FieldDecode e s Text
 text = toText <$> contents
 
-trimmed :: FieldContents s => FieldDecode e s ByteString
-trimmed = trimBS <$> byteString
-  where
-    trimBS =
-      BS.reverse . BSC.dropWhile isSpace .
-        BS.reverse . BSC.dropWhile isSpace
+trimmed :: FieldContents s => FieldDecode e s s
+trimmed = trim <$> contents
 
 ignore :: FieldContents s => FieldDecode e s ()
 ignore = () <$ contents
@@ -98,17 +92,17 @@ categorical as =
   decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
     alaf First foldMap (go s) as'
 
-decodeRead :: (Read a, FieldContents s, Textual e) => FieldDecode e s a
+decodeRead :: (Readable a, FieldContents s, Textual e) => FieldDecode e s a
 decodeRead = decodeReadWith ((<>) "Couldn't parse " . retext)
 
-decodeRead' :: (Textual e, Read a) => e -> FieldDecode e ByteString a
+decodeRead' :: (Textual e, Readable a) => e -> FieldDecode e ByteString a
 decodeRead' e = decodeReadWith (const e)
 
-decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Read a) => (s -> e) -> FieldDecode e s a
-decodeReadWith e = contents >>== \bs ->
-  maybe (badDecode (e bs)) pure . readMaybe . toString $ bs
+decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Readable a) => (s -> e) -> FieldDecode e s a
+decodeReadWith e = trimmed >>== \c ->
+  maybe (badDecode (e c)) pure . fromBS . toByteString $ c
 
-named :: (Read a, FieldContents s, Textual e) => s -> FieldDecode e s a
+named :: (Readable a, FieldContents s, Textual e) => s -> FieldDecode e s a
 named name =
   let vs' = ['a','e','i','o','u']
       vs  = fmap toUpper vs' ++ vs'

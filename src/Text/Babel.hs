@@ -16,6 +16,8 @@ import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LBC
+import qualified Data.Char as C
+import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString (fromString))
 import Data.Semigroup (Semigroup)
@@ -38,6 +40,7 @@ class (Semigroup a, IsString a) => Textual a where
   fromText :: T.Text -> a
   toLazyText :: a -> LT.Text
   fromLazyText :: LT.Text -> a
+  trim :: a -> a
 
 retext :: (Textual a, Textual b) => a -> b
 retext = fromLazyByteString . toLazyByteString
@@ -57,6 +60,7 @@ instance (c ~ Char) => Textual [c] where
   fromText = fromString . T.unpack
   toLazyText = LT.pack . toString
   fromLazyText = fromString . LT.unpack
+  trim = L.reverse . L.dropWhile C.isSpace . L.reverse . L.dropWhile C.isSpace
 
 instance Textual T.Text where
   toString = T.unpack
@@ -68,6 +72,7 @@ instance Textual T.Text where
   fromText = id
   toLazyText = LT.fromStrict
   fromLazyText = LT.toStrict
+  trim = T.strip
 
 instance Textual LT.Text where
   toString = LT.unpack
@@ -79,6 +84,7 @@ instance Textual LT.Text where
   fromText = LT.fromStrict
   toLazyText = id
   fromLazyText = id
+  trim = LT.strip
 
 instance Textual TB.Builder where
   toString = toString . toLazyText
@@ -90,6 +96,7 @@ instance Textual TB.Builder where
   fromText = TB.fromText
   toLazyText = TB.toLazyText
   fromLazyText = TB.fromLazyText
+  trim = fromLazyText . trim . toLazyText
 
 instance Textual B.ByteString where
   toString = BC.unpack
@@ -101,6 +108,7 @@ instance Textual B.ByteString where
   fromText = T.encodeUtf8
   toLazyText = toLazyText . toText
   fromLazyText = fromText . fromLazyText
+  trim = B.reverse . BC.dropWhile C.isSpace . B.reverse . BC.dropWhile C.isSpace
 
 instance Textual LB.ByteString where
   toString = LBC.unpack
@@ -112,6 +120,7 @@ instance Textual LB.ByteString where
   fromText = toLazyByteString
   toLazyText = fromLazyByteString
   fromLazyText = toLazyByteString
+  trim = LB.reverse . LBC.dropWhile C.isSpace . LB.reverse . LBC.dropWhile C.isSpace
 
 instance Textual BSB.Builder where
   toString = toString . toLazyByteString
@@ -123,6 +132,7 @@ instance Textual BSB.Builder where
   fromText = fromByteString . toByteString
   toLazyText = toLazyText . toLazyByteString
   fromLazyText = fromLazyByteString . toLazyByteString
+  trim = fromLazyByteString . trim . toLazyByteString
 
 showT :: (Show a, Textual t) => a -> t
 showT = fromString . show
