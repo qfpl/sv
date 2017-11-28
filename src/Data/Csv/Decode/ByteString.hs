@@ -28,8 +28,8 @@ import Text.Babel
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents
 
-bytestringUtf8 :: IsString e => FieldDecode e ByteString Text
-bytestringUtf8 = contents >>==
+utf8 :: IsString e => FieldDecode e ByteString Text
+utf8 = contents >>==
   either (badDecode . fromString . show) pure . decodeUtf8'
 
 lazyByteString :: FieldContents s => FieldDecode e s LBS.ByteString
@@ -68,16 +68,19 @@ float = named "float"
 double :: (FieldContents s, Textual e) => FieldDecode e s Double
 double = named "double"
 
-choice :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
-choice a b = fmap Left a <!> fmap Right b
+choice :: FieldDecode e s a -> FieldDecode e s a -> FieldDecode e s a
+choice = (<!>)
 
-withDefault :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
-withDefault b a = swapE <$> choice b (replace a)
-  where
-    swapE = either Right Left
+choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
+choiceE a b = fmap Left a <!> fmap Right b
 
 orElse :: FieldContents s => FieldDecode e s a -> a -> FieldDecode e s a
 orElse f a = f <!> replace a
+
+withDefault :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+withDefault b a = swapE <$> choiceE b (replace a)
+  where
+    swapE = either Right Left
 
 categorical :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
 categorical as =
