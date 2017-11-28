@@ -6,9 +6,10 @@ module Data.Csv.Decode.ByteString where
 import Control.Lens.Wrapped
 import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.ByteString.Char8 (pack, unpack)
-import Data.Char (toUpper)
+import qualified Data.ByteString.Char8 as BSC
+import Data.Char (toUpper, isSpace)
 import Data.Functor.Alt ((<!>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (listToMaybe)
@@ -22,48 +23,61 @@ import Data.Text.Encoding (decodeUtf8')
 import Text.Read (readMaybe)
 
 import Data.Csv.Field (FieldContents)
-import Data.Csv.Decode (FieldDecode, contentsD, decodeMay', (>>==))
+import Data.Csv.Decode (FieldDecode, contents, decodeMay', (>>==))
 import Data.Csv.Decode.Error
 import Text.Babel
 
-byteString :: Semigroup e => FieldDecode e ByteString ByteString
-byteString = contentsD
+byteString :: FieldContents s => FieldDecode e s ByteString
+byteString = toByteString <$> contents
 
-lazyByteString :: Semigroup e => FieldDecode e ByteString LBS.ByteString
-lazyByteString = LBS.fromStrict <$> contentsD
+bytestringUtf8 :: IsString e => FieldDecode e ByteString Text
+bytestringUtf8 = contents >>==
+  either (badDecode . fromString . show) pure . decodeUtf8'
 
-string :: Semigroup e => FieldDecode e ByteString String
-string = unpack <$> contentsD
+lazyByteString :: FieldContents s => FieldDecode e s LBS.ByteString
+lazyByteString = toLazyByteString <$> contents
 
-text :: FieldDecode ByteString ByteString Text
-text = contentsD >>==
-  either (badDecode . pack . show) pure . decodeUtf8'
+string :: FieldContents s => FieldDecode e s String
+string = toString <$> contents
 
-lazyText :: FieldDecode ByteString ByteString LT.Text
+lazyText :: IsString e => FieldDecode e ByteString LT.Text
 lazyText = LT.fromStrict <$> text
 
-unit :: FieldDecode ByteString ByteString ()
-unit = pure ()
+text :: FieldContents s => FieldDecode e s Text
+text = toText <$> contents
 
-int :: FieldDecode ByteString ByteString Int
+trimmed :: FieldContents s => FieldDecode e s ByteString
+trimmed = trimBS <$> byteString
+  where
+    trimBS =
+      BS.reverse . BSC.dropWhile isSpace .
+        BS.reverse . BSC.dropWhile isSpace
+
+ignore :: FieldContents s => FieldDecode e s ()
+ignore = () <$ contents
+
+unit :: FieldContents s => FieldDecode e s ()
+unit = ignore
+
+int :: (FieldContents s, Textual e) => FieldDecode e s Int
 int = named "int"
 
-integer :: FieldDecode ByteString ByteString Integer
+integer :: (FieldContents s, Textual e) => FieldDecode e s Integer
 integer = named "integer"
 
-float :: FieldDecode ByteString ByteString Float
+float :: (FieldContents s, Textual e) => FieldDecode e s Float
 float = named "float"
 
-double :: FieldDecode ByteString ByteString Double
+double :: (FieldContents s, Textual e) => FieldDecode e s Double
 double = named "double"
 
 eitherD :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
 eitherD a b = fmap Left a <!> fmap Right b
 
-withDefault :: Semigroup e => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+withDefault :: FieldDecode e s b -> a -> FieldDecode e s (Either a b)
 withDefault b a = eitherD (pure a) b
 
-categorical :: forall a s e. (FieldContents s, Ord s, Semigroup e, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
+categorical :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
 categorical as =
   let as' :: [(a, Set s)]
       as' = fmap (second fromList) as
@@ -72,18 +86,18 @@ categorical as =
         if s `member` set
         then Just a
         else Nothing
-  in  contentsD >>== \s ->
+  in  contents >>== \s ->
   decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
     alaf First foldMap (go s) as'
 
-decodeRead :: (Read a, FieldContents s, Textual e, Semigroup e) => FieldDecode e s a
+decodeRead :: (Read a, FieldContents s, Textual e) => FieldDecode e s a
 decodeRead = decodeReadWith ((<>) "Couldn't parse " . retext)
 
-decodeRead' :: (Textual e, Semigroup e, Read a) => e -> FieldDecode e ByteString a
+decodeRead' :: (Textual e, Read a) => e -> FieldDecode e ByteString a
 decodeRead' e = decodeReadWith (const e)
 
 decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Read a) => (s -> e) -> FieldDecode e s a
-decodeReadWith e = contentsD >>== \bs ->
+decodeReadWith e = contents >>== \bs ->
   maybe (badDecode (e bs)) pure . readMaybe . toString $ bs
 
 named :: (Read a, FieldContents s, Textual e) => s -> FieldDecode e s a

@@ -17,7 +17,7 @@ module Data.Csv.Field (
   , downmix
   , upmix
   , FieldContents (expandQuotes)
-  , contents
+  , fieldContents
 ) where
 
 import Control.Lens        (Iso, iso, Prism', prism, from, review, view)
@@ -133,8 +133,8 @@ mono = iso downmix upmix
 class Textual a => FieldContents a where
   expandQuotes :: Quoted a -> a
 
-contents :: FieldContents s => Field s -> s
-contents = foldField id (expandQuotes . view value) . review mono
+fieldContents :: FieldContents s => Field s -> s
+fieldContents = foldField id (expandQuotes . view value) . review mono
 
 instance FieldContents String where
   expandQuotes (Quoted q v) =

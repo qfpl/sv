@@ -12,12 +12,11 @@ import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
-import Data.Semigroup (Semigroup)
 import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, bindValidation)
 
 import Data.Csv.Csv (Csv, records)
 import Data.Csv.Decode.Error (DecodeError, DecodeValidation, decodeError, expectedEndOfRow, unexpectedEndOfRow)
-import Data.Csv.Field (Field, FieldContents, contents)
+import Data.Csv.Field (Field, FieldContents, fieldContents)
 import Data.Csv.Parser (separatedValues)
 import Data.Csv.Record (Record, _fields)
 import Data.List.NonEmpty.Extra (AsNonEmpty)
@@ -70,11 +69,11 @@ fieldDecode_ f = FieldDecode . Compose . state $ \l ->
     [] -> (unexpectedEndOfRow, [])
     (x:xs) -> (f x, xs)
 
-fieldDecode :: (FieldContents s, Semigroup e) => (s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode f = fieldDecode_ (f . contents)
+fieldDecode :: FieldContents s => (s -> DecodeValidation e a) -> FieldDecode e s a
+fieldDecode f = fieldDecode_ (f . fieldContents)
 
-contentsD :: (FieldContents s, Semigroup e) => FieldDecode e s s
-contentsD = fieldDecode AccSuccess
+contents :: FieldContents s => FieldDecode e s s
+contents = fieldDecode AccSuccess
 
 decodeMay :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 decodeMay ab e a = decodeMay' e (ab a)
@@ -98,7 +97,7 @@ row a = rowDecode $ \rs ->
     (v, []) -> v
     (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap retext) xs)
 
-(<&>) :: (Textual s, Textual e, Semigroup e) => FieldDecode e s (a -> b) -> FieldDecode e s a -> RowDecode e s b
+(<&>) :: (Textual s, Textual e) => FieldDecode e s (a -> b) -> FieldDecode e s a -> RowDecode e s b
 (<&>) ab a = row (ab <*> a)
 infixl 4 <&>
 
