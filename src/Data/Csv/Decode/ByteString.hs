@@ -56,6 +56,9 @@ trimmed = trimBS <$> byteString
 ignore :: FieldContents s => FieldDecode e s ()
 ignore = () <$ contents
 
+replace :: FieldContents s => a -> FieldDecode e s a
+replace a = a <$ contents
+
 unit :: FieldContents s => FieldDecode e s ()
 unit = ignore
 
@@ -71,11 +74,16 @@ float = named "float"
 double :: (FieldContents s, Textual e) => FieldDecode e s Double
 double = named "double"
 
-eitherD :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
-eitherD a b = fmap Left a <!> fmap Right b
+choice :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
+choice a b = fmap Left a <!> fmap Right b
 
-withDefault :: FieldDecode e s b -> a -> FieldDecode e s (Either a b)
-withDefault b a = eitherD (pure a) b
+withDefault :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+withDefault b a = swapE <$> choice b (replace a)
+  where
+    swapE = either Right Left
+
+orElse :: FieldContents s => FieldDecode e s a -> a -> FieldDecode e s a
+orElse f a = f <!> replace a
 
 categorical :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
 categorical as =
