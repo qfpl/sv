@@ -41,6 +41,11 @@ class (Semigroup a, IsString a) => Textual a where
 
 retext :: (Textual a, Textual b) => a -> b
 retext = fromLazyByteString . toLazyByteString
+{-# NOINLINE retext #-}
+
+{-# RULES
+"retext/id" retext = id
+  #-}
 
 instance (c ~ Char) => Textual [c] where
   toString = id
