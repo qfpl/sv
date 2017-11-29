@@ -17,7 +17,7 @@ import Data.Semigroup.Foldable  (intercalate1)
 import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Semigroup           (Semigroup)
 
-import Data.Csv.Csv    (Csv (Csv))
+import Data.Csv.Csv    (Csv (Csv), Header (Header))
 import Data.Csv.Field  (Field, Field' (QuotedF, UnquotedF), upmix)
 import Data.Csv.Pretty.Config (PrettyConfigC, PrettyConfig, string1, string2, setSeparator, separator, newline, space, quote)
 import Data.Csv.Record (Record (Record), FinalRecord, HasFinalRecord (maybeNer), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
@@ -53,6 +53,9 @@ prettyRecord c (Record fs) =
   let sep = separator c
   in  intercalate1 sep (fmap (prettyField c) fs)
 
+prettyHeader :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Header s2 -> m
+prettyHeader c (Header r n) = prettyRecord c r <> newline c n
+
 prettyNonEmptyString :: Foldable f => f Char -> String
 prettyNonEmptyString = toList
 
@@ -67,7 +70,7 @@ prettyRecords c =
   prettyPesarated c . view theRecords
 
 prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s1 s2 m -> Csv s1 s2 -> m
-prettyCsv config (Csv c rs e) =
+prettyCsv config (Csv c h rs e) =
   let newConfig = setSeparator config c
-  in  prettyRecords newConfig rs <> prettyFinalRecord newConfig e
+  in  foldMap (prettyHeader newConfig) h <> prettyRecords newConfig rs <> prettyFinalRecord newConfig e
 

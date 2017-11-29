@@ -30,7 +30,7 @@ import qualified Data.Text.Lazy as LT
 import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, bindValidation)
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
-import Data.Csv.Csv (Csv, records)
+import Data.Csv.Csv (Csv, Headedness, records)
 import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, badDecode, decodeError, expectedEndOfRow, unexpectedEndOfRow)
 import Data.Csv.Field (Field, FieldContents, fieldContents)
 import Data.Csv.Parser (separatedValues)
@@ -122,14 +122,15 @@ decodeCsv r = traverse (runRowDecode r) . records
 parseDecode ::
   (Textual s, AsNonEmpty t s, IsString1 t)
   => RowDecode e s a
+  -> Headedness
   -> s
   -> Result (DecodeValidation e [a])
-parseDecode d =
-  fmap (decodeCsv d) . parseByteString (separatedValues ',') mempty . toByteString
+parseDecode d h =
+  fmap (decodeCsv d) . parseByteString (separatedValues ',' h) mempty . toByteString
 
-fileDecode :: (MonadIO m, AsNonEmpty t s, Textual s, IsString1 t) => RowDecode e s a -> FilePath -> m (Result (DecodeValidation e [a]))
-fileDecode d =
-  fmap (fmap (decodeCsv d)) . parseFromFileEx (separatedValues ',')
+fileDecode :: (MonadIO m, AsNonEmpty t s, Textual s, IsString1 t) => RowDecode e s a -> Headedness -> FilePath -> m (Result (DecodeValidation e [a]))
+fileDecode d h =
+  fmap (fmap (decodeCsv d)) . parseFromFileEx (separatedValues ',' h)
 
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents

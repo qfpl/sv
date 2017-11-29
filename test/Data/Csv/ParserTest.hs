@@ -16,9 +16,9 @@ import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Parsec          (ParseError, parse)
 
-import           Data.Csv.Csv         (Csv, mkCsv')
+import           Data.Csv.Csv         (Csv, mkCsv', comma, pipe, Headedness (Unheaded))
 import           Data.Csv.Field       (Field, Field' (QuotedF, UnquotedF), downmix, upmix)
-import           Data.Csv.Parser.Internal (comma, ending, field', pipe, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Parser.Internal (ending, field', doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
 import           Data.Separated       (sprinkle)
 import           Text.Between         (uniform)
@@ -150,10 +150,10 @@ finalRecordTest =
 separatedValuesTest :: Char -> Newline -> TestTree
 separatedValuesTest sep nl =
   let p :: Text -> Either ParseError (Csv Text1 Text)
-      p = parse (separatedValues sep) ""
-      ps = parse (separatedValues sep) "" . fold
+      p = parse (separatedValues sep Unheaded) ""
+      ps = parse (separatedValues sep Unheaded) "" . fold
       csv :: [Record s2] -> FinalRecord s1 s2 -> Csv s1 s2
-      csv rs e = mkCsv' sep e $ sprinkle nl rs
+      csv rs e = mkCsv' sep Nothing e $ sprinkle nl rs
       s = Text.singleton sep
       nls = newlineText nl
   in  testGroup "separatedValues" [

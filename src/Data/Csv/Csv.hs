@@ -2,18 +2,31 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances#-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 -- | This file defines a datatype for a complete CSV document.
 -- The datatype preserves information so that the original CSV
 -- text can be recovered.
 module Data.Csv.Csv (
-  Csv (Csv, _separator, _initialRecords, _finalRecord)
-  , HasCsv (csv, finalRecord, initialRecords, separator)
+  Csv (Csv, _csvSeparator, _csvHeader, _csvInitialRecords, _csvFinalRecord)
+  , HasCsv (csv, csvFinalRecord, csvInitialRecords, csvSeparator)
   , mkCsv
   , mkCsv'
   , empty
   , unconsRecord
   , records
+  , Header (Header, _headerRecord)
+  , HasHeader (header, headerRecord)
+  , noHeader
+  , mkHeader
+  , Headedness (Unheaded, Headed)
+  , headedness
+  , Separator
+  , comma
+  , pipe
+  , tab
 ) where
 
 import Control.Lens       ((^.), Lens', review)
@@ -36,46 +49,53 @@ import Text.Newline       (Newline)
 --   as well.
 data Csv s1 s2 =
   Csv {
-    _separator :: Char
-  , _initialRecords :: Records s2
-  , _finalRecord :: FinalRecord s1 s2
+    _csvSeparator :: Char
+  , _csvHeader :: Maybe (Header s2)
+  , _csvInitialRecords :: Records s2
+  , _csvFinalRecord :: FinalRecord s1 s2
   }
   deriving (Eq, Ord, Show)
 
 class HasCsv c s1 s2 | c -> s1 s2 where
   csv :: Lens' c (Csv s1 s2)
-  finalRecord :: Lens' c (FinalRecord s1 s2)
-  {-# INLINE finalRecord #-}
-  initialRecords :: Lens' c (Records s2)
-  {-# INLINE initialRecords #-}
-  separator :: Lens' c Char
-  {-# INLINE separator #-}
-  finalRecord = csv . finalRecord
-  initialRecords = csv . initialRecords
-  separator = csv . separator
+  csvSeparator :: Lens' c Char
+  {-# INLINE csvSeparator #-}
+  csvHeader :: Lens' c (Maybe (Header s2))
+  {-# INLINE csvHeader #-}
+  csvInitialRecords :: Lens' c (Records s2)
+  {-# INLINE csvInitialRecords #-}
+  csvFinalRecord :: Lens' c (FinalRecord s1 s2)
+  {-# INLINE csvFinalRecord #-}
+  csvSeparator = csv . csvSeparator
+  csvHeader = csv . csvHeader
+  csvInitialRecords = csv . csvInitialRecords
+  csvFinalRecord = csv . csvFinalRecord
 
 instance HasCsv (Csv s1 s2) s1 s2 where
-  {-# INLINE finalRecord #-}
-  {-# INLINE initialRecords #-}
-  {-# INLINE separator #-}
+  {-# INLINE csvSeparator #-}
+  {-# INLINE csvHeader #-}
+  {-# INLINE csvInitialRecords #-}
+  {-# INLINE csvFinalRecord #-}
   csv = id
-  finalRecord f (Csv x1 x2 x3)
-    = fmap (Csv x1 x2) (f x3)
-  initialRecords f (Csv x1 x2 x3)
-    = fmap (\y -> Csv x1 y x3) (f x2)
-  separator f (Csv x1 x2 x3)
-    = fmap (\y -> Csv y x2 x3) (f x1)
+  csvSeparator f (Csv x1 x2 x3 x4) =
+    fmap (\y -> Csv y x2 x3 x4) (f x1)
+  csvHeader f (Csv x1 x2 x3 x4) =
+    fmap (\y -> (Csv x1 y x3 x4)) (f x2)
+  csvInitialRecords f (Csv x1 x2 x3 x4) =
+    fmap (\y -> Csv x1 x2 y x4) (f x3)
+  csvFinalRecord f (Csv x1 x2 x3 x4) =
+    fmap (Csv x1 x2 x3) (f x4)
 
 -- | Convenience constructor for CSV
-mkCsv :: Char -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
-mkCsv c ns rs = Csv c rs ns
+mkCsv :: Char -> Maybe (Header s2) -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
+mkCsv c h ns rs = Csv c h rs ns
 
 -- | Convenience constructor for CSV
-mkCsv' :: Char -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
-mkCsv' c ns = mkCsv c ns . Records
+mkCsv' :: Char -> Maybe (Header s2) -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
+mkCsv' c h ns = mkCsv c h ns . Records
 
 empty :: Char -> Csv s1 s2
-empty c = Csv c mempty noFinal
+empty c = Csv c noHeader mempty noFinal
 
 instance Functor (Csv s) where
   fmap = second
@@ -87,24 +107,73 @@ instance Traversable (Csv s) where
   traverse = bitraverse pure
 
 instance Bifunctor Csv where
-  bimap f g (Csv s rs e) = Csv s (fmap g rs) (bimap f g e)
+  bimap f g (Csv s h rs e) = Csv s (fmap (fmap g) h) (fmap g rs) (bimap f g e)
 
 instance Bifoldable Csv where
-  bifoldMap f g (Csv _ rs e) = foldMap g rs <> bifoldMap f g e
+  bifoldMap f g (Csv _ h rs e) = foldMap (foldMap g) h <> foldMap g rs <> bifoldMap f g e
 
 instance Bitraversable Csv where
-  bitraverse f g (Csv s rs e) = Csv s <$> traverse g rs <*> bitraverse f g e
+  bitraverse f g (Csv s h rs e) = Csv s <$> traverse (traverse g) h <*> traverse g rs <*> bitraverse f g e
 
 unconsRecord :: AsNonEmpty s1 s2 => Csv s1 s2 -> Maybe ((Record s2, Maybe Newline), Csv s1 s2)
-unconsRecord (Csv sep initial final) =
+unconsRecord (Csv sep h initial final) =
   case initial ^. theRecords of
     Pesarated (Separated []) -> case final ^. maybeNer of
       Nothing -> Nothing
       Just r -> Just ((review nonEmptyRecord r, Nothing), empty sep)
-    Pesarated (Separated ((r,n):rs)) -> Just ((r,Just n), Csv sep (Records (Pesarated (Separated rs))) final)
+    Pesarated (Separated ((r,n):rs)) -> Just ((r,Just n), Csv sep h (Records (Pesarated (Separated rs))) final)
 
 -- TODO this can be a lot faster. Should it be list? Probably not.
 records :: AsNonEmpty s1 s2 => Csv s1 s2 -> [Record s2]
-records (Csv _ (Records initial) (FinalRecord final)) =
+records (Csv _ _ (Records initial) (FinalRecord final)) =
   foldr (:) final' initial
   where final' = foldMap (pure . review _NonEmpty) final
+
+type Separator = Char
+
+comma :: Separator
+comma = ','
+
+pipe :: Separator
+pipe = '|'
+
+tab :: Separator
+tab = '\t'
+
+data Header s =
+  Header {
+    _headerRecord :: Record s
+  , _headerNewline :: Newline
+  }
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+
+class HasHeader c s | c -> s where
+  header :: Lens' c (Header s)
+  headerNewline :: Lens' c Newline
+  {-# INLINE headerNewline #-}
+  headerRecord :: Lens' c (Record s)
+  {-# INLINE headerRecord #-}
+  headerNewline = header . headerNewline
+  headerRecord = header . headerRecord
+
+instance HasHeader (Header s) s where
+  {-# INLINE headerNewline #-}
+  {-# INLINE headerRecord #-}
+  header = id
+  headerNewline f_ayHZ (Header x1_ayI0 x2_ayI1)
+    = fmap (\ y1_ayI2 -> Header x1_ayI0 y1_ayI2) (f_ayHZ x2_ayI1)
+  headerRecord f_ayI3 (Header x1_ayI4 x2_ayI5)
+    = fmap (\ y1_ayI6 -> Header y1_ayI6 x2_ayI5) (f_ayI3 x1_ayI4)
+
+noHeader :: Maybe (Header s)
+noHeader = Nothing
+
+mkHeader :: Record s -> Newline -> Maybe (Header s)
+mkHeader r n = Just (Header r n)
+
+data Headedness =
+  Unheaded | Headed
+  deriving (Eq, Ord, Show)
+
+headedness :: Csv s1 s2 -> Headedness
+headedness = maybe Unheaded (const Headed) . _csvHeader

@@ -25,7 +25,6 @@ library
                        , Data.Csv.Decode
                        , Data.Csv.Decode.Error
                        , Data.Csv.Field
-                       , Data.Csv.Headed
                        , Data.Csv.Parser
                        , Data.Csv.Parser.Internal
                        , Data.Csv.Pretty

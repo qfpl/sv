@@ -3,9 +3,6 @@
 module Data.Csv.Parser.Internal (
   separatedValues
   , header
-  , headed
-  , comma
-  , pipe
   , field
   , field'
   , singleQuotedField
@@ -15,7 +12,7 @@ module Data.Csv.Parser.Internal (
   , ending
 ) where
 
-import           Control.Applicative     (Alternative, (<|>), liftA2, liftA3, optional)
+import           Control.Applicative     (Alternative, (<|>), liftA3, optional)
 import           Control.Lens            (review, view)
 import           Data.Bifunctor          (Bifunctor (first))
 import           Data.CharSet            (CharSet)
@@ -26,9 +23,8 @@ import           Data.Monoid             ((<>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
-import           Data.Csv.Csv            (Csv (Csv))
+import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed))
 import           Data.Csv.Field          (Field, Field' (UnquotedF, QuotedF), downmix)
-import           Data.Csv.Headed         (Header (Header), Headed (Headed))
 import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Data.List.NonEmpty.Extra (AsNonEmpty)
 import           Text.Babel              (Textual, fromString, IsString1, fromString1)
@@ -37,14 +33,6 @@ import           Text.Escaped            (Escaped', escapeNel)
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Space              (HorizontalSpace (Space, Tab), Spaced)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
-
--- | The comma character
-comma :: Char
-comma = ','
-
--- | The pipe character
-pipe :: Char
-pipe = '|'
 
 -- These two functions are in newer versions of the parsers package, but in
 -- order to maintain compatibility with older versions I've left them here.
@@ -125,9 +113,9 @@ record :: (CharParsing m, Textual s) => Char -> m (Record s)
 record sep =
   Record <$> (field sep `sepEndByNonEmpty` char sep)
 
-separatedValues :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (Csv t s)
-separatedValues sep =
-  uncurry (Csv sep) <$> multiRecords sep
+separatedValues :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> Headedness -> m (Csv t s)
+separatedValues sep h =
+  fmap uncurry (Csv sep) <$> header sep h <*> multiRecords sep
 
 records :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (Either (FinalRecord t s) (Records s))
 records sep =
@@ -152,9 +140,7 @@ nonEmptyRecord sep =
   try (multiFieldNER <$> field sep <* char sep <*> (view fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
 
-header :: (CharParsing m, Textual s) => Char -> m (Header s)
-header = fmap Header . record
-
-headed :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (Headed t s)
-headed c = Headed <$> header c <*> optional (liftA2 (,) newline (separatedValues c))
-
+header :: (CharParsing m, Textual s) => Char -> Headedness -> m (Maybe (Header s))
+header c h = case h of
+  Unheaded -> pure noHeader
+  Headed -> mkHeader <$> record c <*> newline

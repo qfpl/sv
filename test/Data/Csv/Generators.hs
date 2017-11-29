@@ -1,5 +1,6 @@
 module Data.Csv.Generators (
   genCsv
+  , genCsvWithHeadedness
   , genNewline
   , genSep
   , genFinalRecord
@@ -12,7 +13,6 @@ module Data.Csv.Generators (
   , genNonEmptyRecord
   , genPesarated
   , genSeparated
-  , genHeaded
   , genHeader
 ) where
 
@@ -22,9 +22,8 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Csv.Csv        (Csv (Csv))
+import Data.Csv.Csv        (Csv (Csv), Header (Header), Headedness, headedness)
 import Data.Csv.Field      (Field' (QuotedF, UnquotedF), downmix)
-import Data.Csv.Headed     (Header (Header), Headed (Headed))
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
 import Text.Between        (Between (Between))
@@ -37,7 +36,11 @@ genCsv :: Gen Char -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2)
 genCsv sep spc s1 s2 =
   let rs = genRecords spc s2
       e  = genFinalRecord spc s1 s2
-  in  liftA3 Csv sep rs e
+      h = Gen.maybe (genHeader spc s2 genNewline)
+  in  Csv <$> sep <*> h <*> rs <*> e
+
+genCsvWithHeadedness :: Gen Char -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2, Headedness)
+genCsvWithHeadedness sep spc s1 s2 = fmap (\c -> (c, headedness c)) (genCsv sep spc s1 s2)
 
 genNewline :: Gen Newline
 genNewline =
@@ -82,6 +85,10 @@ genRecord :: Gen Spaces -> Gen s -> Gen (Record s)
 genRecord spc s =
   Record <$> Gen.nonEmpty (Range.linear 1 10) (downmix <$> genField spc s s)
 
+genHeader :: Gen Spaces -> Gen s -> Gen Newline -> Gen (Header s)
+genHeader spc s n =
+  Header <$> genRecord spc s <*> n
+
 genNonEmptyRecord :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (NonEmptyRecord s1 s2)
 genNonEmptyRecord spc s1 s2 =
   let f  = genField spc s1 s2
@@ -103,13 +110,3 @@ genPesarated spc s =
 genSeparated :: Gen a -> Gen b -> Gen (Separated a b)
 genSeparated a b =
   Separated <$> Gen.list (Range.linear 0 1000) (liftA2 (,) a b)
-
-genHeader :: Gen Spaces -> Gen s -> Gen (Header s)
-genHeader spc s = Header <$> genRecord spc s
-
-genHeaded :: Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Headed s1 s2)
-genHeaded spc s1 s2 =
-  let hdr = genHeader spc s2
-      csv = genCsv genSep spc s1 s2
-  in Headed <$> hdr <*> Gen.maybe (liftA2 (,) genNewline csv)
-

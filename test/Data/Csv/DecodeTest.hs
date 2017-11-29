@@ -9,10 +9,12 @@ import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase, (@?=))
 
 import Data.ByteString
-import Data.Csv.Decode
 import Data.Functor.Alt
 import Data.Semigroup
 import Text.Trifecta (Result(Success, Failure))
+
+import Data.Csv.Csv (Headedness (Unheaded))
+import Data.Csv.Decode
 
 test_Decode :: TestTree
 test_Decode =
@@ -54,7 +56,7 @@ csv1' =
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      case parseDecode v3ios csv1 of
+      case parseDecode v3ios Unheaded csv1 of
         Failure _ -> assertFailure "Parse failed"
         Success z -> z @?= pure csv1'
 
