@@ -1,27 +1,42 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Csv.Decode where
 
-import Control.Lens (view)
+import Control.Lens (view, alaf)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
 import Control.Monad.State (MonadIO, MonadState, State, runState, state)
+import Data.Bifunctor (bimap, second)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as LBS
+import Data.Char (toUpper)
 import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe (listToMaybe)
+import Data.Monoid (First (First))
+import Data.Readable (Readable (fromBS))
+import Data.Semigroup (Semigroup ((<>)), sconcat)
+import Data.Set (Set, fromList, member)
+import Data.String (IsString (fromString))
+import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8')
+import qualified Data.Text.Lazy as LT
 import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, bindValidation)
+import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
 import Data.Csv.Csv (Csv, records)
-import Data.Csv.Decode.Error (DecodeError, DecodeValidation, decodeError, expectedEndOfRow, unexpectedEndOfRow)
+import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, badDecode, decodeError, expectedEndOfRow, unexpectedEndOfRow)
 import Data.Csv.Field (Field, FieldContents, fieldContents)
 import Data.Csv.Parser (separatedValues)
 import Data.Csv.Record (Record, _fields)
 import Data.List.NonEmpty.Extra (AsNonEmpty)
-import Text.Babel (Textual, IsString1, toByteString, retext)
-import Text.Trifecta
+import Text.Babel (Textual, IsString1, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
 newtype FieldDecode e s a =
   FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
@@ -115,3 +130,93 @@ parseDecode d =
 fileDecode :: (MonadIO m, AsNonEmpty t s, Textual s, IsString1 t) => RowDecode e s a -> FilePath -> m (Result (DecodeValidation e [a]))
 fileDecode d =
   fmap (fmap (decodeCsv d)) . parseFromFileEx (separatedValues ',')
+
+byteString :: FieldContents s => FieldDecode e s ByteString
+byteString = toByteString <$> contents
+
+utf8 :: IsString e => FieldDecode e ByteString Text
+utf8 = contents >>==
+  either (badDecode . fromString . show) pure . decodeUtf8'
+
+lazyByteString :: FieldContents s => FieldDecode e s LBS.ByteString
+lazyByteString = toLazyByteString <$> contents
+
+string :: FieldContents s => FieldDecode e s String
+string = toString <$> contents
+
+lazyText :: IsString e => FieldDecode e ByteString LT.Text
+lazyText = LT.fromStrict <$> text
+
+text :: FieldContents s => FieldDecode e s Text
+text = toText <$> contents
+
+trimmed :: FieldContents s => FieldDecode e s s
+trimmed = trim <$> contents
+
+ignore :: FieldContents s => FieldDecode e s ()
+ignore = () <$ contents
+
+replace :: FieldContents s => a -> FieldDecode e s a
+replace a = a <$ contents
+
+unit :: FieldContents s => FieldDecode e s ()
+unit = ignore
+
+int :: (FieldContents s, Textual e) => FieldDecode e s Int
+int = named "int"
+
+integer :: (FieldContents s, Textual e) => FieldDecode e s Integer
+integer = named "integer"
+
+float :: (FieldContents s, Textual e) => FieldDecode e s Float
+float = named "float"
+
+double :: (FieldContents s, Textual e) => FieldDecode e s Double
+double = named "double"
+
+choice :: FieldDecode e s a -> FieldDecode e s a -> FieldDecode e s a
+choice = (<!>)
+
+choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
+choiceE a b = fmap Left a <!> fmap Right b
+
+orElse :: FieldContents s => FieldDecode e s a -> a -> FieldDecode e s a
+orElse f a = f <!> replace a
+
+withDefault :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+withDefault b a = swapE <$> choiceE b (replace a)
+  where
+    swapE = either Right Left
+
+categorical :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
+categorical as =
+  let as' :: [(a, Set s)]
+      as' = fmap (second fromList) as
+      go :: s -> (a, Set s) -> Maybe a
+      go s (a, set) =
+        if s `member` set
+        then Just a
+        else Nothing
+  in  contents >>== \s ->
+  decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
+    alaf First foldMap (go s) as'
+
+decodeRead :: (Readable a, FieldContents s, Textual e) => FieldDecode e s a
+decodeRead = decodeReadWith ((<>) "Couldn't parse " . retext)
+
+decodeRead' :: (Textual e, Readable a) => e -> FieldDecode e ByteString a
+decodeRead' e = decodeReadWith (const e)
+
+decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Readable a) => (s -> e) -> FieldDecode e s a
+decodeReadWith e = trimmed >>== \c ->
+  maybe (badDecode (e c)) pure . fromBS . toByteString $ c
+
+named :: (Readable a, FieldContents s, Textual e) => s -> FieldDecode e s a
+named name =
+  let vs' = ['a','e','i','o','u']
+      vs  = fmap toUpper vs' ++ vs'
+      n c = if c `elem` vs then "n" else ""
+      n' = foldMap n . listToMaybe
+      n'' = fromString (n' (toString name))
+      space = " "
+  in  decodeReadWith (\bs -> sconcat ("Couldn't parse \"" :| [retext bs, "\" as a", n'', space, retext name]))

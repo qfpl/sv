@@ -23,7 +23,6 @@ library
   exposed-modules:     Data.ByteString1
                        , Data.Csv.Csv
                        , Data.Csv.Decode
-                       , Data.Csv.Decode.ByteString
                        , Data.Csv.Decode.Error
                        , Data.Csv.Field
                        , Data.Csv.Headed
