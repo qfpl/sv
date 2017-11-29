@@ -15,6 +15,7 @@ import qualified Data.Text as Text
 import Data.Text.Lazy.Builder as Text (Builder, fromText)
 import Data.Text1               (Text1, _Text1)
 
+import Data.Csv.Csv (Separator)
 import Text.Newline    (Newline, newlineText)
 import Text.Space      (Spaces, spaces)
 import Text.Quote      (Quote, quoteText)
@@ -41,9 +42,9 @@ instance Functor f => Functor (PrettyConfig' f s1 s2) where
     }
 
 type PrettyConfig = PrettyConfig' Identity
-type PrettyConfigC = PrettyConfig' ((->) Char)
+type PrettyConfigC = PrettyConfig' ((->) Separator)
 
-setSeparator :: PrettyConfigC s1 s2 m -> Char -> PrettyConfig s1 s2 m
+setSeparator :: PrettyConfigC s1 s2 m -> Separator -> PrettyConfig s1 s2 m
 setSeparator (PrettyConfig' s q n sp s1 s2) c =
   PrettyConfig' (Identity (s c)) q n sp s1 s2
 

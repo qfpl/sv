@@ -23,7 +23,7 @@ import           Data.Monoid             ((<>))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, sepEndBy, try)
 
-import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed))
+import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
 import           Data.Csv.Field          (Field, Field' (UnquotedF, QuotedF), downmix)
 import           Data.Csv.Record         (NonEmptyRecord (SingleFieldNER), Record (Record), HasRecord (fields), Records, singletonRecords, FinalRecord (FinalRecord), multiFieldNER)
 import           Data.List.NonEmpty.Extra (AsNonEmpty)
@@ -66,10 +66,10 @@ escapeQuote q =
 two :: a -> [a]
 two a = [a,a]
 
-unquotedField :: CharParsing m => Char -> (m Char -> m t) -> m (Field' t s)
+unquotedField :: CharParsing m => Separator -> (m Char -> m t) -> m (Field' t s)
 unquotedField sep combinator = UnquotedF <$> combinator (fieldChar sep)
 
-fieldChar :: CharParsing m => Char -> m Char
+fieldChar :: CharParsing m => Separator -> m Char
 fieldChar sep = noneOfSet (newlineOr sep)
 
 newlineOr :: Char -> CharSet
@@ -109,20 +109,20 @@ spaces = many space
 spaced :: CharParsing m => m a -> m (Spaced a)
 spaced p = liftA3 Between spaces p spaces
 
-record :: (CharParsing m, Textual s) => Char -> m (Record s)
+record :: (CharParsing m, Textual s) => Separator -> m (Record s)
 record sep =
   Record <$> (field sep `sepEndByNonEmpty` char sep)
 
-separatedValues :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> Headedness -> m (Csv t s)
+separatedValues :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Separator -> Headedness -> m (Csv t s)
 separatedValues sep h =
   fmap uncurry (Csv sep) <$> header sep h <*> multiRecords sep
 
-records :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (Either (FinalRecord t s) (Records s))
+records :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Separator -> m (Either (FinalRecord t s) (Records s))
 records sep =
   try (Left <$> ending sep)
   <|> (Right <$> (singletonRecords <$> record sep <*> newline))
 
-multiRecords :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (Records s, FinalRecord t s)
+multiRecords :: (Monad m, CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Separator -> m (Records s, FinalRecord t s)
 multiRecords sep =
   untilLeft id (records sep)
 
@@ -132,15 +132,15 @@ untilLeft f x =
     Left l  -> pure (mempty, l)
     Right r -> first (f r <>) <$> untilLeft f x
 
-ending :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (FinalRecord t s)
+ending :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Separator -> m (FinalRecord t s)
 ending sep = (FinalRecord <$> optional (nonEmptyRecord sep)) <* eof
 
-nonEmptyRecord :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Char -> m (NonEmptyRecord t s)
+nonEmptyRecord :: (CharParsing m, Textual s, IsString1 t, AsNonEmpty t s) => Separator -> m (NonEmptyRecord t s)
 nonEmptyRecord sep =
   try (multiFieldNER <$> field sep <* char sep <*> (view fields <$> record sep))
   <|> SingleFieldNER <$> field1 sep
 
-header :: (CharParsing m, Textual s) => Char -> Headedness -> m (Maybe (Header s))
+header :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Maybe (Header s))
 header c h = case h of
   Unheaded -> pure noHeader
   Headed -> mkHeader <$> record c <*> newline

@@ -22,7 +22,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Csv.Csv        (Csv (Csv), Header (Header), Headedness, headedness)
+import Data.Csv.Csv        (Csv (Csv), Header (Header), Headedness, headedness, Separator)
 import Data.Csv.Field      (Field' (QuotedF, UnquotedF), downmix)
 import Data.Csv.Record     (Record (Record), NonEmptyRecord (SingleFieldNER, MultiFieldNER), FinalRecord (FinalRecord), Records (Records))
 import Data.List.AtLeastTwo (AtLeastTwo (AtLeastTwo))
@@ -32,14 +32,14 @@ import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced)
 import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
-genCsv :: Gen Char -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2)
+genCsv :: Gen Separator -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2)
 genCsv sep spc s1 s2 =
   let rs = genRecords spc s2
       e  = genFinalRecord spc s1 s2
       h = Gen.maybe (genHeader spc s2 genNewline)
   in  Csv <$> sep <*> h <*> rs <*> e
 
-genCsvWithHeadedness :: Gen Char -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2, Headedness)
+genCsvWithHeadedness :: Gen Separator -> Gen Spaces -> Gen s1 -> Gen s2 -> Gen (Csv s1 s2, Headedness)
 genCsvWithHeadedness sep spc s1 s2 = fmap (\c -> (c, headedness c)) (genCsv sep spc s1 s2)
 
 genNewline :: Gen Newline
@@ -47,7 +47,7 @@ genNewline =
   -- TODO put CR back in
   Gen.element [CRLF, LF]
 
-genSep :: Gen Char
+genSep :: Gen Separator
 genSep =
   Gen.element ['|', ',']
 

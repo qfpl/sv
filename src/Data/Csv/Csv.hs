@@ -49,7 +49,7 @@ import Text.Newline       (Newline)
 --   as well.
 data Csv s1 s2 =
   Csv {
-    _csvSeparator :: Char
+    _csvSeparator :: Separator
   , _csvHeader :: Maybe (Header s2)
   , _csvInitialRecords :: Records s2
   , _csvFinalRecord :: FinalRecord s1 s2
@@ -58,7 +58,7 @@ data Csv s1 s2 =
 
 class HasCsv c s1 s2 | c -> s1 s2 where
   csv :: Lens' c (Csv s1 s2)
-  csvSeparator :: Lens' c Char
+  csvSeparator :: Lens' c Separator
   {-# INLINE csvSeparator #-}
   csvHeader :: Lens' c (Maybe (Header s2))
   {-# INLINE csvHeader #-}
@@ -87,14 +87,14 @@ instance HasCsv (Csv s1 s2) s1 s2 where
     fmap (Csv x1 x2 x3) (f x4)
 
 -- | Convenience constructor for CSV
-mkCsv :: Char -> Maybe (Header s2) -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
+mkCsv :: Separator -> Maybe (Header s2) -> FinalRecord s1 s2 -> Records s2 -> Csv s1 s2
 mkCsv c h ns rs = Csv c h rs ns
 
 -- | Convenience constructor for CSV
-mkCsv' :: Char -> Maybe (Header s2) -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
+mkCsv' :: Separator -> Maybe (Header s2) -> FinalRecord s1 s2 -> Pesarated Newline (Record s2) -> Csv s1 s2
 mkCsv' c h ns = mkCsv c h ns . Records
 
-empty :: Char -> Csv s1 s2
+empty :: Separator -> Csv s1 s2
 empty c = Csv c noHeader mempty noFinal
 
 instance Functor (Csv s) where
