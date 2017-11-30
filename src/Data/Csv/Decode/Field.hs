@@ -26,7 +26,7 @@ runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
 
 (==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
 (==<<) f (FieldDecode c) =
-  FieldDecode (rmapC (flip bindValidation (view _AccValidation . f)) c)
+  FieldDecode (rmapC (`bindValidation` (view _AccValidation . f)) c)
 infixr 1 ==<<
 
 (>>==) :: FieldDecode e s a -> (a -> DecodeValidation e b) -> FieldDecode e s b

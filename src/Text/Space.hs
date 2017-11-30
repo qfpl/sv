@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- | Large chunks of only space characters, represented efficiently as integers
 module Text.Space
   ( HorizontalSpace (Space, Tab)

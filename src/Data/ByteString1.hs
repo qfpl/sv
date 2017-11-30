@@ -10,4 +10,4 @@ newtype ByteString1 =
   deriving (Eq, Ord)
 
 fromByteString :: ByteString -> Maybe ByteString1
-fromByteString bs = if (not (BS.null bs)) then Just (ByteString1 bs) else Nothing
+fromByteString bs = if not (BS.null bs) then Just (ByteString1 bs) else Nothing

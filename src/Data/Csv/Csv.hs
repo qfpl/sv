@@ -80,7 +80,7 @@ instance HasCsv (Csv s1 s2) s1 s2 where
   csvSeparator f (Csv x1 x2 x3 x4) =
     fmap (\y -> Csv y x2 x3 x4) (f x1)
   csvHeader f (Csv x1 x2 x3 x4) =
-    fmap (\y -> (Csv x1 y x3 x4)) (f x2)
+    fmap (\y -> Csv x1 y x3 x4) (f x2)
   csvInitialRecords f (Csv x1 x2 x3 x4) =
     fmap (\y -> Csv x1 x2 y x4) (f x3)
   csvFinalRecord f (Csv x1 x2 x3 x4) =
@@ -160,10 +160,10 @@ instance HasHeader (Header s) s where
   {-# INLINE headerNewline #-}
   {-# INLINE headerRecord #-}
   header = id
-  headerNewline f_ayHZ (Header x1_ayI0 x2_ayI1)
-    = fmap (\ y1_ayI2 -> Header x1_ayI0 y1_ayI2) (f_ayHZ x2_ayI1)
-  headerRecord f_ayI3 (Header x1_ayI4 x2_ayI5)
-    = fmap (\ y1_ayI6 -> Header y1_ayI6 x2_ayI5) (f_ayI3 x1_ayI4)
+  headerNewline f (Header x1 x2)
+    = fmap (Header x1) (f x2)
+  headerRecord f (Header x1 x2)
+    = fmap (\y -> Header y x2) (f x1)
 
 noHeader :: Maybe (Header s)
 noHeader = Nothing

@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 module Data.Csv.Decode.Error (
   DecodeError (..)
 , DecodeErrors (..)

@@ -177,4 +177,4 @@ named name =
       n'' = fromString (n' (toString name))
       space = " "
   in  decodeReadWithMsg $ \bs ->
-        mconcat (["Couldn't parse \"", retext bs, "\" as a", n'', space, retext name])
+        mconcat ["Couldn't parse \"", retext bs, "\" as a", n'', space, retext name]
