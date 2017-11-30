@@ -3,7 +3,49 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.Decode where
+module Data.Csv.Decode (
+  FieldDecode (FieldDecode, unwrapFieldDecode)
+, runFieldDecode
+, (==<<)
+, (>>==)
+, DecodeState (DecodeState, getDecodeState)
+, decodeState
+, runDecodeState
+, fieldDecode
+, fieldDecode_
+, decodeMay
+, decodeMay'
+, RowDecode (RowDecode, unwrapRowDecode)
+, rowDecode
+, runRowDecode
+, row
+, (<&>)
+, decode
+, parseDecode
+, decodeFromFile
+, contents
+, byteString
+, utf8
+, lazyByteString
+, string
+, lazyText
+, trimmed
+, ignore
+, replace
+, unit
+, int
+, integer
+, float
+, double
+, choice
+, choiceE
+, orElse
+, withDefault
+, categorical
+, decodeRead
+, decodeRead'
+, decodeReadWithMsg
+) where
 
 import Control.Lens (view, alaf)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
@@ -17,11 +59,9 @@ import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Maybe (listToMaybe)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
-import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -31,7 +71,7 @@ import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, 
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
 import Data.Csv.Csv (Csv, Headedness, records)
-import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, badDecode, decodeError, expectedEndOfRow, unexpectedEndOfRow)
+import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, badDecode, decodeError, expectedEndOfRow, unexpectedEndOfRow, resultToDecodeError)
 import Data.Csv.Field (Field, FieldContents, fieldContents)
 import Data.Csv.Parser (separatedValues)
 import Data.Csv.Record (Record, _fields)
@@ -87,9 +127,6 @@ fieldDecode_ f = FieldDecode . Compose . state $ \l ->
 fieldDecode :: FieldContents s => (s -> DecodeValidation e a) -> FieldDecode e s a
 fieldDecode f = fieldDecode_ (f . fieldContents)
 
-contents :: FieldContents s => FieldDecode e s s
-contents = fieldDecode AccSuccess
-
 decodeMay :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 decodeMay ab e a = decodeMay' e (ab a)
 
@@ -116,8 +153,8 @@ row a = rowDecode $ \rs ->
 (<&>) ab a = row (ab <*> a)
 infixl 4 <&>
 
-decodeCsv :: AsNonEmpty t s => RowDecode e s a -> Csv t s -> DecodeValidation e [a]
-decodeCsv r = traverse (runRowDecode r) . records
+decode :: AsNonEmpty t s => RowDecode e s a -> Csv t s -> DecodeValidation e [a]
+decode r = traverse (runRowDecode r) . records
 
 parseDecode ::
   (Textual s, AsNonEmpty t s, IsString1 t)
@@ -126,11 +163,20 @@ parseDecode ::
   -> s
   -> Result (DecodeValidation e [a])
 parseDecode d h =
-  fmap (decodeCsv d) . parseByteString (separatedValues ',' h) mempty . toByteString
+  fmap (decode d) . parseByteString (separatedValues ',' h) mempty . toByteString
 
-fileDecode :: (MonadIO m, AsNonEmpty t s, Textual s, IsString1 t) => RowDecode e s a -> Headedness -> FilePath -> m (Result (DecodeValidation e [a]))
-fileDecode d h =
-  fmap (fmap (decodeCsv d)) . parseFromFileEx (separatedValues ',' h)
+decodeFromFile ::
+  (MonadIO m, Textual e, Textual s, IsString1 t, AsNonEmpty t s)
+  => RowDecode e s a
+  -> Headedness
+  -> FilePath
+  -> m (DecodeValidation e [a])
+decodeFromFile d h fp =
+  let decodeResult r = resultToDecodeError r `bindValidation` decode d
+  in  decodeResult <$> parseFromFileEx (separatedValues ',' h) fp
+
+contents :: FieldContents s => FieldDecode e s s
+contents = fieldDecode AccSuccess
 
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents
@@ -203,13 +249,13 @@ categorical as =
     alaf First foldMap (go s) as'
 
 decodeRead :: (Readable a, FieldContents s, Textual e) => FieldDecode e s a
-decodeRead = decodeReadWith ((<>) "Couldn't parse " . retext)
+decodeRead = decodeReadWithMsg (mappend "Couldn't parse " . retext)
 
 decodeRead' :: (Textual e, Readable a) => e -> FieldDecode e ByteString a
-decodeRead' e = decodeReadWith (const e)
+decodeRead' e = decodeReadWithMsg (const e)
 
-decodeReadWith :: (Textual e, FieldContents s, Semigroup e, Readable a) => (s -> e) -> FieldDecode e s a
-decodeReadWith e = trimmed >>== \c ->
+decodeReadWithMsg :: (FieldContents s, Textual e, Readable a) => (s -> e) -> FieldDecode e s a
+decodeReadWithMsg e = trimmed >>== \c ->
   maybe (badDecode (e c)) pure . fromBS . toByteString $ c
 
 named :: (Readable a, FieldContents s, Textual e) => s -> FieldDecode e s a
@@ -220,4 +266,5 @@ named name =
       n' = foldMap n . listToMaybe
       n'' = fromString (n' (toString name))
       space = " "
-  in  decodeReadWith (\bs -> sconcat ("Couldn't parse \"" :| [retext bs, "\" as a", n'', space, retext name]))
+  in  decodeReadWithMsg $ \bs ->
+        mconcat (["Couldn't parse \"", retext bs, "\" as a", n'', space, retext name])

@@ -30,7 +30,7 @@ import qualified Data.Text.Lazy.Encoding as LT
 
 import qualified Data.ByteString1 as B1
 
-class (Semigroup a, IsString a) => Textual a where
+class (Semigroup a, Monoid a, IsString a) => Textual a where
   toString :: a -> String
   toByteString :: a -> B.ByteString
   fromByteString :: B.ByteString -> a
