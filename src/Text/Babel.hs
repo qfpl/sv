@@ -3,9 +3,7 @@
 module Text.Babel 
   (
     Textual (..)
-  , retext
   , showT
-  -- reexports
   , IsString (fromString)
   , IsString1 (fromString1)
   )
@@ -41,14 +39,7 @@ class (Semigroup a, Monoid a, IsString a) => Textual a where
   toLazyText :: a -> LT.Text
   fromLazyText :: LT.Text -> a
   trim :: a -> a
-
-retext :: (Textual a, Textual b) => a -> b
-retext = fromLazyByteString . toLazyByteString
-{-# NOINLINE retext #-}
-
-{-# RULES
-"retext/id" retext = id
-  #-}
+  retext :: Textual b => a -> b
 
 instance (c ~ Char) => Textual [c] where
   toString = id
@@ -61,6 +52,7 @@ instance (c ~ Char) => Textual [c] where
   toLazyText = LT.pack . toString
   fromLazyText = fromString . LT.unpack
   trim = L.reverse . L.dropWhile C.isSpace . L.reverse . L.dropWhile C.isSpace
+  retext = fromString
 
 instance Textual T.Text where
   toString = T.unpack
@@ -73,6 +65,7 @@ instance Textual T.Text where
   toLazyText = LT.fromStrict
   fromLazyText = LT.toStrict
   trim = T.strip
+  retext = fromText
 
 instance Textual LT.Text where
   toString = LT.unpack
@@ -85,6 +78,7 @@ instance Textual LT.Text where
   toLazyText = id
   fromLazyText = id
   trim = LT.strip
+  retext = fromLazyText
 
 instance Textual TB.Builder where
   toString = toString . toLazyText
@@ -97,6 +91,7 @@ instance Textual TB.Builder where
   toLazyText = TB.toLazyText
   fromLazyText = TB.fromLazyText
   trim = fromLazyText . trim . toLazyText
+  retext = fromLazyText . toLazyText
 
 instance Textual B.ByteString where
   toString = BC.unpack
@@ -109,6 +104,7 @@ instance Textual B.ByteString where
   toLazyText = toLazyText . toText
   fromLazyText = fromText . fromLazyText
   trim = B.reverse . BC.dropWhile C.isSpace . B.reverse . BC.dropWhile C.isSpace
+  retext = fromByteString
 
 instance Textual LB.ByteString where
   toString = LBC.unpack
@@ -121,6 +117,7 @@ instance Textual LB.ByteString where
   toLazyText = fromLazyByteString
   fromLazyText = toLazyByteString
   trim = LB.reverse . LBC.dropWhile C.isSpace . LB.reverse . LBC.dropWhile C.isSpace
+  retext = fromLazyByteString
 
 instance Textual BSB.Builder where
   toString = toString . toLazyByteString
@@ -133,6 +130,7 @@ instance Textual BSB.Builder where
   toLazyText = toLazyText . toLazyByteString
   fromLazyText = fromLazyByteString . toLazyByteString
   trim = fromLazyByteString . trim . toLazyByteString
+  retext = fromLazyText . toLazyText
 
 showT :: (Show a, Textual t) => a -> t
 showT = fromString . show

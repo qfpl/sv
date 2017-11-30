@@ -2,12 +2,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Data.List.NonEmpty.Extra where
+module Data.List.NonEmpty.Extra (
+  AsNonEmpty (_NonEmpty)
+) where
 
 import Control.Lens ((^.), Prism', prism', preview, review)
 import Data.Bifunctor (first)
 import Data.ByteString  (ByteString)
-import Data.ByteString1 (ByteString1, fromByteString, toByteString)
+import Data.ByteString1 (ByteString1, byteString1, toByteString)
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.Text as T
@@ -30,7 +32,7 @@ instance AsNonEmpty Text1 T.Text where
   _NonEmpty = _Text1
 
 instance AsNonEmpty ByteString1 ByteString where
-  _NonEmpty = prism' toByteString fromByteString
+  _NonEmpty = prism' toByteString byteString1
 
 instance AsNonEmpty s1 s2 => AsNonEmpty (NonEmptyRecord s1 s2) (Record s2) where
   _NonEmpty = prism'

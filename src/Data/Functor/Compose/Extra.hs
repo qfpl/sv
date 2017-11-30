@@ -1,6 +1,11 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Data.Functor.Compose.Extra where
+module Data.Functor.Compose.Extra (
+  lmapC
+, rmapC
+, injl
+, injr
+) where
 
 import Data.Functor.Compose (Compose (Compose))
 

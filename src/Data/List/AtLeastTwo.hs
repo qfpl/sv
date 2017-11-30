@@ -2,7 +2,12 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Data.List.AtLeastTwo where
+module Data.List.AtLeastTwo (
+  AtLeastTwo (AtLeastTwo, _car, _cdr)
+, mkAtLeastTwo
+, HasAtLeastTwo (atLeastTwo, car, cdr)
+, AsAtLeastTwo (_AtLeastTwo)
+) where
 
 import Control.Lens (Lens', _Wrapped, Prism', prism')
 import Control.Lens.Tuple (Field1 (_1), Field2 (_2))
