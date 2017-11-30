@@ -1,29 +1,26 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Data.Csv.Decode.Error where
+module Data.Csv.Decode.Error (
+  DecodeError (..)
+, DecodeErrors (..)
+, DecodeValidation
+, AccValidation (AccFailure, AccSuccess)
+, bindValidation
+, decodeError
+, unexpectedEndOfRow
+, expectedEndOfRow
+, unknownCanonicalValue
+, badParse
+, badDecode
+, resultToDecodeError
+) where
 
-import Data.List.NonEmpty
-import Data.Semigroup
-import Data.Validation
+import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
 import Text.Trifecta (Result (Success, Failure), _errDoc)
 
+import Data.Csv.Decode.Type
 import Data.Csv.Field
 import Text.Babel (Textual, showT)
-
--- TODO eventually give this type a much better show
-data DecodeError e =
-  UnexpectedEndOfRow
-  | ExpectedEndOfRow [Field e]
-  | UnknownCanonicalValue e [(e, [e])]
-  | BadParse e
-  | BadDecode e
-  deriving (Eq, Ord, Show)
-
-newtype DecodeErrors e =
-  DecodeErrors (NonEmpty (DecodeError e))
-  deriving (Eq, Ord, Show, Semigroup)
-
-type DecodeValidation e = AccValidation (DecodeErrors e)
 
 decodeError :: DecodeError e -> DecodeValidation e a
 decodeError = AccFailure . DecodeErrors . pure

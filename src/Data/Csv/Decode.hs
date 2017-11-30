@@ -1,26 +1,8 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Csv.Decode (
-  FieldDecode (FieldDecode, unwrapFieldDecode)
-, runFieldDecode
-, (==<<)
-, (>>==)
-, DecodeState (DecodeState, getDecodeState)
-, decodeState
-, runDecodeState
-, fieldDecode
-, fieldDecode_
-, decodeMay
-, decodeMay'
-, RowDecode (RowDecode, unwrapRowDecode)
-, rowDecode
-, runRowDecode
-, row
-, (<&>)
-, decode
+  decode
 , parseDecode
 , decodeFromFile
 , contents
@@ -45,20 +27,21 @@ module Data.Csv.Decode (
 , decodeRead
 , decodeRead'
 , decodeReadWithMsg
+, module Data.Csv.Decode.Error
+, module Data.Csv.Decode.Field
+, module Data.Csv.Decode.Row
+, module Data.Csv.Decode.State
+, module Data.Csv.Decode.Type
+, FieldContents
 ) where
 
-import Control.Lens (view, alaf)
-import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
-import Control.Monad.State (MonadIO, MonadState, State, runState, state)
+import Control.Lens (alaf)
+import Control.Monad.IO.Class (MonadIO)
 import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
-import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
-import Data.Functor.Apply (Apply)
-import Data.Functor.Compose (Compose (Compose, getCompose))
-import Data.Functor.Compose.Extra (rmapC)
 import Data.Maybe (listToMaybe)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
@@ -67,91 +50,18 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
-import Data.Validation (AccValidation (AccSuccess, AccFailure), _AccValidation, bindValidation)
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
 import Data.Csv.Csv (Csv, Headedness, records)
-import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, badDecode, decodeError, expectedEndOfRow, unexpectedEndOfRow, resultToDecodeError)
-import Data.Csv.Field (Field, FieldContents, fieldContents)
+import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
+import Data.Csv.Decode.Field
+import Data.Csv.Decode.Row
+import Data.Csv.Decode.State
+import Data.Csv.Decode.Type
+import Data.Csv.Field (FieldContents)
 import Data.Csv.Parser (separatedValues)
-import Data.Csv.Record (Record, _fields)
 import Data.List.NonEmpty.Extra (AsNonEmpty)
 import Text.Babel (Textual, IsString1, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
-
-newtype FieldDecode e s a =
-  FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
-  deriving (Functor, Apply, Applicative)
-
-instance Alt (FieldDecode e s) where
-  FieldDecode (Compose as) <!> FieldDecode (Compose bs) =
-    FieldDecode . Compose . decodeState $ \fs ->
-      case runDecodeState as fs of
-        (a, gs) -> case runDecodeState bs fs of
-          (b, hs) ->
-            let a' = fmap (,gs) a
-                b' = fmap (,hs) b
-            in  case a' <!> b' of
-                  AccFailure e -> (AccFailure e, hs)
-                  AccSuccess (z,js) -> (AccSuccess z, js)
-
-runFieldDecode :: FieldDecode e s a -> [Field s] -> (DecodeValidation e a, [Field s])
-runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
-
-(==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
-(==<<) f (FieldDecode c) =
-  FieldDecode (rmapC (flip bindValidation (view _AccValidation . f)) c)
-
-infixr 1 ==<<
-
-(>>==) :: FieldDecode e s a -> (a -> DecodeValidation e b) -> FieldDecode e s b
-(>>==) = flip (==<<)
-
-infixl 1 >>==
-
-newtype DecodeState s a =
-  DecodeState { getDecodeState :: State [Field s] a }
-  deriving (Functor, Apply, Applicative, Monad, MonadState [Field s])
-
-decodeState :: ([Field s] -> (a, [Field s])) -> DecodeState s a
-decodeState = DecodeState . state
-
-runDecodeState :: DecodeState s a -> [Field s] -> (a, [Field s])
-runDecodeState = runState . getDecodeState
-
-fieldDecode_ :: (Field s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode_ f = FieldDecode . Compose . state $ \l ->
-  case l of
-    [] -> (unexpectedEndOfRow, [])
-    (x:xs) -> (f x, xs)
-
-fieldDecode :: FieldContents s => (s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode f = fieldDecode_ (f . fieldContents)
-
-decodeMay :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
-decodeMay ab e a = decodeMay' e (ab a)
-
-decodeMay' :: DecodeError e -> Maybe b -> DecodeValidation e b
-decodeMay' e = maybe (decodeError e) pure
-
-newtype RowDecode e s a =
-  RowDecode { unwrapRowDecode :: ReaderT (Record s) (DecodeValidation e) a }
-  deriving (Functor, Apply, Applicative)
-
-rowDecode :: (Record s -> DecodeValidation e a) -> RowDecode e s a
-rowDecode = RowDecode . ReaderT
-
-runRowDecode :: RowDecode e s a -> Record s -> DecodeValidation e a
-runRowDecode = runReaderT . unwrapRowDecode
-
-row :: (Textual e, Textual s) => FieldDecode e s a -> RowDecode e s a
-row a = rowDecode $ \rs ->
-  case runFieldDecode a . toList . _fields $ rs of
-    (v, []) -> v
-    (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap retext) xs)
-
-(<&>) :: (Textual s, Textual e) => FieldDecode e s (a -> b) -> FieldDecode e s a -> RowDecode e s b
-(<&>) ab a = row (ab <*> a)
-infixl 4 <&>
 
 decode :: AsNonEmpty t s => RowDecode e s a -> Csv t s -> DecodeValidation e [a]
 decode r = traverse (runRowDecode r) . records
@@ -176,7 +86,7 @@ decodeFromFile d h fp =
   in  decodeResult <$> parseFromFileEx (separatedValues ',' h) fp
 
 contents :: FieldContents s => FieldDecode e s s
-contents = fieldDecode AccSuccess
+contents = fieldDecode pure
 
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents

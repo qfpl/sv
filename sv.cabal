@@ -24,6 +24,10 @@ library
                        , Data.Csv.Csv
                        , Data.Csv.Decode
                        , Data.Csv.Decode.Error
+                       , Data.Csv.Decode.Field
+                       , Data.Csv.Decode.Row
+                       , Data.Csv.Decode.State
+                       , Data.Csv.Decode.Type
                        , Data.Csv.Field
                        , Data.Csv.Parser
                        , Data.Csv.Parser.Internal
