@@ -1,5 +1,5 @@
-{-# language RankNTypes #-}
-{-# language OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Csv.PrettyTest (test_Pretty) where
 

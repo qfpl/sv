@@ -3,4 +3,3 @@ module Data.Csv.Parser (
 ) where
 
 import Data.Csv.Parser.Internal (separatedValues)
-
