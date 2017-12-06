@@ -3,28 +3,27 @@
 
 module Data.Csv.ParserTest (test_Parser) where
 
-import           Control.Lens         ((^.), review)
+import           Data.ByteString      (ByteString)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
 import           Data.Text            (Text)
-import qualified Data.Text as Text    (singleton)
-import           Data.Text1           (Text1, packed1)
 import           Test.Tasty           (TestName, TestTree, testGroup)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
 import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
-import           Text.Parsec          (ParseError, parse)
+import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
-import           Data.Csv.Csv         (Csv, mkCsv', comma, pipe, Headedness (Unheaded))
-import           Data.Csv.Field       (Field, Field' (QuotedF, UnquotedF), downmix, upmix)
-import           Data.Csv.Parser.Internal (ending, field', doubleQuotedField, record, separatedValues, singleQuotedField)
-import           Data.Csv.Record      (Record (Record), NonEmptyRecord (SingleFieldNER), final, noFinal, FinalRecord, singleFinal)
-import           Data.Separated       (sprinkle)
+import           Data.Csv.Csv         (Csv, mkCsv', comma, pipe, tab, Headedness (Unheaded), Separator)
+import           Data.Csv.Field       (Field (QuotedF, UnquotedF))
+import           Data.Csv.Parser.Internal (field, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Record      (Record (Record))
+import           Data.Separated       (skrinpleMay)
+import           Text.Babel           (singleton)
 import           Text.Between         (uniform)
 import           Text.Escaped         (escapeNel, noEscape)
 import           Text.Space           (manySpaces, spaced)
-import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
+import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteToString)
 
 test_Parser :: TestTree
 test_Parser =
@@ -33,34 +32,45 @@ test_Parser =
   , doubleQuotedFieldTest
   , fieldTest
   , recordTest
-  , finalRecordTest
   , csvTest
   , psvTest
+  , tsvTest
+  , nsvTest
+  , crsvTest
+  , bssvTest
   ]
+
+r2e :: Result a -> Either String a
+r2e r = case r of
+  Success a -> Right a
+  Failure e -> Left (show (_errDoc e))
 
 (@?=/) ::
   (Show a, Show b, Eq a, Eq b)
   => Either a b
   -> b
   -> Assertion
-(@?=/) l r = l @?= Right r
+(@?=/) l r = l @?= pure r
 
 qd, qs :: a -> Quoted a
 qd = Quoted DoubleQuote . noEscape
 qs = Quoted SingleQuote . noEscape
+qsr :: s -> Record s
+qsr = Record . pure . nospc . qs
 uq :: s -> Field s
-uq = downmix . UnquotedF
+uq = UnquotedF
 uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
-nospc :: Quoted s2 -> Field' s1 s2
+nospc :: Quoted s -> Field s
 nospc = QuotedF . uniform mempty
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field' Text Text)) -> TestName -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (Field Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
-  let p = parse parser "" . concat
-      q = [review quoteChar quote]
+  let p :: [ByteString] -> Either String (Field Text)
+      p = r2e . parseByteString parser mempty . mconcat
+      q = quoteToString quote
       qq = Quoted quote . noEscape
   in testGroup name [
     testCase "empty" $
@@ -87,35 +97,35 @@ doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" Do
 
 fieldTest :: TestTree
 fieldTest =
-  let p :: Text -> Either ParseError (Field' Text Text)
-      p = parse (field' comma) ""
+  let p :: ByteString -> Either String (Field Text)
+      p = r2e . parseByteString (field comma) mempty
   in  testGroup "field" [
     testCase "doublequoted" $
       p "\"hello\"" @?=/ nospc (qd "hello")
   , testCase "singlequoted" $
       p "'goodbye'" @?=/ nospc (qs "goodbye")
   , testCase "unquoted" $
-      p "yes" @?=/ upmix (uq "yes")
+      p "yes" @?=/ uq "yes"
   , testCase "spaced doublequoted" $
      p "       \" spaces  \"    " @?=/ QuotedF (spaced (manySpaces 7) (manySpaces 4) (qd " spaces  "))
   , testCase "spaced singlequoted" $
      p "        ' more spaces ' " @?=/ QuotedF (spaced (manySpaces 8) (manySpaces 1) (qs " more spaces "))
   , testCase "spaced unquoted" $
-     p "  text  " @?=/ upmix (uq "  text  ")
+     p "  text  " @?=/ uq "  text  "
   , testCase "fields can include the separator in single quotes" $
      p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $
      p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
   , testCase "unquoted fields stop at the separator (1)" $
-     p "close,to,the,edge" @?=/ upmix (uq "close")
+     p "close,to,the,edge" @?=/ uq "close"
   , testCase "unquoted fields stop at the separator (2)" $
-     p ",close,to,the,edge" @?=/ upmix (uq "")
+     p ",close,to,the,edge" @?=/ uq ""
   ]
 
 recordTest :: TestTree
 recordTest =
-  let p :: Text -> Either ParseError (Record Text)
-      p = parse (record comma) ""
+  let p :: ByteString -> Either String (Record Text)
+      p = r2e . parseByteString (record comma) mempty
   in  testGroup "record" [
     testCase "single field" $
       p "Yes" @?=/ uqa (pure "Yes")
@@ -131,51 +141,53 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
-sqf :: Text -> FinalRecord b Text
-sqf = final . SingleFieldNER . QuotedF . pure . qs
-uqf :: NonEmpty Char -> FinalRecord Text1 b
-uqf = final . SingleFieldNER . UnquotedF . (^. packed1)
-
-finalRecordTest :: TestTree
-finalRecordTest =
-  let p :: Text -> Either ParseError (FinalRecord Text1 Text)
-      p = parse (ending comma) ""
-  in  testGroup "finalRecord" [
-    testCase "single character" $
-      p "a" @?=/ uqf ('a':|[])
-  , testCase "empty string" $
-      p "''" @?=/ sqf ""
-  ]
-
-separatedValuesTest :: Char -> Newline -> TestTree
-separatedValuesTest sep nl =
-  let p :: Text -> Either ParseError (Csv Text1 Text)
-      p = parse (separatedValues sep Unheaded) ""
-      ps = parse (separatedValues sep Unheaded) "" . fold
-      csv :: [Record s2] -> FinalRecord s1 s2 -> Csv s1 s2
-      csv rs e = mkCsv' sep Nothing e $ sprinkle nl rs
-      s = Text.singleton sep
+separatedValuesTest :: Separator -> Newline -> Bool -> TestTree
+separatedValuesTest sep nl terminatedByNewline =
+  let p :: ByteString -> Either String (Csv Text)
+      p = r2e . parseByteString (separatedValues sep Unheaded) mempty
+      ps = p . fold
+      csv :: [Record s] -> [Newline] -> Csv s
+      csv rs e = mkCsv' sep Nothing e $ skrinpleMay nl rs
+      s = singleton sep
       nls = newlineText nl
+      terminator = if terminatedByNewline then [nl] else []
+      termStr = foldMap newlineText terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
-      p "" @?=/ csv [] noFinal
+      ps ["", termStr] @?=/ csv [] terminator
   , testCase "single empty quotes field" $ 
-      p "''" @?=/ csv [] (sqf "")
+      ps ["''", termStr] @?=/ csv [qsr ""] terminator
   , testCase "single field, single record" $
-      p "one" @?=/ csv [] (singleFinal 'o' "ne")
+      ps ["one", termStr] @?=/ csv [uqa (pure "one")] terminator
   , testCase "single field, multiple records" $
-      ps ["one",nls,"un"] @?=/ csv [uqa (pure "one")] (singleFinal 'u' "n")
+      ps ["one",nls,"un",termStr] @?=/ csv [uqa (pure "one"), uqa (pure "un")] terminator
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two", nls] @?=/ csv (uqaa (pure ("one":|["two"]))) noFinal
+      ps ["one", s, "two",termStr] @?=/ csv (uqaa (pure ("one":|["two"]))) terminator
   , testCase "multiple fields, multiple records" $
-      ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois", nls]
-        @?=/ csv (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) noFinal
+      ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois",termStr]
+        @?=/ csv (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
   ]
 
-csvTest, psvTest :: TestTree
-csvTest =
-  testGroup "csv" $ fmap (separatedValuesTest comma) [CR, LF, CRLF]
+svTest :: String -> Separator -> TestTree
+svTest name sep =
+  testGroup name $ separatedValuesTest sep <$> [CR, LF, CRLF] <*> [False, True]
 
-psvTest =
-  testGroup "psv" $ fmap (separatedValuesTest pipe) [CR, LF, CRLF]
+csvTest :: TestTree
+csvTest = svTest "csv" comma
 
+psvTest :: TestTree
+psvTest = svTest "psv" pipe
+
+tsvTest :: TestTree
+tsvTest = svTest "tsv" tab
+
+nsvTest :: TestTree
+nsvTest = svTest "NULL separated values" '\0'
+
+crsvTest :: TestTree
+crsvTest =
+  testGroup "carriage return separated values" $
+    separatedValuesTest '\r' <$> [LF] <*> [False, True]
+
+bssvTest :: TestTree
+bssvTest = svTest "backspace separated values" '\BS'

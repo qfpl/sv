@@ -8,21 +8,23 @@ module Text.Quote (
   , AsQuote (_Quote, _SingleQuote, _DoubleQuote)
   , quoteChar
   , quoteText
+  , quoteToString
   , Quoted (Quoted, _quote, _value)
   , HasQuoted (quoted, quote, value)
   , expand
 ) where
 
-import Control.Lens (Lens', Prism', prism, prism')
+import Control.Lens (Lens', Prism', prism, prism', review)
 import Control.Monad ((>=>))
 import Data.Bifunctor (first)
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
+import Data.String (IsString (fromString))
 import Data.Text (Text)
 import qualified Data.Text as Text (null, singleton, uncons)
 import Data.Traversable (Traversable (traverse))
 
-import Text.Escaped       (Escaped, Escaped')
+import Text.Escaped (Escaped, Escaped')
 
 -- | A sum type for quote characters. Either single or double quotes.
 data Quote =
@@ -68,6 +70,9 @@ singletonText =
 -- Useful when concatenating strings
 quoteText :: Prism' Text Quote
 quoteText = singletonText . quoteChar
+
+quoteToString :: IsString a => Quote -> a
+quoteToString = fromString . pure . review quoteChar
 
 -- | A 'Quoted a' is a collection of 'a's separated by escapes given by 'quote'
 data Quoted a =

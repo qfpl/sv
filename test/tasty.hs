@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Test.Tasty
+import Test.Tasty (defaultMain, testGroup)
 
 import Data.Csv.ParserTest (test_Parser)
 import Data.Csv.PrettyTest (test_Pretty)

@@ -1,12 +1,8 @@
 module Data.Csv.Pretty.Internal (
     prettyField
-  , prettyField'
   , prettyRecord
-  , prettyPesarated
+  , prettyPesarated1
   , prettyRecords
-  , prettyFinalRecord
-  , prettyNonEmptyRecord
-  , prettyNonEmptyString
   , prettyCsv
 ) where
 
@@ -14,63 +10,46 @@ import Control.Lens             (view)
 import Data.Bifoldable          (Bifoldable (bifoldMap))
 import Data.Monoid              ((<>))
 import Data.Semigroup.Foldable  (intercalate1)
-import Data.Semigroup.Foldable.Extra (toNonEmpty)
 import Data.Semigroup           (Semigroup)
 
 import Data.Csv.Csv    (Csv (Csv), Header (Header))
-import Data.Csv.Field  (Field, Field' (QuotedF, UnquotedF), upmix)
-import Data.Csv.Pretty.Config (PrettyConfigC, PrettyConfig, string1, string2, setSeparator, separator, newline, space, quote)
-import Data.Csv.Record (Record (Record), FinalRecord, HasFinalRecord (maybeNer), Records, HasRecords (theRecords), NonEmptyRecord (SingleFieldNER, MultiFieldNER))
-import Data.Foldable   (Foldable, fold, toList)
+import Data.Csv.Field  (Field (QuotedF, UnquotedF))
+import Data.Csv.Pretty.Config (PrettyConfigC, PrettyConfig, string, setSeparator, separator, newline, space, quote)
+import Data.Csv.Record (Record (Record), Records, HasRecords (theRecords))
+import Data.Foldable   (fold)
 import Text.Between    (Between (Between))
 import Text.Newline    (Newline)
 import Text.Quote      (Quoted (Quoted))
 
-prettyField' :: (Monoid m, Semigroup m) => PrettyConfig s1 s2 m -> Field' s1 s2 -> m
-prettyField' config f =
+prettyField :: (Monoid m, Semigroup m) => PrettyConfig s m -> Field s -> m
+prettyField config f =
   case f of
     QuotedF (Between b (Quoted q ss) t) ->
       let c = quote config q
           cc = c <> c
           spc = space config
-          s = bifoldMap (const cc) (string2 config) ss
+          s = bifoldMap (const cc) (string config) ss
       in  fold [spc b, c, s, c, spc t]
-    UnquotedF s -> string1 config s
+    UnquotedF s -> string config s
 
-prettyField :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Field s2 -> m
-prettyField c =
-  prettyField' c {string1 = string2 c} . upmix
-
-prettyFinalRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> FinalRecord s1 s2 -> m
-prettyFinalRecord c = foldMap (prettyNonEmptyRecord c) . view maybeNer
-
-prettyPesarated :: (Bifoldable p, Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> p Newline (Record s2) -> m
-prettyPesarated c =
+prettyPesarated1 :: (Bifoldable p, Semigroup m, Monoid m) => PrettyConfig s m -> p Newline (Record s) -> m
+prettyPesarated1 c =
   bifoldMap (newline c) (prettyRecord c)
 
-prettyRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Record s2 -> m
+prettyRecord :: (Semigroup m, Monoid m) => PrettyConfig s m -> Record s -> m
 prettyRecord c (Record fs) =
   let sep = separator c
   in  intercalate1 sep (fmap (prettyField c) fs)
 
-prettyHeader :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Header s2 -> m
+prettyHeader :: (Semigroup m, Monoid m) => PrettyConfig s m -> Header s -> m
 prettyHeader c (Header r n) = prettyRecord c r <> newline c n
 
-prettyNonEmptyString :: Foldable f => f Char -> String
-prettyNonEmptyString = toList
-
-prettyNonEmptyRecord :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> NonEmptyRecord s1 s2 -> m
-prettyNonEmptyRecord c (SingleFieldNER f) =
-  prettyField' c f
-prettyNonEmptyRecord c (MultiFieldNER fs) =
-  prettyRecord c (Record (toNonEmpty fs))
-
-prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s1 s2 m -> Records s2 -> m
+prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s m -> Records s -> m
 prettyRecords c =
-  prettyPesarated c . view theRecords
+  foldMap (prettyPesarated1 c) . view theRecords
 
-prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s1 s2 m -> Csv s1 s2 -> m
+prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s m -> Csv s -> m
 prettyCsv config (Csv c h rs e) =
   let newConfig = setSeparator config c
-  in  foldMap (prettyHeader newConfig) h <> prettyRecords newConfig rs <> prettyFinalRecord newConfig e
+  in  foldMap (prettyHeader newConfig) h <> prettyRecords newConfig rs <> foldMap (newline newConfig) e
 

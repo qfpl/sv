@@ -59,4 +59,3 @@ intOrStringTest =
       case parseDecode v3ios Unheaded csv1 of
         Failure _ -> assertFailure "Parse failed"
         Success z -> z @?= pure csv1'
-

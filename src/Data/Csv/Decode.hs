@@ -52,7 +52,7 @@ import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
-import Data.Csv.Csv (Csv, Headedness, records)
+import Data.Csv.Csv (Csv, Headedness, recordList)
 import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
 import Data.Csv.Decode.Field
 import Data.Csv.Decode.Row
@@ -60,14 +60,13 @@ import Data.Csv.Decode.State
 import Data.Csv.Decode.Type
 import Data.Csv.Field (FieldContents)
 import Data.Csv.Parser (separatedValues)
-import Data.List.NonEmpty.Extra (AsNonEmpty)
-import Text.Babel (Textual, IsString1, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
+import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
-decode :: AsNonEmpty t s => RowDecode e s a -> Csv t s -> DecodeValidation e [a]
-decode r = traverse (runRowDecode r) . records
+decode :: RowDecode e s a -> Csv s -> DecodeValidation e [a]
+decode r = traverse (runRowDecode r) . recordList
 
 parseDecode ::
-  (Textual s, AsNonEmpty t s, IsString1 t)
+  Textual s
   => RowDecode e s a
   -> Headedness
   -> s
@@ -76,7 +75,7 @@ parseDecode d h =
   fmap (decode d) . parseByteString (separatedValues ',' h) mempty . toByteString
 
 decodeFromFile ::
-  (MonadIO m, Textual e, Textual s, IsString1 t, AsNonEmpty t s)
+  (MonadIO m, Textual e, Textual s)
   => RowDecode e s a
   -> Headedness
   -> FilePath

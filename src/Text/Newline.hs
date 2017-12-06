@@ -8,6 +8,7 @@ module Text.Newline (
 ) where
 
 import Control.Lens (Prism', prism, prism')
+import Data.String (IsString (fromString))
 import Data.Text (Text)
 
 -- | Sum type for line endings
@@ -42,8 +43,8 @@ instance AsNewline Newline where
 instance AsNewline Text where
   _Newline = prism' newlineText parseNewline
 
-newlineText :: Newline -> Text
-newlineText n =
+newlineText :: IsString s => Newline -> s
+newlineText n = fromString $
   case n of
     CR -> "\r"
     LF -> "\n"

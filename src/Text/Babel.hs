@@ -4,8 +4,8 @@ module Text.Babel
   (
     Textual (..)
   , showT
+  , singleton
   , IsString (fromString)
-  , IsString1 (fromString1)
   )
 where
 
@@ -16,17 +16,13 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Lazy.Char8 as LBC
 import qualified Data.Char as C
 import qualified Data.List as L
-import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.String (IsString (fromString))
 import Data.Semigroup (Semigroup)
 import qualified Data.Text as T
-import qualified Data.Text1 as T1
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
-
-import qualified Data.ByteString1 as B1
 
 class (Semigroup a, Monoid a, IsString a) => Textual a where
   toString :: a -> String
@@ -135,14 +131,5 @@ instance Textual BSB.Builder where
 showT :: (Show a, Textual t) => a -> t
 showT = fromString . show
 
-class IsString1 a where
-  fromString1 :: NonEmpty Char -> a
-
-instance (a ~ Char) => IsString1 (NonEmpty a) where
-  fromString1 = id
-
-instance IsString1 T1.Text1 where
-  fromString1 (c:|cs) = T1.Text1 c (T.pack cs)
-
-instance IsString1 B1.ByteString1 where
-  fromString1 (c:|cs) = B1.ByteString1 (BC.cons c (fromString cs))
+singleton :: IsString t => Char -> t
+singleton = fromString . pure

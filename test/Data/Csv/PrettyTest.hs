@@ -3,19 +3,16 @@
 
 module Data.Csv.PrettyTest (test_Pretty) where
 
-import Control.Lens         (view)
-import Data.List.NonEmpty   (NonEmpty)
+import Data.ByteString      (ByteString)
 import Data.Text            (Text)
-import Data.Text.Lazy.Builder (toLazyText)
-import Data.Text1           (Text1, packed1)
 import Hedgehog             ((===), Property, Gen, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty           (TestName, TestTree, testGroup)
 import Test.Tasty.Hedgehog  (testProperty)
 import Test.Tasty.HUnit     ((@?=), testCase)
-import Text.Parsec          (parse)
 import Text.Parser.Char     (CharParsing)
+import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import Data.Csv.Csv         (Csv (Csv), Headedness, noHeader, comma)
 import Data.Csv.Field       (unspacedField)
@@ -23,7 +20,8 @@ import Data.Csv.Generators  (genCsvWithHeadedness)
 import Data.Csv.Parser.Internal (field, separatedValues)
 import Data.Csv.Pretty      (prettyCsv, defaultConfig, setSeparator, textConfig)
 import Data.Csv.Pretty.Internal (prettyField)
-import Data.Csv.Record      (NonEmptyRecord (SingleFieldNER), final, noFinal)
+import Data.Csv.Record (emptyRecords, singleton, singletonRecords)
+import Text.Babel           (toByteString)
 import Text.Space           (HorizontalSpace (Space, Tab))
 import Text.Quote           (Quote (SingleQuote))
 
@@ -35,16 +33,22 @@ test_Pretty =
   , csvRoundTrip
   ]
 
-prettyAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> Text) -> TestName -> Text -> TestTree
+-- TODO dedupe this
+r2e :: Result a -> Either String a
+r2e r = case r of
+  Success a -> Right a
+  Failure e -> Left (show (_errDoc e))
+
+prettyAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
 prettyAfterParseRoundTrip parser pretty name s =
   testCase name $
-    fmap pretty (parse parser "" s) @?= Right s
+    fmap (toByteString . pretty) (r2e $ parseByteString parser mempty s) @?= Right s
 
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
   let sep = comma
       config = setSeparator textConfig sep
-      test = prettyAfterParseRoundTrip (field sep) (prettyField config)
+      test = prettyAfterParseRoundTrip (field sep) (toByteString . prettyField config)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -64,10 +68,10 @@ csvPretty =
   let pretty = prettyCsv textConfig
   in  testGroup "csvPretty" [
     testCase "empty" $
-      let subject = Csv comma noHeader mempty noFinal
+      let subject = Csv comma noHeader emptyRecords []
       in  pretty subject @?= ""
   , testCase "empty quotes" $
-      let subject = Csv comma noHeader mempty (final (SingleFieldNER (unspacedField SingleQuote "")))
+      let subject = Csv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote ""))) []
       in pretty subject @?= "''"
   ]
 
@@ -82,14 +86,11 @@ prop_csvRoundTrip =
       genSpaces = Gen.list (Range.linear 0 10) genSpace
       genText :: Gen Text
       genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
-      genNonEmptyString :: Gen (NonEmpty Char)
-      genNonEmptyString = Gen.nonEmpty (Range.linear 0 100) Gen.alphaNum
-      genText1 :: Gen Text1
-      genText1 = view packed1 <$> genNonEmptyString
-      gen = genCsvWithHeadedness (pure comma) genSpaces genText1 genText
-      pretty = toLazyText . prettyCsv defaultConfig
-      parseCsv :: (Monad m, CharParsing m) => Headedness -> m (Csv Text1 Text)
+      gen = genCsvWithHeadedness (pure comma) genSpaces genText
+      pretty = toByteString . prettyCsv defaultConfig
+      parseCsv :: CharParsing m => Headedness -> m (Csv Text)
       parseCsv = separatedValues comma
+      parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen
-    parse (parseCsv h) "" (pretty c) === pure c
+    r2e (fmap pretty (parse h (pretty c))) === pure (pretty c)
