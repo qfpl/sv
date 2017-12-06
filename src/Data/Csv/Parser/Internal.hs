@@ -2,12 +2,16 @@
 
 module Data.Csv.Parser.Internal (
   separatedValues
+  , csv
+  , psv
+  , tsv
   , header
   , field
   , singleQuotedField
   , doubleQuotedField
   , unquotedField
   , record
+  , records
   , ending
 ) where
 
@@ -22,7 +26,7 @@ import           Data.String             (IsString (fromString))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
-import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
+import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
 import           Data.Csv.Field          (Field (UnquotedF, QuotedF))
 import           Data.Csv.Record         (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
@@ -103,10 +107,6 @@ record :: (CharParsing m, Textual s) => Separator -> m (Record s)
 record sep =
   Record <$> (field sep `sepEndByNonEmpty` char sep)
 
-separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Csv s)
-separatedValues sep h =
-  Csv sep <$> header sep h <*> records sep <*> ending
-
 records :: (CharParsing m, Textual s) => Separator -> m (Records s)
 records sep =
   Records <$> optional (
@@ -131,3 +131,16 @@ header :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Maybe (Hea
 header c h = case h of
   Unheaded -> pure noHeader
   Headed -> mkHeader <$> record c <*> newline
+
+separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Csv s)
+separatedValues sep h =
+  Csv sep <$> header sep h <*> records sep <*> ending
+
+csv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+csv = separatedValues comma
+
+psv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+psv = separatedValues pipe
+
+tsv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+tsv = separatedValues tab
