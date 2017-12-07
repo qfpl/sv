@@ -8,7 +8,9 @@ import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
 import           Data.Text            (Text)
+import           Hedgehog
 import           Test.Tasty           (TestName, TestTree, testGroup)
+import           Test.Tasty.Hedgehog  (testProperty)
 import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
 import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
@@ -16,7 +18,8 @@ import           Text.Trifecta        (Result (Success, Failure), parseByteStrin
 
 import           Data.Csv.Csv         (Csv, mkCsv', comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Csv.Field       (Field (QuotedF, UnquotedF))
-import           Data.Csv.Parser.Internal (field, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Csv.Generators (genCsvString)
+import           Data.Csv.Parser.Internal (csv, field, doubleQuotedField, record, separatedValues, singleQuotedField)
 import           Data.Csv.Record      (Record (Record))
 import           Data.Separated       (skrinpleMay)
 import           Text.Babel           (singleton)
@@ -38,6 +41,7 @@ test_Parser =
   , nsvTest
   , crsvTest
   , bssvTest
+  , randomCsvTest
   ]
 
 r2e :: Result a -> Either String a
@@ -146,26 +150,26 @@ separatedValuesTest sep nl terminatedByNewline =
   let p :: ByteString -> Either String (Csv Text)
       p = r2e . parseByteString (separatedValues sep Unheaded) mempty
       ps = p . fold
-      csv :: [Record s] -> [Newline] -> Csv s
-      csv rs e = mkCsv' sep Nothing e $ skrinpleMay nl rs
+      mkCsv'' :: [Record s] -> [Newline] -> Csv s
+      mkCsv'' rs e = mkCsv' sep Nothing e $ skrinpleMay nl rs
       s = singleton sep
       nls = newlineText nl
       terminator = if terminatedByNewline then [nl] else []
       termStr = foldMap newlineText terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
-      ps ["", termStr] @?=/ csv [] terminator
+      ps ["", termStr] @?=/ mkCsv'' [] terminator
   , testCase "single empty quotes field" $ 
-      ps ["''", termStr] @?=/ csv [qsr ""] terminator
+      ps ["''", termStr] @?=/ mkCsv'' [qsr ""] terminator
   , testCase "single field, single record" $
-      ps ["one", termStr] @?=/ csv [uqa (pure "one")] terminator
+      ps ["one", termStr] @?=/ mkCsv'' [uqa (pure "one")] terminator
   , testCase "single field, multiple records" $
-      ps ["one",nls,"un",termStr] @?=/ csv [uqa (pure "one"), uqa (pure "un")] terminator
+      ps ["one",nls,"un",termStr] @?=/ mkCsv'' [uqa (pure "one"), uqa (pure "un")] terminator
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two",termStr] @?=/ csv (uqaa (pure ("one":|["two"]))) terminator
+      ps ["one", s, "two",termStr] @?=/ mkCsv'' (uqaa (pure ("one":|["two"]))) terminator
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois",termStr]
-        @?=/ csv (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
+        @?=/ mkCsv'' (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
   ]
 
 svTest :: String -> Separator -> TestTree
@@ -191,3 +195,16 @@ crsvTest =
 
 bssvTest :: TestTree
 bssvTest = svTest "backspace separated values" '\BS'
+
+prop_randomCsvTest :: Property
+prop_randomCsvTest = property $ do
+  str <- forAll genCsvString
+  let x :: Either String (Csv String)
+      x = r2e (parseByteString (csv Unheaded) mempty str)
+  case x of
+    Left _ -> failure
+    Right _ -> success
+
+randomCsvTest :: TestTree
+randomCsvTest =
+  testProperty "parse random CSV" prop_randomCsvTest
