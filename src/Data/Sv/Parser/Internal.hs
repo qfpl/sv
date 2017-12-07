@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Csv.Parser.Internal (
+module Data.Sv.Parser.Internal (
   separatedValues
   , csv
   , psv
@@ -26,9 +26,9 @@ import           Data.String             (IsString (fromString))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
-import           Data.Csv.Csv            (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
-import           Data.Csv.Field          (Field (UnquotedF, QuotedF))
-import           Data.Csv.Record         (Record (Record), Records (Records))
+import           Data.Sv.Sv              (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
+import           Data.Sv.Field           (Field (UnquotedF, QuotedF))
+import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
 import           Text.Between            (Between (Between))
 import           Text.Escaped            (Escaped', escapeNel)

@@ -3,7 +3,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.DecodeTest (test_Decode) where
+module Data.Sv.DecodeTest (test_Decode) where
 
 import Test.Tasty       (TestTree, testGroup)
 import Test.Tasty.HUnit (assertFailure, testCase, (@?=))
@@ -13,8 +13,8 @@ import Data.Functor.Alt
 import Data.Semigroup
 import Text.Trifecta (Result(Success, Failure))
 
-import Data.Csv.Csv (Headedness (Unheaded))
-import Data.Csv.Decode
+import Data.Sv.Sv (Headedness (Unheaded))
+import Data.Sv.Decode
 
 test_Decode :: TestTree
 test_Decode =

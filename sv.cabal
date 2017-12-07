@@ -20,20 +20,20 @@ source-repository    head
   location:          git@github.com/qfpl/sv.git
 
 library
-  exposed-modules:     Data.Csv.Csv
-                       , Data.Csv.Decode
-                       , Data.Csv.Decode.Error
-                       , Data.Csv.Decode.Field
-                       , Data.Csv.Decode.Row
-                       , Data.Csv.Decode.State
-                       , Data.Csv.Decode.Type
-                       , Data.Csv.Field
-                       , Data.Csv.Parser
-                       , Data.Csv.Parser.Internal
-                       , Data.Csv.Pretty
-                       , Data.Csv.Pretty.Config
-                       , Data.Csv.Pretty.Internal
-                       , Data.Csv.Record
+  exposed-modules:     Data.Sv.Sv
+                       , Data.Sv.Decode
+                       , Data.Sv.Decode.Error
+                       , Data.Sv.Decode.Field
+                       , Data.Sv.Decode.Row
+                       , Data.Sv.Decode.State
+                       , Data.Sv.Decode.Type
+                       , Data.Sv.Field
+                       , Data.Sv.Parser
+                       , Data.Sv.Parser.Internal
+                       , Data.Sv.Pretty
+                       , Data.Sv.Pretty.Config
+                       , Data.Sv.Pretty.Internal
+                       , Data.Sv.Record
                        , Data.Functor.Compose.Extra
                        , Data.Semigroup.Foldable.Extra
                        , Text.Babel
@@ -73,10 +73,10 @@ test-suite             tasty
   main-is:
                        tasty.hs
   other-modules:
-                       Data.Csv.DecodeTest
-                       , Data.Csv.PrettyTest
-                       , Data.Csv.ParserTest
-                       , Data.Csv.Generators
+                       Data.Sv.DecodeTest
+                       , Data.Sv.PrettyTest
+                       , Data.Sv.ParserTest
+                       , Data.Sv.Generators
   default-language:
                        Haskell2010
   build-depends:

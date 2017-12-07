@@ -1,4 +1,4 @@
-module Data.Csv.Decode.Field (
+module Data.Sv.Decode.Field (
   FieldDecode (..)
 , runFieldDecode
 , (==<<)
@@ -16,10 +16,10 @@ import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
 import Data.Validation (_AccValidation, bindValidation)
 
-import Data.Csv.Field (Field, FieldContents, fieldContents)
-import Data.Csv.Decode.Error
-import Data.Csv.Decode.State (runDecodeState)
-import Data.Csv.Decode.Type
+import Data.Sv.Field (Field, FieldContents, fieldContents)
+import Data.Sv.Decode.Error
+import Data.Sv.Decode.State (runDecodeState)
+import Data.Sv.Decode.Type
 
 runFieldDecode :: FieldDecode e s a -> [Field s] -> (DecodeValidation e a, [Field s])
 runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode

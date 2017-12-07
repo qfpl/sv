@@ -9,7 +9,7 @@
 -- | This file defines a datatype for a complete CSV document.
 -- The datatype preserves information so that the original CSV
 -- text can be recovered.
-module Data.Csv.Csv (
+module Data.Sv.Sv (
   Csv (Csv, _separator, _maybeHeader, _records, _finalNewlines)
   , HasCsv (csv, separator, maybeHeader, finalNewlines)
   , HasRecords (records, theRecords)
@@ -36,7 +36,7 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Record    (Record, Records (Records), HasRecords (records, theRecords), emptyRecords, recordList)
+import Data.Sv.Record     (Record, Records (Records), HasRecords (records, theRecords), emptyRecords, recordList)
 import Text.Newline       (Newline)
 
 -- | 'Csv' is a whitespace-preserving data type for separated values.

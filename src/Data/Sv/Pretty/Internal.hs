@@ -1,4 +1,4 @@
-module Data.Csv.Pretty.Internal (
+module Data.Sv.Pretty.Internal (
     prettyField
   , prettyRecord
   , prettyPesarated1
@@ -12,10 +12,10 @@ import Data.Monoid              ((<>))
 import Data.Semigroup.Foldable  (intercalate1)
 import Data.Semigroup           (Semigroup)
 
-import Data.Csv.Csv    (Csv (Csv), Header (Header))
-import Data.Csv.Field  (Field (QuotedF, UnquotedF))
-import Data.Csv.Pretty.Config (PrettyConfigC, PrettyConfig, string, setSeparator, separator, newline, space, quote)
-import Data.Csv.Record (Record (Record), Records, HasRecords (theRecords))
+import Data.Sv.Sv     (Csv (Csv), Header (Header))
+import Data.Sv.Field  (Field (QuotedF, UnquotedF))
+import Data.Sv.Pretty.Config (PrettyConfigC, PrettyConfig, string, setSeparator, separator, newline, space, quote)
+import Data.Sv.Record (Record (Record), Records, HasRecords (theRecords))
 import Data.Foldable   (fold)
 import Text.Between    (Between (Between))
 import Text.Newline    (Newline)

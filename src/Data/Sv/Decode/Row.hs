@@ -1,4 +1,4 @@
-module Data.Csv.Decode.Row (
+module Data.Sv.Decode.Row (
   RowDecode (RowDecode, unwrapRowDecode)
 , rowDecode
 , runRowDecode
@@ -7,10 +7,10 @@ module Data.Csv.Decode.Row (
 ) where
 
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
-import Data.Csv.Record (Record, _fields)
-import Data.Csv.Decode.Error (DecodeValidation, expectedEndOfRow)
-import Data.Csv.Decode.Field (FieldDecode, runFieldDecode)
-import Data.Csv.Decode.Type (RowDecode (RowDecode, unwrapRowDecode))
+import Data.Sv.Record (Record, _fields)
+import Data.Sv.Decode.Error (DecodeValidation, expectedEndOfRow)
+import Data.Sv.Decode.Field (FieldDecode, runFieldDecode)
+import Data.Sv.Decode.Type (RowDecode (RowDecode, unwrapRowDecode))
 import Data.Foldable (toList)
 import Text.Babel (Textual, retext)
 

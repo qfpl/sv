@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
-module Data.Csv.Decode.Type (
+module Data.Sv.Decode.Type (
   FieldDecode (..)
 , DecodeState (..)
 , RowDecode (..)
@@ -19,8 +19,8 @@ import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
 
-import Data.Csv.Field (Field)
-import Data.Csv.Record (Record)
+import Data.Sv.Field (Field)
+import Data.Sv.Record (Record)
 
 newtype FieldDecode e s a =
   FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }

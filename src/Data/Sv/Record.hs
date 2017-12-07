@@ -5,7 +5,7 @@
 
 -- | This file contains datatypes for Records. A record is a "line" or "row"
 -- of a CSV document
-module Data.Csv.Record (
+module Data.Sv.Record (
   Record (Record, _fields)
   -- Optics
   , HasRecord (record, fields)
@@ -25,7 +25,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Csv.Field     (Field)
+import Data.Sv.Field      (Field)
 import Text.Newline       (Newline)
 
 

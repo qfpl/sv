@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Datatype for a single field or "cell" of a CSV file
-module Data.Csv.Field (
+module Data.Sv.Field (
     Field (UnquotedF, QuotedF)
   , foldField
   , unspacedField

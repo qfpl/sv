@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.Generators (
+module Data.Sv.Generators (
   genCsv
   , genCsvWithHeadedness
   , genNewline
@@ -26,9 +26,9 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Csv.Csv        (Csv (Csv), Header (Header), Headedness, headedness, Separator)
-import Data.Csv.Field      (Field (QuotedF, UnquotedF))
-import Data.Csv.Record     (Record (Record), Records (Records))
+import Data.Sv.Sv          (Csv (Csv), Header (Header), Headedness, headedness, Separator)
+import Data.Sv.Field       (Field (QuotedF, UnquotedF))
+import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
 import Text.Between        (Between (Between))
 import Text.Escaped        (Escaped', escapeNel)

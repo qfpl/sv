@@ -1,4 +1,4 @@
-module Data.Csv.Pretty.Config (
+module Data.Sv.Pretty.Config (
   PrettyConfig' (PrettyConfig', separator', quote, newline, space, string)
   , PrettyConfig
   , PrettyConfigC
@@ -14,10 +14,10 @@ import Data.Text                (Text)
 import qualified Data.Text as Text
 import Data.Text.Lazy.Builder as Text (Builder, fromText)
 
-import Data.Csv.Csv (Separator)
-import Text.Newline    (Newline, newlineText)
-import Text.Space      (Spaces, spaces)
-import Text.Quote      (Quote, quoteText)
+import Data.Sv.Sv   (Separator)
+import Text.Newline (Newline, newlineText)
+import Text.Space   (Spaces, spaces)
+import Text.Quote   (Quote, quoteText)
 
 data PrettyConfig' f s m =
   PrettyConfig' {

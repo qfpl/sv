@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.Decode (
+module Data.Sv.Decode (
   decode
 , parseDecode
 , decodeFromFile
@@ -27,11 +27,11 @@ module Data.Csv.Decode (
 , decodeRead
 , decodeRead'
 , decodeReadWithMsg
-, module Data.Csv.Decode.Error
-, module Data.Csv.Decode.Field
-, module Data.Csv.Decode.Row
-, module Data.Csv.Decode.State
-, module Data.Csv.Decode.Type
+, module Data.Sv.Decode.Error
+, module Data.Sv.Decode.Field
+, module Data.Sv.Decode.Row
+, module Data.Sv.Decode.State
+, module Data.Sv.Decode.Type
 , FieldContents
 ) where
 
@@ -52,14 +52,14 @@ import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
-import Data.Csv.Csv (Csv, Headedness, recordList)
-import Data.Csv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
-import Data.Csv.Decode.Field
-import Data.Csv.Decode.Row
-import Data.Csv.Decode.State
-import Data.Csv.Decode.Type
-import Data.Csv.Field (FieldContents)
-import Data.Csv.Parser (separatedValues)
+import Data.Sv.Sv (Csv, Headedness, recordList)
+import Data.Sv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
+import Data.Sv.Decode.Field
+import Data.Sv.Decode.Row
+import Data.Sv.Decode.State
+import Data.Sv.Decode.Type
+import Data.Sv.Field (FieldContents)
+import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
 decode :: RowDecode e s a -> Csv s -> DecodeValidation e [a]

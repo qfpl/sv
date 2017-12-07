@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.ParserTest (test_Parser) where
+module Data.Sv.ParserTest (test_Parser) where
 
 import           Data.ByteString      (ByteString)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
@@ -16,17 +16,17 @@ import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
-import           Data.Csv.Csv         (Csv, mkCsv', comma, pipe, tab, Headedness (Unheaded), Separator)
-import           Data.Csv.Field       (Field (QuotedF, UnquotedF))
-import           Data.Csv.Generators (genCsvString)
-import           Data.Csv.Parser.Internal (csv, field, doubleQuotedField, record, separatedValues, singleQuotedField)
-import           Data.Csv.Record      (Record (Record))
-import           Data.Separated       (skrinpleMay)
-import           Text.Babel           (singleton)
-import           Text.Between         (uniform)
-import           Text.Escaped         (escapeNel, noEscape)
-import           Text.Space           (manySpaces, spaced)
-import           Text.Quote           (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteToString)
+import           Data.Sv.Sv          (Csv, mkCsv', comma, pipe, tab, Headedness (Unheaded), Separator)
+import           Data.Sv.Field       (Field (QuotedF, UnquotedF))
+import           Data.Sv.Generators  (genCsvString)
+import           Data.Sv.Parser.Internal (csv, field, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Sv.Record      (Record (Record))
+import           Data.Separated      (skrinpleMay)
+import           Text.Babel          (singleton)
+import           Text.Between        (uniform)
+import           Text.Escaped        (escapeNel, noEscape)
+import           Text.Space          (manySpaces, spaced)
+import           Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteToString)
 
 test_Parser :: TestTree
 test_Parser =

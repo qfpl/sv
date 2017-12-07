@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Csv.PrettyTest (test_Pretty) where
+module Data.Sv.PrettyTest (test_Pretty) where
 
 import Data.ByteString      (ByteString)
 import Data.Text            (Text)
@@ -14,16 +14,16 @@ import Test.Tasty.HUnit     ((@?=), testCase)
 import Text.Parser.Char     (CharParsing)
 import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
-import Data.Csv.Csv         (Csv (Csv), Headedness, noHeader, comma)
-import Data.Csv.Field       (unspacedField)
-import Data.Csv.Generators  (genCsvWithHeadedness)
-import Data.Csv.Parser.Internal (field, separatedValues)
-import Data.Csv.Pretty      (prettyCsv, defaultConfig, setSeparator, textConfig)
-import Data.Csv.Pretty.Internal (prettyField)
-import Data.Csv.Record (emptyRecords, singleton, singletonRecords)
-import Text.Babel           (toByteString)
-import Text.Space           (HorizontalSpace (Space, Tab))
-import Text.Quote           (Quote (SingleQuote))
+import Data.Sv.Sv          (Csv (Csv), Headedness, noHeader, comma)
+import Data.Sv.Field       (unspacedField)
+import Data.Sv.Generators  (genCsvWithHeadedness)
+import Data.Sv.Parser.Internal (field, separatedValues)
+import Data.Sv.Pretty      (prettyCsv, defaultConfig, setSeparator, textConfig)
+import Data.Sv.Pretty.Internal (prettyField)
+import Data.Sv.Record      (emptyRecords, singleton, singletonRecords)
+import Text.Babel          (toByteString)
+import Text.Space          (HorizontalSpace (Space, Tab))
+import Text.Quote          (Quote (SingleQuote))
 
 test_Pretty :: TestTree
 test_Pretty =

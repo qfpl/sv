@@ -1,4 +1,4 @@
-module Data.Csv.Decode.Error (
+module Data.Sv.Decode.Error (
   DecodeError (..)
 , DecodeErrors (..)
 , DecodeValidation
@@ -16,8 +16,8 @@ module Data.Csv.Decode.Error (
 import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
 import Text.Trifecta (Result (Success, Failure), _errDoc)
 
-import Data.Csv.Decode.Type
-import Data.Csv.Field
+import Data.Sv.Decode.Type
+import Data.Sv.Field
 import Text.Babel (Textual, showT)
 
 decodeError :: DecodeError e -> DecodeValidation e a

@@ -2,9 +2,9 @@ module Main (main) where
 
 import Test.Tasty (defaultMain, testGroup)
 
-import Data.Csv.ParserTest (test_Parser)
-import Data.Csv.PrettyTest (test_Pretty)
-import Data.Csv.DecodeTest (test_Decode)
+import Data.Sv.ParserTest (test_Parser)
+import Data.Sv.PrettyTest (test_Pretty)
+import Data.Sv.DecodeTest (test_Decode)
 
 main :: IO ()
 main =
