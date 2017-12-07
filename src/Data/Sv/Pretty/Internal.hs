@@ -3,7 +3,7 @@ module Data.Sv.Pretty.Internal (
   , prettyRecord
   , prettyPesarated1
   , prettyRecords
-  , prettyCsv
+  , prettySv
 ) where
 
 import Control.Lens             (view)
@@ -12,7 +12,7 @@ import Data.Monoid              ((<>))
 import Data.Semigroup.Foldable  (intercalate1)
 import Data.Semigroup           (Semigroup)
 
-import Data.Sv.Sv     (Csv (Csv), Header (Header))
+import Data.Sv.Sv     (Sv (Sv), Header (Header))
 import Data.Sv.Field  (Field (QuotedF, UnquotedF))
 import Data.Sv.Pretty.Config (PrettyConfigC, PrettyConfig, string, setSeparator, separator, newline, space, quote)
 import Data.Sv.Record (Record (Record), Records, HasRecords (theRecords))
@@ -48,8 +48,8 @@ prettyRecords :: (Semigroup m, Monoid m) => PrettyConfig s m -> Records s -> m
 prettyRecords c =
   foldMap (prettyPesarated1 c) . view theRecords
 
-prettyCsv :: (Semigroup m, Monoid m) => PrettyConfigC s m -> Csv s -> m
-prettyCsv config (Csv c h rs e) =
+prettySv :: (Semigroup m, Monoid m) => PrettyConfigC s m -> Sv s -> m
+prettySv config (Sv c h rs e) =
   let newConfig = setSeparator config c
   in  foldMap (prettyHeader newConfig) h <> prettyRecords newConfig rs <> foldMap (newline newConfig) e
 

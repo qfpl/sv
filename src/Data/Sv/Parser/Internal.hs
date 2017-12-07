@@ -26,7 +26,7 @@ import           Data.String             (IsString (fromString))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
-import           Data.Sv.Sv              (Csv (Csv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
+import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
 import           Data.Sv.Field           (Field (UnquotedF, QuotedF))
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
@@ -132,15 +132,15 @@ header c h = case h of
   Unheaded -> pure noHeader
   Headed -> mkHeader <$> record c <*> newline
 
-separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Csv s)
+separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
 separatedValues sep h =
-  Csv sep <$> header sep h <*> records sep <*> ending
+  Sv sep <$> header sep h <*> records sep <*> ending
 
-csv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+csv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 csv = separatedValues comma
 
-psv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+psv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 psv = separatedValues pipe
 
-tsv :: (CharParsing m, Textual s) => Headedness -> m (Csv s)
+tsv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 tsv = separatedValues tab

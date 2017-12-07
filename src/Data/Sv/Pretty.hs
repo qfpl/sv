@@ -4,5 +4,5 @@ module Data.Sv.Pretty
 )
 where
 
-import Data.Sv.Pretty.Internal as Internal (prettyCsv)
+import Data.Sv.Pretty.Internal as Internal (prettySv)
 import Data.Sv.Pretty.Config   as Config

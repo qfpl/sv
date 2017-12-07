@@ -14,11 +14,11 @@ import Test.Tasty.HUnit     ((@?=), testCase)
 import Text.Parser.Char     (CharParsing)
 import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
-import Data.Sv.Sv          (Csv (Csv), Headedness, noHeader, comma)
+import Data.Sv.Sv          (Sv (Sv), Headedness, noHeader, comma)
 import Data.Sv.Field       (unspacedField)
-import Data.Sv.Generators  (genCsvWithHeadedness)
+import Data.Sv.Generators  (genSvWithHeadedness)
 import Data.Sv.Parser.Internal (field, separatedValues)
-import Data.Sv.Pretty      (prettyCsv, defaultConfig, setSeparator, textConfig)
+import Data.Sv.Pretty      (prettySv, defaultConfig, setSeparator, textConfig)
 import Data.Sv.Pretty.Internal (prettyField)
 import Data.Sv.Record      (emptyRecords, singleton, singletonRecords)
 import Text.Babel          (toByteString)
@@ -65,13 +65,13 @@ fieldRoundTrip =
 
 csvPretty :: TestTree
 csvPretty =
-  let pretty = prettyCsv textConfig
+  let pretty = prettySv textConfig
   in  testGroup "csvPretty" [
     testCase "empty" $
-      let subject = Csv comma noHeader emptyRecords []
+      let subject = Sv comma noHeader emptyRecords []
       in  pretty subject @?= ""
   , testCase "empty quotes" $
-      let subject = Csv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote ""))) []
+      let subject = Sv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote ""))) []
       in pretty subject @?= "''"
   ]
 
@@ -86,9 +86,9 @@ prop_csvRoundTrip =
       genSpaces = Gen.list (Range.linear 0 10) genSpace
       genText :: Gen Text
       genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
-      gen = genCsvWithHeadedness (pure comma) genSpaces genText
-      pretty = toByteString . prettyCsv defaultConfig
-      parseCsv :: CharParsing m => Headedness -> m (Csv Text)
+      gen = genSvWithHeadedness (pure comma) genSpaces genText
+      pretty = toByteString . prettySv defaultConfig
+      parseCsv :: CharParsing m => Headedness -> m (Sv Text)
       parseCsv = separatedValues comma
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do

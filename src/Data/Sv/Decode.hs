@@ -52,7 +52,7 @@ import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
-import Data.Sv.Sv (Csv, Headedness, recordList)
+import Data.Sv.Sv (Sv, Headedness, recordList)
 import Data.Sv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.Row
@@ -62,7 +62,7 @@ import Data.Sv.Field (FieldContents)
 import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
-decode :: RowDecode e s a -> Csv s -> DecodeValidation e [a]
+decode :: RowDecode e s a -> Sv s -> DecodeValidation e [a]
 decode r = traverse (runRowDecode r) . recordList
 
 parseDecode ::

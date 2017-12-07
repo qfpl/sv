@@ -16,7 +16,7 @@ import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
 import           Text.Parser.Char     (CharParsing)
 import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
-import           Data.Sv.Sv          (Csv, mkCsv', comma, pipe, tab, Headedness (Unheaded), Separator)
+import           Data.Sv.Sv          (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Field       (Field (QuotedF, UnquotedF))
 import           Data.Sv.Generators  (genCsvString)
 import           Data.Sv.Parser.Internal (csv, field, doubleQuotedField, record, separatedValues, singleQuotedField)
@@ -147,29 +147,29 @@ recordTest =
 
 separatedValuesTest :: Separator -> Newline -> Bool -> TestTree
 separatedValuesTest sep nl terminatedByNewline =
-  let p :: ByteString -> Either String (Csv Text)
+  let p :: ByteString -> Either String (Sv Text)
       p = r2e . parseByteString (separatedValues sep Unheaded) mempty
       ps = p . fold
-      mkCsv'' :: [Record s] -> [Newline] -> Csv s
-      mkCsv'' rs e = mkCsv' sep Nothing e $ skrinpleMay nl rs
+      mkSv'' :: [Record s] -> [Newline] -> Sv s
+      mkSv'' rs e = mkSv' sep Nothing e $ skrinpleMay nl rs
       s = singleton sep
       nls = newlineText nl
       terminator = if terminatedByNewline then [nl] else []
       termStr = foldMap newlineText terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
-      ps ["", termStr] @?=/ mkCsv'' [] terminator
+      ps ["", termStr] @?=/ mkSv'' [] terminator
   , testCase "single empty quotes field" $ 
-      ps ["''", termStr] @?=/ mkCsv'' [qsr ""] terminator
+      ps ["''", termStr] @?=/ mkSv'' [qsr ""] terminator
   , testCase "single field, single record" $
-      ps ["one", termStr] @?=/ mkCsv'' [uqa (pure "one")] terminator
+      ps ["one", termStr] @?=/ mkSv'' [uqa (pure "one")] terminator
   , testCase "single field, multiple records" $
-      ps ["one",nls,"un",termStr] @?=/ mkCsv'' [uqa (pure "one"), uqa (pure "un")] terminator
+      ps ["one",nls,"un",termStr] @?=/ mkSv'' [uqa (pure "one"), uqa (pure "un")] terminator
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two",termStr] @?=/ mkCsv'' (uqaa (pure ("one":|["two"]))) terminator
+      ps ["one", s, "two",termStr] @?=/ mkSv'' (uqaa (pure ("one":|["two"]))) terminator
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois",termStr]
-        @?=/ mkCsv'' (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
+        @?=/ mkSv'' (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
   ]
 
 svTest :: String -> Separator -> TestTree
@@ -199,7 +199,7 @@ bssvTest = svTest "backspace separated values" '\BS'
 prop_randomCsvTest :: Property
 prop_randomCsvTest = property $ do
   str <- forAll genCsvString
-  let x :: Either String (Csv String)
+  let x :: Either String (Sv String)
       x = r2e (parseByteString (csv Unheaded) mempty str)
   case x of
     Left _ -> failure

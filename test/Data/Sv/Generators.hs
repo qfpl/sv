@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Sv.Generators (
-  genCsv
-  , genCsvWithHeadedness
+  genSv
+  , genSvWithHeadedness
   , genNewline
   , genSep
   , genBetween
@@ -26,7 +26,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Sv.Sv          (Csv (Csv), Header (Header), Headedness, headedness, Separator)
+import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, headedness, Separator)
 import Data.Sv.Field       (Field (QuotedF, UnquotedF))
 import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
@@ -36,15 +36,15 @@ import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced)
 import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
 
-genCsv :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Csv s)
-genCsv sep spc s =
+genSv :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Sv s)
+genSv sep spc s =
   let rs = genRecords spc s
       e  = Gen.list (Range.linear 0 5) genNewline
       h = Gen.maybe (genHeader spc s genNewline)
-  in  Csv <$> sep <*> h <*> rs <*> e
+  in  Sv <$> sep <*> h <*> rs <*> e
 
-genCsvWithHeadedness :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Csv s, Headedness)
-genCsvWithHeadedness sep spc s = fmap (\c -> (c, headedness c)) (genCsv sep spc s)
+genSvWithHeadedness :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Sv s, Headedness)
+genSvWithHeadedness sep spc s = fmap (\c -> (c, headedness c)) (genSv sep spc s)
 
 genNewline :: Gen Newline
 genNewline =
