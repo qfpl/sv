@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Sv.PrettyTest (test_Pretty) where
+module Data.Sv.PrintTest (test_Print) where
 
 import Data.ByteString      (ByteString)
 import Data.Text            (Text)
@@ -15,21 +15,20 @@ import Text.Parser.Char     (CharParsing)
 import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import Data.Sv.Sv          (Sv (Sv), Headedness, noHeader, comma)
-import Data.Sv.Field       (unspacedField)
+import Data.Sv.Field       (Field, unspacedField)
 import Data.Sv.Generators  (genSvWithHeadedness)
 import Data.Sv.Parser.Internal (field, separatedValues)
-import Data.Sv.Pretty      (prettySv, defaultConfig, setSeparator, textConfig)
-import Data.Sv.Pretty.Internal (prettyField)
+import Data.Sv.Print       (displaySv, printField)
 import Data.Sv.Record      (emptyRecords, singleton, singletonRecords)
 import Text.Babel          (toByteString)
 import Text.Space          (HorizontalSpace (Space, Tab))
 import Text.Quote          (Quote (SingleQuote))
 
-test_Pretty :: TestTree
-test_Pretty =
-  testGroup "Pretty" [
+test_Print :: TestTree
+test_Print =
+  testGroup "Print" [
     fieldRoundTrip
-  , csvPretty
+  , csvPrint
   , csvRoundTrip
   ]
 
@@ -39,16 +38,15 @@ r2e r = case r of
   Success a -> Right a
   Failure e -> Left (show (_errDoc e))
 
-prettyAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
-prettyAfterParseRoundTrip parser pretty name s =
+printAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
+printAfterParseRoundTrip parser display name s =
   testCase name $
-    fmap (toByteString . pretty) (r2e $ parseByteString parser mempty s) @?= Right s
+    fmap display (r2e $ parseByteString parser mempty s) @?= Right s
 
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
   let sep = comma
-      config = setSeparator textConfig sep
-      test = prettyAfterParseRoundTrip (field sep) (toByteString . prettyField config)
+      test = printAfterParseRoundTrip (field sep :: CharParsing m => m (Field ByteString)) (toByteString . printField)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -63,16 +61,16 @@ fieldRoundTrip =
   , test "double quoted with escape in the middle" "\"John \"\"The Duke\"\" Wayne\""
   ]
 
-csvPretty :: TestTree
-csvPretty =
-  let pretty = prettySv textConfig
-  in  testGroup "csvPretty" [
+csvPrint :: TestTree
+csvPrint =
+  testGroup "csvPrint" [
     testCase "empty" $
-      let subject = Sv comma noHeader emptyRecords []
-      in  pretty subject @?= ""
+      let subject :: Sv ByteString
+          subject = Sv comma noHeader emptyRecords []
+      in  displaySv subject @?= ""
   , testCase "empty quotes" $
-      let subject = Sv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote ""))) []
-      in pretty subject @?= "''"
+      let subject = Sv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote []))) []
+      in displaySv subject @?= "''"
   ]
 
 csvRoundTrip :: TestTree
@@ -87,10 +85,9 @@ prop_csvRoundTrip =
       genText :: Gen Text
       genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
       gen = genSvWithHeadedness (pure comma) genSpaces genText
-      pretty = toByteString . prettySv defaultConfig
       parseCsv :: CharParsing m => Headedness -> m (Sv Text)
       parseCsv = separatedValues comma
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen
-    r2e (fmap pretty (parse h (pretty c))) === pure (pretty c)
+    r2e (fmap displaySv (parse h (displaySv c))) === pure (displaySv c)

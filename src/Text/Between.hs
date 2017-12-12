@@ -20,7 +20,6 @@ import Data.Functor        (Functor (fmap))
 import Data.Monoid         ((<>))
 import Data.Traversable    (Traversable (traverse))
 
-
 -- | 'Between s a' is an 'a' between a pair of 's's.
 
 -- This is useful for things like quotes around strings.

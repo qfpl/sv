@@ -34,6 +34,8 @@ class (Semigroup a, Monoid a, IsString a) => Textual a where
   fromText :: T.Text -> a
   toLazyText :: a -> LT.Text
   fromLazyText :: LT.Text -> a
+  toByteStringBuilder :: a -> BSB.Builder
+  toByteStringBuilder = toByteStringBuilder . toLazyByteString
   trim :: a -> a
   retext :: Textual b => a -> b
 
@@ -99,6 +101,7 @@ instance Textual B.ByteString where
   fromText = T.encodeUtf8
   toLazyText = toLazyText . toText
   fromLazyText = fromText . fromLazyText
+  toByteStringBuilder = BSB.byteString
   trim = B.reverse . BC.dropWhile C.isSpace . B.reverse . BC.dropWhile C.isSpace
   retext = fromByteString
 
@@ -112,6 +115,7 @@ instance Textual LB.ByteString where
   fromText = toLazyByteString
   toLazyText = fromLazyByteString
   fromLazyText = toLazyByteString
+  toByteStringBuilder = BSB.lazyByteString
   trim = LB.reverse . LBC.dropWhile C.isSpace . LB.reverse . LBC.dropWhile C.isSpace
   retext = fromLazyByteString
 
@@ -125,6 +129,7 @@ instance Textual BSB.Builder where
   fromText = fromByteString . toByteString
   toLazyText = toLazyText . toLazyByteString
   fromLazyText = fromLazyByteString . toLazyByteString
+  toByteStringBuilder = id
   trim = fromLazyByteString . trim . toLazyByteString
   retext = fromLazyText . toLazyText
 
