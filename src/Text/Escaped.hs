@@ -29,13 +29,13 @@ import Data.Traversable   (Traversable (traverse))
 -- | 'Escaped e a' is a list of characters separated by escape sequences.
 --
 -- @a@ can happily be 'Char', but you could just as easily use 'Text' to make
--- sure tricky characters work properly.
+-- sure tricky characters work properly. This is also much faster.
 --
 -- @e@ is the escape sequence, which should be represented by a bespoke sum
 -- type rather than something like 'Text'.
 --
--- The 'bifoldMap' is particularly useful for this type, as it can turn the
--- whole thing back into a single textual value.
+-- The 'bifoldMap' function is particularly useful for this type, as it can
+-- turn the whole thing back into a single textual value.
 newtype Escaped e a =
   Escaped { _escapeList :: [Either e a]}
   deriving (Eq, Ord, Show)
@@ -48,16 +48,19 @@ instance Wrapped (Escaped e a) where
   _Wrapped' =
     iso (\ (Escaped x) -> x) Escaped
 
+-- | Traverse all the non-escapes in an 'Escaped'
 escapedRights ::
   Traversal (Escaped e a) (Escaped e b) a b
 escapedRights =
   _Wrapped . traverse . _Right
 
+-- | Traverse all the escapes in an 'Escaped'
 escapedLefts ::
   Traversal (Escaped e a) (Escaped f a) e f
 escapedLefts =
   _Wrapped . traverse . _Left
 
+-- | Classy lenses for `Escaped`
 class HasEscaped c e a | c -> e a where
   escaped :: Lens' c (Escaped e a)
   escapeList :: Lens' c [Either e a]

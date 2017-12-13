@@ -11,11 +11,12 @@ import Control.Lens (Prism', prism, prism')
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 
--- | Sum type for line endings
+-- | 'Newline' is a sum type for line endings
 data Newline =
   CR | LF | CRLF
   deriving (Eq, Ord, Show)
 
+-- | 'AsNewline' is a classy prism for 'Newline'
 class AsNewline r where
   _Newline :: Prism' r Newline
   _CR :: Prism' r ()
@@ -43,6 +44,8 @@ instance AsNewline Newline where
 instance AsNewline Text where
   _Newline = prism' newlineText parseNewline
 
+-- | Convert a 'Newline' back to a 'String'. This is overloaded in its choice
+-- of string type. It will work with 'String', 'Text', 'ByteString', and others.
 newlineText :: IsString s => Newline -> s
 newlineText n = fromString $
   case n of
@@ -50,6 +53,7 @@ newlineText n = fromString $
     LF -> "\n"
     CRLF -> "\r\n"
 
+-- | Try to parse text into a 'Newline'
 parseNewline :: Text -> Maybe Newline
 parseNewline ""   = Nothing
 parseNewline "\r" = Just CR

@@ -1,5 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
 
+-- | This is a slow, dreadful solution to The String Problem. It seems to work
+--though.
+--
+-- Backpack could probably be used to replace this with something much better,
+-- but I'm going to wait for it to mature more first.
 module Text.Babel 
   (
     Textual (..)
@@ -24,6 +29,8 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Encoding as LT
 
+-- | Stringy things are 'Textual'. We can convert them to other stringy things,
+-- usually slowly.
 class (Semigroup a, Monoid a, IsString a) => Textual a where
   toString :: a -> String
   toByteString :: a -> B.ByteString
@@ -133,8 +140,11 @@ instance Textual BSB.Builder where
   trim = fromLazyByteString . trim . toLazyByteString
   retext = fromLazyText . toLazyText
 
+-- | Show to any Textual type. This necessarily goes through 'String' on the
+-- way, so it won't be fast even if you pick a faster type.
 showT :: (Show a, Textual t) => a -> t
 showT = fromString . show
 
+-- | Make a singleton of anything stringy
 singleton :: IsString t => Char -> t
 singleton = fromString . pure

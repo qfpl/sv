@@ -32,6 +32,7 @@ data Quote =
   | DoubleQuote
   deriving (Eq, Ord, Show)
 
+-- | Classy prisms for 'Quote'
 class AsQuote r where
   _Quote :: Prism' r Quote
   _SingleQuote :: Prism' r ()
@@ -74,6 +75,8 @@ quoteChar =
 quoteText :: Prism' Text Quote
 quoteText = singletonText . quoteChar
 
+-- | Convert a quote to a 'String'. Works for any stringy type, like 'Text'
+-- or 'ByteString'.
 quoteToString :: IsString a => Quote -> a
 quoteToString = fromString . pure . review quoteChar
 
@@ -85,6 +88,7 @@ data Quoted a =
   }
   deriving (Eq, Ord, Show)
 
+-- | Classy lenses for 'Quoted'
 class HasQuoted c a | c -> a where
   quoted :: Lens' c (Quoted a)
   quote :: Lens' c Quote

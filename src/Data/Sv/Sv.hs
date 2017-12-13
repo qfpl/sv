@@ -52,6 +52,7 @@ data Sv s =
   }
   deriving (Eq, Ord, Show)
 
+-- | Classy lenses for 'Sv'
 class HasRecords c s => HasSv c s | c -> s where
   sv :: Lens' c (Sv s)
   separator :: Lens' c Separator
@@ -89,6 +90,7 @@ mkSv c h ns rs = Sv c h rs ns
 mkSv' :: Separator -> Maybe (Header s) -> [Newline] -> Maybe (Pesarated1 Newline (Record s)) -> Sv s
 mkSv' c h ns = mkSv c h ns . Records
 
+-- | An empty Sv
 empty :: Separator -> Sv s
 empty c = Sv c Nothing emptyRecords []
 
@@ -101,17 +103,25 @@ instance Foldable Sv where
 instance Traversable Sv where
   traverse f (Sv s h rs e) = Sv s <$> traverse (traverse f) h <*> traverse f rs <*> pure e
 
+-- | A 'Separator' is just a 'Char'. It could be a sum type instead, since it
+-- will usually be comma or pipe, but our preference has been to be open here
+-- so that you can use whatever you'd like.
 type Separator = Char
 
+-- | The venerable comma separator. Used for CSV documents.
 comma :: Separator
 comma = ','
 
+-- | The pipe separator. Used for PSV documents.
 pipe :: Separator
 pipe = '|'
 
+-- | Tab is a separator too - why not?
 tab :: Separator
 tab = '\t'
 
+-- | A 'Header' is present in many CSV documents, usually listing the names
+-- of the columns. We keep this separate from the regular records.
 data Header s =
   Header {
     _headerRecord :: Record s
@@ -119,6 +129,7 @@ data Header s =
   }
   deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 
+-- | Classy lenses for 'Header'
 class HasHeader c s | c -> s where
   header :: Lens' c (Header s)
   headerNewline :: Lens' c Newline
@@ -137,15 +148,19 @@ instance HasHeader (Header s) s where
   headerRecord f (Header x1 x2)
     = fmap (\y -> Header y x2) (f x1)
 
+-- | Used to build 'Sv's that don't have a header
 noHeader :: Maybe (Header s)
 noHeader = Nothing
 
+-- | Convenience constructor for 'Header', usually when you're building 'Sv's
 mkHeader :: Record s -> Newline -> Maybe (Header s)
 mkHeader r n = Just (Header r n)
 
+-- | Does the 'Sv' have a 'Header' or not?
 data Headedness =
   Unheaded | Headed
   deriving (Eq, Ord, Show)
 
+-- | Determine the 'Headedness' of an 'Sv'
 headedness :: Sv s -> Headedness
 headedness = maybe Unheaded (const Headed) . _maybeHeader

@@ -31,6 +31,7 @@ data Between s a =
   }
   deriving (Eq, Ord, Show)
 
+-- | Classy lenses for 'Between'
 class HasBetween c s a | c -> s a where
   between :: Lens' c (Between s a)
   after :: Lens' c s

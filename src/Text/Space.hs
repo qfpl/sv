@@ -61,6 +61,7 @@ instance (a ~ Char) => AsHorizontalSpace [a] where
 instance AsHorizontalSpace Text where
   _HorizontalSpace = singletonText . _HorizontalSpace
 
+-- | Helpful alias for lists of 'Space's
 type Spaces = [HorizontalSpace]
 
 -- | One space

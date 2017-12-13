@@ -37,9 +37,11 @@ newtype Record s =
   }
   deriving (Eq, Ord, Show)
 
+-- | A 'Record' is isomorphic to a 'NonEmpty' list of 'Field's
 fieldsIso :: Iso (Record s) (Record a) (NonEmpty (Field s)) (NonEmpty (Field a))
 fieldsIso = iso _fields Record
 
+-- | Classy lenses for 'Record'
 class HasRecord s t | s -> t where
   record :: Lens' s (Record t)
   fields :: Lens' s (NonEmpty (Field t))
@@ -60,6 +62,7 @@ instance Foldable Record where
 instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . _fields
 
+-- | Build a 'Record' with just one 'Field'
 singleton :: Field s -> Record s
 singleton = Record . pure
 
@@ -68,6 +71,7 @@ newtype Records s =
   Records { _theRecords :: Maybe (Pesarated1 Newline (Record s)) }
   deriving (Eq, Ord, Show)
 
+-- | Classy lenses for 'Records'
 class HasRecords c s | c -> s where
   records :: Lens' c (Records s)
   theRecords :: Lens' c (Maybe (Pesarated1 Newline (Record s)))
@@ -88,11 +92,14 @@ instance Foldable Records where
 instance Traversable Records where
   traverse f = fmap Records . traverse (traverse (traverse f)) . view theRecords
 
+-- | A collection of records containing no records.
 emptyRecords :: Records s
 emptyRecords = Records Nothing
 
+-- | A record collection conaining one record
 singletonRecords :: Record s -> Records s
 singletonRecords s = Records (Just (Pesarated1 (Separated1 s mempty)))
 
+-- | Collect the list of 'Record's from anything that 'HasRecords'
 recordList :: HasRecords c s => c -> [Record s]
 recordList = foldMap toList . view theRecords

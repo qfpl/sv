@@ -62,9 +62,15 @@ instance Traversable Field where
   traverse f =
     foldField (fmap UnquotedF . f) (fmap QuotedF . traverse (traverse f))
 
+-- | Overloads the values in fields, which are stringy and may contain escape
+-- sequences.
 class Textual a => FieldContents a where
+  -- | Extracts the value from a field, expanding escape sequences.
+  --
+  -- eg. the field @Escaped quote -> "" <-@ would become @Escaped quote -> " <-@
   expandQuotes :: Quoted a -> a
 
+-- | Extract the contents from a field, expanding escape sequences, using 'expandQuotes'
 fieldContents :: FieldContents s => Field s -> s
 fieldContents = foldField id (expandQuotes . view value)
 
