@@ -19,7 +19,7 @@ import Data.Sv.Field       (Field, unspacedField)
 import Data.Sv.Generators  (genSvWithHeadedness)
 import Data.Sv.Parser.Internal (field, separatedValues)
 import Data.Sv.Print       (displaySv, printField)
-import Data.Sv.Record      (emptyRecords, singleton, singletonRecords)
+import Data.Sv.Record      (emptyRecords, singleField, singleRecord)
 import Text.Babel          (toByteString)
 import Text.Space          (HorizontalSpace (Space, Tab))
 import Text.Quote          (Quote (SingleQuote))
@@ -69,7 +69,7 @@ csvPrint =
           subject = Sv comma noHeader emptyRecords []
       in  displaySv subject @?= ""
   , testCase "empty quotes" $
-      let subject = Sv comma noHeader (singletonRecords (singleton (unspacedField SingleQuote []))) []
+      let subject = Sv comma noHeader (singleRecord (singleField (unspacedField SingleQuote []))) []
       in displaySv subject @?= "''"
   ]
 
