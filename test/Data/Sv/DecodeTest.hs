@@ -13,7 +13,7 @@ import Data.Functor.Alt
 import Data.Semigroup
 import Text.Trifecta (Result(Success, Failure))
 
-import Data.Sv.Sv (Headedness (Unheaded))
+import Data.Sv.Sv (Headedness (Unheaded), comma)
 import Data.Sv.Decode
 
 test_Decode :: TestTree
@@ -56,6 +56,6 @@ csv1' =
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      case parseDecode v3ios Unheaded csv1 of
+      case parseDecode v3ios comma Unheaded csv1 of
         Failure _ -> assertFailure "Parse failed"
         Success z -> z @?= pure csv1'

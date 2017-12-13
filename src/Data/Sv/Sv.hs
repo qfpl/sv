@@ -7,8 +7,11 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 -- | This file defines a datatype for a complete Sv document.
--- The datatype preserves information so that the original Sv
+-- The datatype preserves information such as whitespace so that the original
 -- text can be recovered.
+--
+-- In the usual workflow, this type is only an intermediate stage between
+-- parsing and decoding.
 module Data.Sv.Sv (
   Sv (Sv, _separator, _maybeHeader, _records, _finalNewlines)
   , HasSv (sv, separator, maybeHeader, finalNewlines)
@@ -18,7 +21,7 @@ module Data.Sv.Sv (
   , empty
   , recordList
   , Header (Header, _headerRecord)
-  , HasHeader (header, headerRecord)
+  , HasHeader (header, headerRecord, headerNewline)
   , noHeader
   , mkHeader
   , Headedness (Unheaded, Headed)

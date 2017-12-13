@@ -1,6 +1,17 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | This module contains data structures, combinators, and primitives for
+-- decoding an 'Sv' into a list of your Haskell datatype.
+--
+-- A file can be read with 'decodeFromFile'. If you already have the text
+-- data in memory, it can be decoded with 'parseDecode'.
+-- Each of these will need a 'RowDecode' for your desired type.
+--
+-- You can build a 'FieldDecode' using the primitives in this file. 'FieldDecode'
+-- is an 'Applicative' and an 'Alternative', allowing for composition of these
+-- values. A 'FieldDecode' can then be promoted to a 'RowDecode' using 'row' or '<@>'
+
 module Data.Sv.Decode (
   decode
 , parseDecode
@@ -20,9 +31,10 @@ module Data.Sv.Decode (
 , float
 , double
 , choice
+, element
 , choiceE
 , orElse
-, withDefault
+, orElseE
 , categorical
 , decodeRead
 , decodeRead'
@@ -42,9 +54,11 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
+import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (listToMaybe)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
+import Data.Semigroup.Foldable (asum1)
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -52,7 +66,7 @@ import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
 import Text.Trifecta (Result, parseByteString, parseFromFileEx)
 
-import Data.Sv.Sv (Sv, Headedness, recordList)
+import Data.Sv.Sv (Separator, Sv, Headedness, recordList)
 import Data.Sv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.Row
@@ -62,34 +76,41 @@ import Data.Sv.Field (FieldContents)
 import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
+-- | Decodes a sv into a list of its values using the provided 'RowDecode'
 decode :: RowDecode e s a -> Sv s -> DecodeValidation e [a]
 decode r = traverse (runRowDecode r) . recordList
 
+-- | Parse text as an Sv, and then decode it with the given decoder.
 parseDecode ::
   Textual s
   => RowDecode e s a
+  -> Separator
   -> Headedness
   -> s
   -> Result (DecodeValidation e [a])
-parseDecode d h =
-  fmap (decode d) . parseByteString (separatedValues ',' h) mempty . toByteString
+parseDecode d sep h =
+  fmap (decode d) . parseByteString (separatedValues sep h) mempty . toByteString
 
 decodeFromFile ::
   (MonadIO m, Textual e, Textual s)
   => RowDecode e s a
+  -> Separator
   -> Headedness
   -> FilePath
   -> m (DecodeValidation e [a])
-decodeFromFile d h fp =
+decodeFromFile d sep h fp =
   let decodeResult r = resultToDecodeError r `bindValidation` decode d
-  in  decodeResult <$> parseFromFileEx (separatedValues ',' h) fp
+  in  decodeResult <$> parseFromFileEx (separatedValues sep h) fp
 
+-- | Get the contents of a field without doing any decoding. This never fails.
 contents :: FieldContents s => FieldDecode e s s
 contents = fieldDecode pure
 
+-- | Get the contents of a field as a bytestring.
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents
 
+-- | Get the contents of a field as a bytestring
 utf8 :: IsString e => FieldDecode e ByteString Text
 utf8 = contents >>==
   either (badDecode . fromString . show) pure . decodeUtf8'
@@ -103,6 +124,8 @@ string = toString <$> contents
 lazyText :: IsString e => FieldDecode e ByteString LT.Text
 lazyText = LT.fromStrict <$> text
 
+-- | Decode the field as 'Text'. If your input string is a ByteString,
+-- consider using 'utf8'` instead.
 text :: FieldContents s => FieldDecode e s Text
 text = toText <$> contents
 
@@ -110,7 +133,7 @@ trimmed :: FieldContents s => FieldDecode e s s
 trimmed = trim <$> contents
 
 ignore :: FieldContents s => FieldDecode e s ()
-ignore = () <$ contents
+ignore = replace ()
 
 replace :: FieldContents s => a -> FieldDecode e s a
 replace a = a <$ contents
@@ -133,14 +156,17 @@ double = named "double"
 choice :: FieldDecode e s a -> FieldDecode e s a -> FieldDecode e s a
 choice = (<!>)
 
+element :: NonEmpty (FieldDecode e s a) -> FieldDecode e s a
+element = asum1
+
 choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
 choiceE a b = fmap Left a <!> fmap Right b
 
 orElse :: FieldContents s => FieldDecode e s a -> a -> FieldDecode e s a
 orElse f a = f <!> replace a
 
-withDefault :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
-withDefault b a = swapE <$> choiceE b (replace a)
+orElseE :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+orElseE b a = swapE <$> choiceE b (replace a)
   where
     swapE = either Right Left
 

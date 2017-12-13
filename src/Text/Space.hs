@@ -3,11 +3,13 @@
 -- | Large chunks of only space characters, represented efficiently as integers
 module Text.Space
   ( HorizontalSpace (Space, Tab)
+  , AsHorizontalSpace (_HorizontalSpace, _Space, _Tab)
   , Spaces
   , single
   , manySpaces
   , tab
   , spaceToChar
+  , charToSpace
   , spaces
   , Spaced
   , spaced

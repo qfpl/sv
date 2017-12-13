@@ -3,6 +3,7 @@
 -- | A sum type for line endings
 module Text.Newline (
   Newline (CR, LF, CRLF)
+  , AsNewline(_Newline, _CR, _LF, _CRLF)
   , newlineText
   , parseNewline
 ) where
