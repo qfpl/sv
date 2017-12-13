@@ -10,11 +10,11 @@ module Data.Sv.Record (
   -- Optics
   , HasRecord (record, fields)
   , fieldsIso
-  , singleton
+  , singleField
   , HasRecords (records, theRecords)
   , Records (Records, _theRecords)
   , emptyRecords
-  , singletonRecords
+  , singleRecord
   , recordList
 ) where
 
@@ -30,7 +30,7 @@ import Text.Newline       (Newline)
 
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
--- by commas.
+-- by a separator (often a comma).
 newtype Record s =
   Record {
     _fields :: NonEmpty (Field s)
@@ -63,8 +63,8 @@ instance Traversable Record where
   traverse f = fmap Record . traverse (traverse f) . _fields
 
 -- | Build a 'Record' with just one 'Field'
-singleton :: Field s -> Record s
-singleton = Record . pure
+singleField :: Field s -> Record s
+singleField = Record . pure
 
 -- | A collection of records, separated by newlines.
 newtype Records s =
@@ -97,8 +97,8 @@ emptyRecords :: Records s
 emptyRecords = Records Nothing
 
 -- | A record collection conaining one record
-singletonRecords :: Record s -> Records s
-singletonRecords s = Records (Just (Pesarated1 (Separated1 s mempty)))
+singleRecord :: Record s -> Records s
+singleRecord s = Records (Just (Pesarated1 (Separated1 s mempty)))
 
 -- | Collect the list of 'Record's from anything that 'HasRecords'
 recordList :: HasRecords c s => c -> [Record s]
