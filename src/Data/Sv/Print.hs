@@ -23,7 +23,7 @@ import Data.Sv.Sv (Sv (Sv), Header (Header), Separator)
 import Text.Babel (Textual (toByteString, toByteStringBuilder), singleton)
 import Text.Between
 import Text.Newline
-import Text.Space (spaceChar)
+import Text.Space (spaceToChar)
 import Text.Quote
 
 printNewline :: Newline -> Builder
@@ -37,7 +37,7 @@ printField f =
       let c = quoteToString q
           cc = c <> c
           s = bifoldMap (const cc) toByteStringBuilder ss
-          spc = foldMap (singleton . spaceChar)
+          spc = foldMap (singleton . spaceToChar)
       in  fold [spc b, c, s, c, spc t]
 
 printRecord :: Textual s => Separator -> Record s -> Builder

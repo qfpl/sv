@@ -7,11 +7,11 @@ module Text.Space
   , single
   , manySpaces
   , tab
-  , spaceChar
-  , space
+  , spaceToChar
   , spaces
   , Spaced
   , spaced
+  , unspaced
   , unspace
   )
 where
@@ -23,12 +23,15 @@ import qualified Data.Text as Text
 import Data.Sv.Lens.Util (singletonList, singletonText)
 import Text.Between     (Between, betwixt, _value)
 
+-- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
+-- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
 data HorizontalSpace =
   Space
   | Tab
   deriving (Eq, Ord, Show)
 -- TODO Others?
 
+-- | Classy prisms for 'HorizontalSpace's
 class AsHorizontalSpace r where
   _HorizontalSpace :: Prism' r HorizontalSpace
   _Space :: Prism' r ()
@@ -50,10 +53,10 @@ instance AsHorizontalSpace HorizontalSpace where
         _   -> Left x
 
 instance AsHorizontalSpace Char where
-  _HorizontalSpace = space
+  _HorizontalSpace = prism' spaceToChar charToSpace
 
 instance (a ~ Char) => AsHorizontalSpace [a] where
-  _HorizontalSpace = singletonList . space
+  _HorizontalSpace = singletonList . _HorizontalSpace
 
 instance AsHorizontalSpace Text where
   _HorizontalSpace = singletonText . _HorizontalSpace
@@ -64,29 +67,31 @@ type Spaces = [HorizontalSpace]
 single :: Spaces
 single = [Space]
 
+-- | As many spaces as you'd like
 manySpaces :: Int -> Spaces
 manySpaces = flip replicate Space
 
+-- | One tab
 tab :: Spaces
 tab = [Tab]
 
-spaceChar :: HorizontalSpace -> Char
-spaceChar Space = ' '
-spaceChar Tab = '\t'
+-- | Turn a 'Space' into a 'Char'. To go the other way, see 'charToSpace'
+spaceToChar :: HorizontalSpace -> Char
+spaceToChar Space = ' '
+spaceToChar Tab = '\t'
 
-space :: Prism' Char HorizontalSpace
-space =
-  prism' spaceChar $ \c ->
-    case c of
-      ' '  -> Just Space
-      '\t' -> Just Tab
-      _    -> Nothing
+-- | Try to turn a 'Char' into a Space. To go the other way, see 'spaceToChar'
+charToSpace :: Char -> Maybe HorizontalSpace
+charToSpace c = case c of
+  ' '  -> Just Space
+  '\t' -> Just Tab
+  _    -> Nothing
 
 -- | Parse 'Text' into 'Spaces', or turn spaces into text
 spaces :: Prism' Text Spaces
 spaces =
   prism'
-    (Text.pack . foldMap (pure . spaceChar))
+    (Text.pack . foldMap (pure . spaceToChar))
     (foldMap c2s . Text.unpack)
 
 c2s :: Char -> Maybe Spaces
@@ -97,10 +102,15 @@ c2s _   = Nothing
 -- | Something between spaces is 'Spaced'
 type Spaced = Between Spaces
 
--- | Alias for @Text.Between.betwixt@
+-- | Put the given argument between the given spaces.
+-- Alias for @Text.Between.betwixt@
 spaced :: Spaces -> Spaces -> a -> Spaced a
 spaced = betwixt
 
-unspace :: Spaced a -> Spaced a
-unspace = betwixt mempty mempty . _value
+-- | Put the given argument between no spaces
+unspaced :: a -> Spaced a
+unspaced = betwixt mempty mempty
 
+-- | Remove spaces from the argument
+unspace :: Spaced a -> Spaced a
+unspace = unspaced . _value
