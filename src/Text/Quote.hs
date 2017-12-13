@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- | A sum type for quote characters
 module Text.Quote (
@@ -15,15 +16,14 @@ module Text.Quote (
 ) where
 
 import Control.Lens (Lens', Prism', prism, prism', review)
-import Control.Monad ((>=>))
 import Data.Bifunctor (first)
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
 import Data.String (IsString (fromString))
 import Data.Text (Text)
-import qualified Data.Text as Text (null, singleton, uncons)
 import Data.Traversable (Traversable (traverse))
 
+import Data.Sv.Lens.Util (singletonList, singletonText)
 import Text.Escaped (Escaped, Escaped')
 
 -- | A sum type for quote characters. Either single or double quotes.
@@ -48,6 +48,15 @@ instance AsQuote Quote where
     SingleQuote -> Left x
     DoubleQuote -> Right ()
 
+instance AsQuote Char where
+  _Quote = quoteChar
+
+instance (a ~ Char) => AsQuote [a] where
+  _Quote = singletonList . _Quote
+
+instance AsQuote Text where
+  _Quote = quoteText
+
 -- | Convert a Quote to the Char it represents.
 quoteChar :: Prism' Char Quote
 quoteChar =
@@ -59,12 +68,6 @@ quoteChar =
       '\'' -> Just SingleQuote
       '"'  -> Just DoubleQuote
       _    -> Nothing)
-
-singletonText :: Prism' Text Char
-singletonText =
-  prism'
-    Text.singleton
-    (Text.uncons >=> \(h,tl) -> if Text.null tl then Just h else Nothing)
 
 -- | Convert a 'Quote' into a String.
 -- Useful when concatenating strings

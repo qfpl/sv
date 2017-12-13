@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 -- | Large chunks of only space characters, represented efficiently as integers
 module Text.Space
   ( HorizontalSpace (Space, Tab)
@@ -14,18 +16,47 @@ module Text.Space
   )
 where
 
-import Control.Lens     (Prism', prism')
+import Control.Lens     (Prism', prism, prism')
 import Data.Text        (Text)
 import qualified Data.Text as Text
 
+import Data.Sv.Lens.Util (singletonList, singletonText)
 import Text.Between     (Between, betwixt, _value)
 
 data HorizontalSpace =
   Space
   | Tab
   deriving (Eq, Ord, Show)
-
 -- TODO Others?
+
+class AsHorizontalSpace r where
+  _HorizontalSpace :: Prism' r HorizontalSpace
+  _Space :: Prism' r ()
+  _Tab :: Prism' r ()
+  _Space = _HorizontalSpace . _Space
+  _Tab = _HorizontalSpace . _Tab
+
+instance AsHorizontalSpace HorizontalSpace where
+  _HorizontalSpace = id
+  _Space =
+    prism (const Space) $ \x ->
+      case x of
+        Space -> Right ()
+        _     -> Left x
+  _Tab =
+    prism (const Tab) $ \x ->
+      case x of
+        Tab -> Right ()
+        _   -> Left x
+
+instance AsHorizontalSpace Char where
+  _HorizontalSpace = space
+
+instance (a ~ Char) => AsHorizontalSpace [a] where
+  _HorizontalSpace = singletonList . space
+
+instance AsHorizontalSpace Text where
+  _HorizontalSpace = singletonText . _HorizontalSpace
 
 type Spaces = [HorizontalSpace]
 
