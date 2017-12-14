@@ -6,12 +6,11 @@
 module Data.Sv.DecodeTest (test_Decode) where
 
 import Test.Tasty       (TestTree, testGroup)
-import Test.Tasty.HUnit (assertFailure, testCase, (@?=))
+import Test.Tasty.HUnit (testCase, (@?=))
 
 import Data.ByteString
 import Data.Functor.Alt
 import Data.Semigroup
-import Text.Trifecta (Result(Success, Failure))
 
 import Data.Sv.Sv (Headedness (Unheaded), comma)
 import Data.Sv.Decode
