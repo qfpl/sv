@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 
 -- | This module contains data structures, combinators, and primitives for
 -- decoding an 'Sv' into a list of your Haskell datatype.
@@ -39,6 +40,10 @@ module Data.Sv.Decode (
 , decodeRead
 , decodeRead'
 , decodeReadWithMsg
+, parser
+, trifecta
+, attoparsec
+, parsec
 , module Data.Sv.Decode.Error
 , module Data.Sv.Decode.Field
 , module Data.Sv.Decode.State
@@ -48,6 +53,8 @@ module Data.Sv.Decode (
 
 import Control.Lens (alaf)
 import Control.Monad.IO.Class (MonadIO)
+import Data.Attoparsec.ByteString (parseOnly)
+import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
@@ -63,10 +70,13 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
-import Text.Trifecta (parseByteString, parseFromFileEx)
+import Text.Parsec (Parsec)
+import qualified Text.Parsec as P (parse)
+import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
+import qualified Text.Trifecta as T (Parser)
 
 import Data.Sv.Sv (Separator, Sv, Headedness, recordList)
-import Data.Sv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
+import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
@@ -87,8 +97,8 @@ parseDecode ::
   -> s
   -> DecodeValidation e [a]
 parseDecode d sep h s =
-  let z = resultToDecodeError . parseByteString (separatedValues sep h) mempty . toByteString $ s
-  in  z `bindValidation` decode d
+  let parseResult = resultToDecodeError BadParse . parseByteString (separatedValues sep h) mempty . toByteString $ s
+  in  parseResult `bindValidation` decode d
 
 decodeFromFile ::
   (MonadIO m, Textual e, Textual s)
@@ -98,7 +108,7 @@ decodeFromFile ::
   -> FilePath
   -> m (DecodeValidation e [a])
 decodeFromFile d sep h fp =
-  let decodeResult r = resultToDecodeError r `bindValidation` decode d
+  let decodeResult r = resultToDecodeError BadParse r `bindValidation` decode d
   in  decodeResult <$> parseFromFileEx (separatedValues sep h) fp
 
 -- | Get the contents of a field without doing any decoding. This never fails.
@@ -202,3 +212,40 @@ named name =
       space = " "
   in  decodeReadWithMsg $ \bs ->
         mconcat ["Couldn't parse \"", retext bs, "\" as a", n'', space, retext name]
+
+---- Promoting parsers to 'FieldDecode's
+
+-- | Build a 'FieldDecode' from a parser from the 'parsers' library.
+parser :: (FieldContents s, Textual e) => (forall m . CharParsing m => m a) -> FieldDecode e s a
+parser = trifecta
+
+-- | Build a 'FieldDecode' from a Trifecta parser
+trifecta :: (FieldContents s, Textual e) => T.Parser a -> FieldDecode e s a
+trifecta =
+  mkParserFunction
+    (resultToDecodeError BadDecode)
+    (flip parseByteString mempty)
+
+-- | Build a 'FieldDecode' from an Attoparsec parser
+attoparsec :: (FieldContents s, Textual e) => A.Parser a -> FieldDecode e s a
+attoparsec =
+  mkParserFunction
+    (eitherToDecodeError (BadDecode . fromString))
+    parseOnly
+
+-- | Build a 'FieldDecode' from a Parsec parser
+parsec :: (FieldContents s, Textual e) => Parsec ByteString () a -> FieldDecode e s a
+parsec =
+  mkParserFunction
+    (eitherToDecodeError (BadDecode . showT))
+    (\p s -> P.parse p mempty s)
+
+mkParserFunction ::
+  (CharParsing p, FieldContents s, Textual e)
+  => (f a -> DecodeValidation e a)
+  -> (p a -> ByteString -> f a)
+  -> p a
+  -> FieldDecode e s a
+mkParserFunction err run p =
+  let p' = p <* eof
+  in  byteString >>== (err . run p')

@@ -11,6 +11,8 @@ module Data.Sv.Decode.Error (
 , badParse
 , badDecode
 , resultToDecodeError
+, eitherToDecodeError
+, eitherToDecodeError'
 ) where
 
 import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
@@ -18,7 +20,7 @@ import Text.Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
 import Data.Sv.Field
-import Text.Babel (Textual, showT)
+import Text.Babel (Textual, retext, showT)
 
 decodeError :: DecodeError e -> DecodeValidation e a
 decodeError = AccFailure . DecodeErrors . pure
@@ -38,7 +40,13 @@ badParse = decodeError . BadParse
 badDecode :: e -> DecodeValidation e a
 badDecode = decodeError . BadDecode
 
-resultToDecodeError :: Textual e => Result a -> DecodeValidation e a
-resultToDecodeError result = case result of
+resultToDecodeError :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
+resultToDecodeError f result = case result of
   Success a -> pure a
-  Failure e -> badParse (showT (_errDoc e))
+  Failure e -> decodeError . f . showT . _errDoc $ e
+
+eitherToDecodeError :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
+eitherToDecodeError f = either (decodeError . f) pure
+
+eitherToDecodeError' :: (Textual e, Textual e') => (e' -> DecodeError e'') -> Either e a -> DecodeValidation e'' a
+eitherToDecodeError' f = either (decodeError . f . retext) pure
