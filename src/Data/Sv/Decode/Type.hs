@@ -4,13 +4,11 @@
 module Data.Sv.Decode.Type (
   FieldDecode (..)
 , DecodeState (..)
-, RowDecode (..)
 , DecodeValidation
 , DecodeError (..)
 , DecodeErrors (..)
 ) where
 
-import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (MonadState, State, runState, state)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
@@ -20,7 +18,6 @@ import Data.Semigroup
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
 
 import Data.Sv.Field (Field)
-import Data.Sv.Record (Record)
 
 newtype FieldDecode e s a =
   FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
@@ -41,10 +38,6 @@ instance Alt (FieldDecode e s) where
 newtype DecodeState s a =
   DecodeState { getDecodeState :: State [Field s] a }
   deriving (Functor, Apply, Applicative, Monad, MonadState [Field s])
-
-newtype RowDecode e s a =
-  RowDecode { unwrapRowDecode :: ReaderT (Record s) (DecodeValidation e) a }
-  deriving (Functor, Apply, Applicative)
 
 -- TODO eventually give this type a much better show
 data DecodeError e =

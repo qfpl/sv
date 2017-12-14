@@ -6,11 +6,11 @@
 --
 -- A file can be read with 'decodeFromFile'. If you already have the text
 -- data in memory, it can be decoded with 'parseDecode'.
--- Each of these will need a 'RowDecode' for your desired type.
+-- You will need a 'FieldDecode' for your desired type.
 --
--- You can build a 'FieldDecode' using the primitives in this file. 'FieldDecode'
+-- A 'FieldDecode' can be built using the primitives in this file. 'FieldDecode'
 -- is an 'Applicative' and an 'Alternative', allowing for composition of these
--- values. A 'FieldDecode' can then be promoted to a 'RowDecode' using 'row' or '<@>'
+-- values.
 
 module Data.Sv.Decode (
   decode
@@ -41,7 +41,6 @@ module Data.Sv.Decode (
 , decodeReadWithMsg
 , module Data.Sv.Decode.Error
 , module Data.Sv.Decode.Field
-, module Data.Sv.Decode.Row
 , module Data.Sv.Decode.State
 , module Data.Sv.Decode.Type
 , FieldContents
@@ -64,36 +63,36 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
-import Text.Trifecta (Result, parseByteString, parseFromFileEx)
+import Text.Trifecta (parseByteString, parseFromFileEx)
 
 import Data.Sv.Sv (Separator, Sv, Headedness, recordList)
 import Data.Sv.Decode.Error (DecodeError (UnknownCanonicalValue), DecodeValidation, bindValidation, badDecode, resultToDecodeError)
 import Data.Sv.Decode.Field
-import Data.Sv.Decode.Row
 import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
 import Data.Sv.Field (FieldContents)
 import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
 
--- | Decodes a sv into a list of its values using the provided 'RowDecode'
-decode :: RowDecode e s a -> Sv s -> DecodeValidation e [a]
-decode r = traverse (runRowDecode r) . recordList
+-- | Decodes a sv into a list of its values using the provided 'FieldDecode'
+decode :: (Textual s, Textual e) => FieldDecode e s a -> Sv s -> DecodeValidation e [a]
+decode f = traverse (promote f) . recordList
 
 -- | Parse text as an Sv, and then decode it with the given decoder.
 parseDecode ::
-  Textual s
-  => RowDecode e s a
+  (Textual s, Textual e)
+  => FieldDecode e s a
   -> Separator
   -> Headedness
   -> s
-  -> Result (DecodeValidation e [a])
-parseDecode d sep h =
-  fmap (decode d) . parseByteString (separatedValues sep h) mempty . toByteString
+  -> DecodeValidation e [a]
+parseDecode d sep h s =
+  let z = resultToDecodeError . parseByteString (separatedValues sep h) mempty . toByteString $ s
+  in  z `bindValidation` decode d
 
 decodeFromFile ::
   (MonadIO m, Textual e, Textual s)
-  => RowDecode e s a
+  => FieldDecode e s a
   -> Separator
   -> Headedness
   -> FilePath

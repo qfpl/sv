@@ -36,8 +36,8 @@ data V3 a =
 v3 :: Semigroup e => FieldDecode e s a -> FieldDecode e s (V3 a)
 v3 f = sequenceA (V3 f f f)
 
-v3ios :: RowDecode ByteString ByteString (V3 IntOrString)
-v3ios = row (v3 intOrString)
+v3ios :: FieldDecode ByteString ByteString (V3 IntOrString)
+v3ios = v3 intOrString
 
 csv1 :: ByteString
 csv1 = intercalate "\r\n" [
@@ -56,6 +56,4 @@ csv1' =
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      case parseDecode v3ios comma Unheaded csv1 of
-        Failure _ -> assertFailure "Parse failed"
-        Success z -> z @?= pure csv1'
+      parseDecode v3ios comma Unheaded csv1 @?= pure csv1'

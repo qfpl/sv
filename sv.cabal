@@ -51,7 +51,6 @@ library
                        , Data.Sv.Decode
                        , Data.Sv.Decode.Error
                        , Data.Sv.Decode.Field
-                       , Data.Sv.Decode.Row
                        , Data.Sv.Decode.State
                        , Data.Sv.Decode.Type
                        , Data.Sv.Field

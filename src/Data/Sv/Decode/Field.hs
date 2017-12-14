@@ -7,11 +7,13 @@ module Data.Sv.Decode.Field (
 , fieldDecode_
 , decodeMay
 , decodeMay'
+, promote
 ) where
 
 
 import Control.Lens (view)
 import Control.Monad.State (state)
+import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
 import Data.Validation (_AccValidation, bindValidation)
@@ -20,6 +22,8 @@ import Data.Sv.Field (Field, FieldContents, fieldContents)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.State (runDecodeState)
 import Data.Sv.Decode.Type
+import Data.Sv.Record (Record, _fields)
+import Text.Babel (Textual (retext))
 
 runFieldDecode :: FieldDecode e s a -> [Field s] -> (DecodeValidation e a, [Field s])
 runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
@@ -47,3 +51,12 @@ decodeMay ab e a = decodeMay' e (ab a)
 
 decodeMay' :: DecodeError e -> Maybe b -> DecodeValidation e b
 decodeMay' e = maybe (decodeError e) pure
+
+-- | promotes a FieldDecode to work on a whole 'Record' at once
+--
+-- TODO probably needs a waaaay better name
+promote :: (Textual e, Textual s) => FieldDecode e s a -> Record s -> DecodeValidation e a
+promote a rs =
+  case runFieldDecode a . toList . _fields $ rs of
+    (v, []) -> v
+    (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap retext) xs)
