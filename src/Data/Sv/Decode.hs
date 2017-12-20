@@ -20,6 +20,7 @@ module Data.Sv.Decode (
 , contents
 , byteString
 , utf8
+, ascii
 , lazyByteString
 , string
 , lazyText
@@ -33,6 +34,7 @@ module Data.Sv.Decode (
 , double
 , choice
 , element
+, option
 , choiceE
 , orElse
 , orElseE
@@ -119,10 +121,14 @@ contents = fieldDecode pure
 byteString :: FieldContents s => FieldDecode e s ByteString
 byteString = toByteString <$> contents
 
--- | Get the contents of a field as a bytestring
+-- | Get the contents of a UTF8 encoded field as 'Text'
 utf8 :: IsString e => FieldDecode e ByteString Text
 utf8 = contents >>==
   either (badDecode . fromString . show) pure . decodeUtf8'
+
+-- | Get the contents of an ASCII encoded field as 'Text'
+ascii :: IsString e => FieldDecode e ByteString Text
+ascii = utf8
 
 lazyByteString :: FieldContents s => FieldDecode e s LBS.ByteString
 lazyByteString = toLazyByteString <$> contents
@@ -168,6 +174,9 @@ choice = (<!>)
 element :: NonEmpty (FieldDecode e s a) -> FieldDecode e s a
 element = asum1
 
+option :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
+option f = Just <$> f <!> Nothing <$ ignore
+
 choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
 choiceE a b = fmap Left a <!> fmap Right b
 
@@ -189,8 +198,8 @@ categorical as =
         then Just a
         else Nothing
   in  contents >>== \s ->
-  decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
-    alaf First foldMap (go s) as'
+    decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
+      alaf First foldMap (go s) as'
 
 decodeRead :: (Readable a, FieldContents s, Textual e) => FieldDecode e s a
 decodeRead = decodeReadWithMsg (mappend "Couldn't parse " . retext)

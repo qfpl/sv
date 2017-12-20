@@ -3,6 +3,7 @@
 
 module Data.Sv.Decode.Type (
   FieldDecode (..)
+, FieldDecode'
 , DecodeState (..)
 , DecodeValidation
 , DecodeError (..)
@@ -22,6 +23,8 @@ import Data.Sv.Field (Field)
 newtype FieldDecode e s a =
   FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
   deriving (Functor, Apply, Applicative)
+
+type FieldDecode' s = FieldDecode s s
 
 instance Alt (FieldDecode e s) where
   FieldDecode (Compose as) <!> FieldDecode (Compose bs) =
