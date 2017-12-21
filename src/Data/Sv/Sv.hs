@@ -13,8 +13,8 @@
 -- In the usual workflow, this type is only an intermediate stage between
 -- parsing and decoding.
 module Data.Sv.Sv (
-  Sv (Sv, _separator, _maybeHeader, _records, _finalNewlines)
-  , HasSv (sv, separator, maybeHeader, finalNewlines)
+  Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)
+  , HasSv (sv, maybeHeader, finalNewlines)
   , HasRecords (records, theRecords)
   , mkSv
   , mkSv'
@@ -25,8 +25,9 @@ module Data.Sv.Sv (
   , noHeader
   , mkHeader
   , Headedness (Unheaded, Headed)
-  , headedness
+  , getHeadedness
   , Separator
+  , HasSeparator (separator)
   , comma
   , pipe
   , tab
@@ -39,6 +40,7 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
+import Data.Sv.Config     (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
 import Data.Sv.Record     (Record, Records (Records), HasRecords (records, theRecords), emptyRecords, recordList)
 import Text.Newline       (Newline)
 
@@ -48,7 +50,7 @@ import Text.Newline       (Newline)
 --   as well.
 data Sv s =
   Sv {
-    _separator :: Separator
+    _separatorSv :: Separator
   , _maybeHeader :: Maybe (Header s)
   , _records :: Records s
   , _finalNewlines :: [Newline]
@@ -56,17 +58,19 @@ data Sv s =
   deriving (Eq, Ord, Show)
 
 -- | Classy lenses for 'Sv'
-class HasRecords c s => HasSv c s | c -> s where
+class (HasRecords c s, HasSeparator c) => HasSv c s | c -> s where
   sv :: Lens' c (Sv s)
-  separator :: Lens' c Separator
-  {-# INLINE separator #-}
   maybeHeader :: Lens' c (Maybe (Header s))
   {-# INLINE maybeHeader #-}
   finalNewlines :: Lens' c [Newline]
   {-# INLINE finalNewlines #-}
-  separator = sv . separator
   maybeHeader = sv . maybeHeader
   finalNewlines = sv . finalNewlines
+
+instance HasSeparator (Sv s) where
+  separator f (Sv x1 x2 x3 x4) =
+    fmap (\y -> Sv y x2 x3 x4) (f x1)
+  {-# INLINE separator #-}
 
 instance HasRecords (Sv s) s where
   records f (Sv x1 x2 x3 x4) =
@@ -74,12 +78,9 @@ instance HasRecords (Sv s) s where
   {-# INLINE records #-}
 
 instance HasSv (Sv s) s where
-  {-# INLINE separator #-}
   {-# INLINE maybeHeader #-}
   {-# INLINE finalNewlines #-}
   sv = id
-  separator f (Sv x1 x2 x3 x4) =
-    fmap (\y -> Sv y x2 x3 x4) (f x1)
   maybeHeader f (Sv x1 x2 x3 x4) =
     fmap (\y -> Sv x1 y x3 x4) (f x2)
   finalNewlines f (Sv x1 x2 x3 x4) =
@@ -106,22 +107,9 @@ instance Foldable Sv where
 instance Traversable Sv where
   traverse f (Sv s h rs e) = Sv s <$> traverse (traverse f) h <*> traverse f rs <*> pure e
 
--- | A 'Separator' is just a 'Char'. It could be a sum type instead, since it
--- will usually be comma or pipe, but our preference has been to be open here
--- so that you can use whatever you'd like.
-type Separator = Char
-
--- | The venerable comma separator. Used for CSV documents.
-comma :: Separator
-comma = ','
-
--- | The pipe separator. Used for PSV documents.
-pipe :: Separator
-pipe = '|'
-
--- | Tab is a separator too - why not?
-tab :: Separator
-tab = '\t'
+-- | Determine the 'Headedness' of an 'Sv'
+getHeadedness :: Sv s -> Headedness
+getHeadedness = maybe Unheaded (const Headed) . _maybeHeader
 
 -- | A 'Header' is present in many CSV documents, usually listing the names
 -- of the columns. We keep this separate from the regular records.
@@ -158,12 +146,3 @@ noHeader = Nothing
 -- | Convenience constructor for 'Header', usually when you're building 'Sv's
 mkHeader :: Record s -> Newline -> Maybe (Header s)
 mkHeader r n = Just (Header r n)
-
--- | Does the 'Sv' have a 'Header' or not?
-data Headedness =
-  Unheaded | Headed
-  deriving (Eq, Ord, Show)
-
--- | Determine the 'Headedness' of an 'Sv'
-headedness :: Sv s -> Headedness
-headedness = maybe Unheaded (const Headed) . _maybeHeader

@@ -51,19 +51,22 @@ module Data.Sv.Decode (
 , module Data.Sv.Decode.State
 , module Data.Sv.Decode.Type
 , FieldContents
+, ParsingLib (Trifecta, Attoparsec)
+, HasParsingLib (parsingLib)
 ) where
 
-import Control.Lens (alaf)
-import Control.Monad.IO.Class (MonadIO)
+import Control.Lens (alaf, view)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (bimap, second)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.List.NonEmpty (NonEmpty)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
 import Data.Semigroup.Foldable (asum1)
@@ -77,7 +80,8 @@ import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
 import qualified Text.Trifecta as T (Parser)
 
-import Data.Sv.Sv (Separator, Sv, Headedness, recordList)
+import Data.Sv.Config (SvConfig, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultConfig)
+import Data.Sv.Sv (Sv, recordList)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.State
@@ -92,26 +96,42 @@ decode f = traverse (promote f) . recordList
 
 -- | Parse text as an Sv, and then decode it with the given decoder.
 parseDecode ::
-  (Textual s, Textual e)
+  forall e s a.
+  (Textual e, Textual s)
   => FieldDecode e s a
-  -> Separator
-  -> Headedness
+  -> Maybe SvConfig
   -> s
   -> DecodeValidation e [a]
-parseDecode d sep h s =
-  let parseResult = resultToDecodeError BadParse . parseByteString (separatedValues sep h) mempty . toByteString $ s
-  in  parseResult `bindValidation` decode d
+parseDecode d maybeConfig s =
+  let config = fromMaybe defaultConfig maybeConfig
+      sep = view separator config
+      h = view headedness config
+      lib = view parsingLib config
+      p :: CharParsing f => f (Sv s)
+      p = separatedValues sep h
+      parse = case lib of
+        Trifecta -> resultToDecodeError BadParse . parseByteString p mempty . toByteString
+        Attoparsec -> eitherToDecodeError (BadParse . fromString) . parseOnly p . toByteString
+  in  parse s `bindValidation` decode d
 
 decodeFromFile ::
   (MonadIO m, Textual e, Textual s)
   => FieldDecode e s a
-  -> Separator
-  -> Headedness
+  -> Maybe SvConfig
   -> FilePath
   -> m (DecodeValidation e [a])
-decodeFromFile d sep h fp =
-  let decodeResult r = resultToDecodeError BadParse r `bindValidation` decode d
-  in  decodeResult <$> parseFromFileEx (separatedValues sep h) fp
+decodeFromFile d maybeConfig fp =
+  let config = fromMaybe defaultConfig maybeConfig
+      sep = view separator config
+      h = view headedness config
+      lib = view parsingLib config
+      p :: (CharParsing f, Textual s) => f (Sv s)
+      p = separatedValues sep h
+      parseIO = case lib of
+        Trifecta -> resultToDecodeError BadParse <$> parseFromFileEx p fp
+        Attoparsec -> eitherToDecodeError (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
+  in do sv <- parseIO
+        pure (sv `bindValidation` decode d)
 
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: FieldContents s => FieldDecode e s s

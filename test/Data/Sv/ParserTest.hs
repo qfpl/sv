@@ -111,19 +111,19 @@ fieldTest =
   , testCase "unquoted" $
       p "yes" @?=/ uq "yes"
   , testCase "spaced doublequoted" $
-     p "       \" spaces  \"    " @?=/ QuotedF (spaced (manySpaces 7) (manySpaces 4) (qd " spaces  "))
+      p "       \" spaces  \"    " @?=/ QuotedF (spaced (manySpaces 7) (manySpaces 4) (qd " spaces  "))
   , testCase "spaced singlequoted" $
-     p "        ' more spaces ' " @?=/ QuotedF (spaced (manySpaces 8) (manySpaces 1) (qs " more spaces "))
+      p "        ' more spaces ' " @?=/ QuotedF (spaced (manySpaces 8) (manySpaces 1) (qs " more spaces "))
   , testCase "spaced unquoted" $
-     p "  text  " @?=/ uq "  text  "
+      p "  text  " @?=/ uq "  text  "
   , testCase "fields can include the separator in single quotes" $
-     p "'hello,there,'" @?=/ nospc (qs "hello,there,")
+      p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $
-     p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
+      p "\"court,of,the,,,,crimson,king\"" @?=/ nospc (qd "court,of,the,,,,crimson,king")
   , testCase "unquoted fields stop at the separator (1)" $
-     p "close,to,the,edge" @?=/ uq "close"
+      p "close,to,the,edge" @?=/ uq "close"
   , testCase "unquoted fields stop at the separator (2)" $
-     p ",close,to,the,edge" @?=/ uq ""
+      p ",close,to,the,edge" @?=/ uq ""
   ]
 
 recordTest :: TestTree

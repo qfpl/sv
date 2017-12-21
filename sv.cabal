@@ -47,7 +47,7 @@ source-repository    head
 
 library
   exposed-modules:     Data.Sv
-                       , Data.Sv.Sv
+                       , Data.Sv.Config
                        , Data.Sv.Decode
                        , Data.Sv.Decode.Error
                        , Data.Sv.Decode.Field
@@ -59,6 +59,7 @@ library
                        , Data.Sv.Parser.Internal
                        , Data.Sv.Print
                        , Data.Sv.Record
+                       , Data.Sv.Sv
                        , Data.Functor.Compose.Extra
                        , Data.Semigroup.Foldable.Extra
                        , Text.Babel
@@ -100,7 +101,8 @@ test-suite             tasty
   main-is:
                        tasty.hs
   other-modules:
-                       Data.Sv.DecodeTest
+                       Species
+                       , Data.Sv.DecodeTest
                        , Data.Sv.ParserTest
                        , Data.Sv.PrintTest
                        , Data.Sv.Generators

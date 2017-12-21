@@ -26,7 +26,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, headedness, Separator)
+import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Field       (Field (QuotedF, UnquotedF))
 import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
@@ -44,7 +44,7 @@ genSv sep spc s =
   in  Sv <$> sep <*> h <*> rs <*> e
 
 genSvWithHeadedness :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Sv s, Headedness)
-genSvWithHeadedness sep spc s = fmap (\c -> (c, headedness c)) (genSv sep spc s)
+genSvWithHeadedness sep spc s = fmap (\c -> (c, getHeadedness c)) (genSv sep spc s)
 
 genNewline :: Gen Newline
 genNewline =

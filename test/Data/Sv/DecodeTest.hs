@@ -5,14 +5,14 @@
 
 module Data.Sv.DecodeTest (test_Decode) where
 
-import Test.Tasty       (TestTree, testGroup)
-import Test.Tasty.HUnit (testCase, (@?=))
-
+import Control.Lens ((&), (.~))
 import Data.ByteString
 import Data.Functor.Alt
 import Data.Semigroup
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, (@?=))
 
-import Data.Sv.Sv (Headedness (Unheaded), comma)
+import Data.Sv (SvConfig, defaultConfig, Headedness (Unheaded), headedness)
 import Data.Sv.Decode
 
 test_Decode :: TestTree
@@ -52,7 +52,10 @@ csv1' =
   , V3 (I 7) (S " unquoted text") (I 5)
   ]
 
+cfg :: SvConfig
+cfg = defaultConfig & headedness .~ Unheaded
+
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      parseDecode v3ios comma Unheaded csv1 @?= pure csv1'
+      parseDecode v3ios (Just cfg) csv1 @?= pure csv1'
