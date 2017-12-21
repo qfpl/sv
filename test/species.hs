@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Species where
+module Main where
 
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
+import System.Exit (exitFailure)
 
 import Data.Sv
 
@@ -17,7 +18,7 @@ species :: IO (DecodeValidation S [Species])
 species = decodeFromFile speciesDecoder (Just config) file
 
 type S = ByteString
-s :: FieldDecode e S ByteString
+s :: FieldDecode' ByteString ByteString
 s = byteString
 
 data Species =
@@ -122,8 +123,8 @@ data Significance
 significance :: FieldDecode' S Significance
 significance =
   categorical [
-    (Y, ["Y", "y"])
-  , (N, ["N", "no"])
+    (Y, ["Y", "y", "yes"])
+  , (N, ["N", "n", "no"])
   ]
 
 speciesDecoder :: FieldDecode' S Species
@@ -131,3 +132,12 @@ speciesDecoder =
   Species <$> int <*> s <*> s <*> s <*> s <*> s <*> s <*>
     option nca <*> option epbc <*> option significance <*> option endemicity
 
+main :: IO ()
+main = do
+  dv <- species
+  case dv of
+    AccSuccess _ -> pure ()
+    AccFailure e -> do
+      putStrLn "Failed to parse and decode species.csv:"
+      print e
+      exitFailure
