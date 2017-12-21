@@ -21,14 +21,13 @@ import Data.Sv
 \end{code}
 
 Here is our test file, in comma-separated-values format. Its subject is
-fauna of Queensland, Australia.
+the conservation statuses of species found in Queensland, Australia.
+attributions.md describes how this file was sourced.
 
 The file contains a header row featuring the column names, and then
 thousands of rows of data. We will load the file from disk, parse it, and
 then decode each row into a regular Haskell datatype, which will be
 collected in a list.
-
-attributions.mdvc describes how this file was sourced.
 
 It is important to mention that this file is encoded using Windows-1252,
 which is a non-ISO extension to latin1 8-bit ASCII. In particular, it is
@@ -57,11 +56,13 @@ config :: SvConfig
 config = defaultConfig & (parsingLib .~ Attoparsec)
 \end{code}
 
-This is the type we've made for our rows. Many of the fields are simply
+This is the type we've made for our rows. It was designed by observing
+the properties of the file. Many of the fields are simply
 textual data, so we've chosen ByteString. We recommend using Text if
-your data is ASCII, UTF-8, or UTF-16.
-
+your data is ASCII, UTF-8, or UTF-16. We've made data types for the other
+fields.
 Other fields include the ID which is an int, and several optional fields.
+Because they are optional, we have wrapped them in Maybe.
 These optional fields are categorical data, meaning that each entry is
 from a fixed set of categories or classes.
 
@@ -96,7 +97,13 @@ combining these primitive decoders. Decoders are Applicative and
 Alternative, giving us access to many derived combinators. There are also
 other useful combinators defined in Data.Sv.Decode.
 
-TODO describe type parameters
+A FieldDecode has three type paramters. The first of these is the string
+type to use for errors. Usually one would use Text or Bytestring. The second
+type parameter is the input string type. We recommend these be the same.
+In this case, they're both ByteString. A type alias FieldDecode' is provided,
+which has these two type parameters the same. That type alias will be used for
+the rest of the file. The final paramter for a FieldDecode is the type we're
+decoding into.
 
 \begin{code}
 idDecode :: FieldDecode ByteString ByteString ID
@@ -121,7 +128,9 @@ data NcaCode
   deriving Show
 \end{code}
 
-... and here is our decoder. 
+... and here is our decoder. We use the FieldDecode primitive `categorical',
+as it makes specifying categorical data easier and provides specific error
+messages when a field does not parse as any known category.
 
 \begin{code}
 nca :: FieldDecode' ByteString NcaCode
@@ -139,7 +148,9 @@ nca =
   ]
 \end{code}
 
-Environment Protection and Biodiversity Conservation Act 1999
+The following are similar types and decoders, this time for categories defined
+in Environment Protection and Biodiversity Conservation Act 1999, and an
+endemicity code. They are defined similarly to NcaCode above and its decoder.
 
 \begin{code}
 data EpbcCode
@@ -193,6 +204,11 @@ endemicity =
   ]
 \end{code}
 
+This is a boolean indicator of significance. We give it a categorical decoder.
+This categorical decoder is different because we allow different several
+different strings to indicate each of the two values. This helps to deal with
+data sets with inconsistently labeled categorical data.
+
 \begin{code}
 data Significance
   = Y
@@ -207,6 +223,10 @@ significance =
   ]
 \end{code}
 
+Now we put it all together! This is the decoder for our Species data type
+defined above. We use our idDecode, a bunch of bytestrings, and then our
+categorical decoders, each wrapped in option since they might be missing.
+It's all glued together with Applicative combinators.
 
 \begin{code}
 speciesDecoder :: FieldDecode' ByteString Species
@@ -215,10 +235,16 @@ speciesDecoder = let s = byteString in
     option nca <*> option epbc <*> option significance <*> option endemicity
 \end{code}
 
+We call decodeFromFile to load, parse, and decode our file. Note that we're
+passing our config in.
+
 \begin{code}
 species :: IO (DecodeValidation ByteString [Species])
 species = decodeFromFile speciesDecoder (Just config) file
 \end{code}
+
+And that's it! We've defined a data type for our rows, built a FieldDecode for
+that type, and then parsed our CSV file into useful Haskell data types.
 
 \begin{code}
 main :: IO ()
