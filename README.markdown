@@ -25,3 +25,5 @@ the user to have a great degree of freedom to build the right decoder for
 their dataset. This focus often means that our types are heavily
 parameterised. We have tried to provide hints in the haddock comments as to
 how one would usually instantiate a given type.
+
+For a worked example of usage, see test/species.hs
