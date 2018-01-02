@@ -39,6 +39,7 @@ module Data.Sv.Decode (
 , orElse
 , orElseE
 , categorical
+, categorical'
 , decodeRead
 , decodeRead'
 , decodeReadWithMsg
@@ -208,8 +209,11 @@ orElseE b a = swapE <$> choiceE b (replace a)
   where
     swapE = either Right Left
 
-categorical :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
-categorical as =
+categorical :: (FieldContents s, Ord s, Textual e, Show a) => [(a, s)] -> FieldDecode e s a
+categorical = categorical' . fmap (fmap pure)
+
+categorical' :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
+categorical' as =
   let as' :: [(a, Set s)]
       as' = fmap (second fromList) as
       go :: s -> (a, Set s) -> Maybe a

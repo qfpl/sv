@@ -136,15 +136,15 @@ messages when a field does not parse as any known category.
 nca :: FieldDecode' ByteString NcaCode
 nca =
   categorical [
-    (NExtinct, ["PE"])
-  , (NCriticallyEndangered, ["CE"])
-  , (NEndangered, ["E"])
-  , (NVulnerable, ["V"])
-  , (NNearThreatened, ["NT"])
-  , (NSpecialLeastConcern, ["SL"])
-  , (NLeastConcern, ["C"])
-  , (NInternational, ["I"])
-  , (NProhibited, ["P"])
+    (NExtinct, "PE")
+  , (NCriticallyEndangered, "CE")
+  , (NEndangered, "E")
+  , (NVulnerable, "V")
+  , (NNearThreatened, "NT")
+  , (NSpecialLeastConcern, "SL")
+  , (NLeastConcern, "C")
+  , (NInternational, "I")
+  , (NProhibited, "P")
   ]
 \end{code}
 
@@ -165,12 +165,12 @@ data EpbcCode
 epbc :: FieldDecode' ByteString EpbcCode
 epbc =
   categorical [
-    (EExtinct, ["EX"])
-  , (EWildExtinct, ["WX"])
-  , (ECriticallyEndangered, ["CE"])
-  , (EEndangered, ["E"])
-  , (EVulnerable, ["V"])
-  , (EConservationDependent, ["CD"])
+    (EExtinct, "EX")
+  , (EWildExtinct, "WX")
+  , (ECriticallyEndangered, "CE")
+  , (EEndangered, "E")
+  , (EVulnerable, "V")
+  , (EConservationDependent, "CD")
   ]
 
 data Endemicity
@@ -190,17 +190,17 @@ data Endemicity
 endemicity :: FieldDecode' ByteString Endemicity
 endemicity =
   categorical [
-    (QueenslandEndemic, ["Q"])
-  , (AustralianEndemic, ["QA"])
-  , (QldAndInternational, ["QI"])
-  , (AustraliaAndInternational, ["QAI"])
-  , (QldNativeUndefinedEndemicity, ["U"])
-  , (NaturalisedFromOverseas, ["II"])
-  , (NaturalisedFromElsewhereInAus, ["IA"])
-  , (NaturalisedFromUndefinedOrigin, ["IU"])
-  , (VagrantAustralian, ["VA"])
-  , (VagrantInternational, ["VI"])
-  , (VagrantUndefined, ["VU"])
+    (QueenslandEndemic, "Q")
+  , (AustralianEndemic, "QA")
+  , (QldAndInternational, "QI")
+  , (AustraliaAndInternational, "QAI")
+  , (QldNativeUndefinedEndemicity, "U")
+  , (NaturalisedFromOverseas, "II")
+  , (NaturalisedFromElsewhereInAus, "IA")
+  , (NaturalisedFromUndefinedOrigin, "IU")
+  , (VagrantAustralian, "VA")
+  , (VagrantInternational, "VI")
+  , (VagrantUndefined, "VU")
   ]
 \end{code}
 
@@ -217,7 +217,7 @@ data Significance
 
 significance :: FieldDecode' ByteString Significance
 significance =
-  categorical [
+  categorical' [
     (Y, ["Y", "y", "yes"])
   , (N, ["N", "n", "no"])
   ]
