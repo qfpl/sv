@@ -251,7 +251,8 @@ main :: IO ()
 main = do
   dv <- species
   case dv of
-    AccSuccess _ -> pure ()
+    AccSuccess rows ->
+      print (length rows)
     AccFailure e -> do
       putStrLn "Failed to parse and decode species.csv:"
       print e
