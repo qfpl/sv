@@ -16,9 +16,10 @@ module Data.Sv.Record (
   , emptyRecords
   , singleRecord
   , recordList
+  , traverseRecords
 ) where
 
-import Control.Lens       (Lens', Iso, iso, view)
+import Control.Lens       (Lens', Iso, Traversal', iso, view)
 import Data.Foldable      (Foldable (foldMap), toList)
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty)
@@ -103,3 +104,7 @@ singleRecord s = Records (Just (Pesarated1 (Separated1 s mempty)))
 -- | Collect the list of 'Record's from anything that 'HasRecords'
 recordList :: HasRecords c s => c -> [Record s]
 recordList = foldMap toList . view theRecords
+
+-- | traverse each 'Record' within a 'Records'
+traverseRecords :: Traversal' (Records s) (Record s)
+traverseRecords = theRecords . traverse . traverse
