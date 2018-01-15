@@ -15,7 +15,7 @@ import Data.Foldable (fold)
 import Data.Semigroup ((<>))
 import Data.Semigroup.Foldable (intercalate1)
 import Data.Separated (Pesarated1)
-import System.IO (BufferMode (BlockBuffering), hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
+import System.IO (BufferMode (BlockBuffering), hFlush, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Field
 import Data.Sv.Record (Record (Record), Records, theRecords)
@@ -64,6 +64,7 @@ writeSvToFile fp sv = do
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
   hPutBuilder h b
+  hFlush h
 
 displaySv :: Textual s => Sv s -> ByteString
 displaySv = toByteString . printSv

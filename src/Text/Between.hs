@@ -4,8 +4,8 @@
 
 -- | Something between two other things
 module Text.Between (
-  Between (Between, _before, _value, _after)
-  , HasBetween (between, before, after, value)
+  Between (Between, _before, _middle, _after)
+  , HasBetween (between, before, after, middle)
   , betwixt
   , empty
   , uniform
@@ -26,7 +26,7 @@ import Data.Traversable    (Traversable (traverse))
 data Between s a =
   Between {
     _before :: s
-  , _value :: a
+  , _middle :: a
   , _after :: s
   }
   deriving (Eq, Ord, Show)
@@ -38,20 +38,20 @@ class HasBetween c s a | c -> s a where
   {-# INLINE after #-}
   before :: Lens' c s
   {-# INLINE before #-}
-  value :: Lens' c a
-  {-# INLINE value #-}
+  middle :: Lens' c a
+  {-# INLINE middle #-}
   after = between . after
   before = between . before
-  value = between . value
+  middle = between . middle
 
 instance HasBetween (Between s a) s a where
   {-# INLINE after #-}
   {-# INLINE before #-}
-  {-# INLINE value #-}
+  {-# INLINE middle #-}
   between = id
   before f (Between x y z) = fmap (\w -> Between w y z) (f x)
-  value f (Between x y z) = fmap (\w -> Between x w z) (f y)
   after f (Between x y z) = fmap (Between x y) (f z)
+  middle f (Between x y z) = fmap (\w -> Between x w z) (f y)
 
 instance Functor (Between s) where
   fmap f (Between b a t) = Between b (f a) t
@@ -64,7 +64,7 @@ instance Monoid s => Applicative (Between s) where
   Between b f t <*> Between b' a t' = Between (b <> b') (f a) (t' <> t)
 
 instance Foldable (Between s) where
-  foldMap f = f . _value
+  foldMap f = f . _middle
 
 instance Traversable (Between s) where
   traverse f (Between b a t) = fmap (betwixt b t) (f a)

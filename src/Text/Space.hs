@@ -15,6 +15,7 @@ module Text.Space
   , spaced
   , unspaced
   , unspace
+  , module Text.Between
   )
 where
 
@@ -23,7 +24,7 @@ import Data.Text        (Text)
 import qualified Data.Text as Text
 
 import Data.Sv.Lens.Util (singletonList, singletonText)
-import Text.Between     (Between, betwixt, _value)
+import Text.Between
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
 -- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
@@ -116,4 +117,4 @@ unspaced = betwixt mempty mempty
 
 -- | Remove spaces from the argument
 unspace :: Spaced a -> Spaced a
-unspace = unspaced . _value
+unspace = unspaced . _middle

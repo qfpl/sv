@@ -2,6 +2,7 @@
 
 module Data.Sv.Parser.Internal (
   separatedValues
+  , separatedValuesC
   , csv
   , psv
   , tsv
@@ -16,7 +17,7 @@ module Data.Sv.Parser.Internal (
 ) where
 
 import           Control.Applicative     (Alternative, (<|>), optional)
-import           Control.Lens            (review)
+import           Control.Lens            (review, view)
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
 import           Data.Functor            (($>), (<$>))
@@ -26,6 +27,7 @@ import           Data.String             (IsString (fromString))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
+import           Data.Sv.Config          (SvConfig, headedness, separator)
 import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
 import           Data.Sv.Field           (Field (UnquotedF, QuotedF))
 import           Data.Sv.Record          (Record (Record), Records (Records))
@@ -135,6 +137,12 @@ header c h = case h of
 separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
 separatedValues sep h =
   Sv sep <$> header sep h <*> records sep <*> ending
+
+separatedValuesC :: (CharParsing m, Textual s) => SvConfig -> m (Sv s)
+separatedValuesC c =
+  let s = view separator c
+      h = view headedness c
+  in  separatedValues s h
 
 csv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 csv = separatedValues comma

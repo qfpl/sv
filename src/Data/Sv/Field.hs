@@ -26,7 +26,7 @@ import Data.Text.Lazy.Builder as TB (Builder, fromText, fromLazyText, toLazyText
 import Data.Traversable    (Traversable (traverse))
 
 import Text.Babel
-import Text.Between        (value)
+import Text.Between        (middle)
 import Text.Escaped        (noEscape)
 import Text.Space          (Spaced)
 import Text.Quote          (Quote, Quoted (Quoted), quoteChar)
@@ -72,7 +72,7 @@ class Textual a => FieldContents a where
 
 -- | Extract the contents from a field, expanding escape sequences, using 'expandQuotes'
 fieldContents :: FieldContents s => Field s -> s
-fieldContents = foldField id (expandQuotes . view value)
+fieldContents = foldField id (expandQuotes . view middle)
 
 instance FieldContents String where
   expandQuotes (Quoted q v) =
