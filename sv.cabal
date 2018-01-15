@@ -149,3 +149,43 @@ test-suite             species
                        -Wall
   hs-source-dirs:
                        test
+
+
+test-suite             ragged
+  type:
+                       exitcode-stdio-1.0
+  main-is:
+                       ragged.hs
+  default-language:
+                       Haskell2010
+  build-depends:
+                       base >=4.8 && <5
+                       , bytestring >= 0.9.1.10 && < 0.11
+                       , lens >= 4 && < 5
+                       , semigroupoids
+                       , sv
+                       , text
+  ghc-options:
+                       -Wall
+  hs-source-dirs:
+                       test
+
+
+test-suite             concat
+  type:
+                       exitcode-stdio-1.0
+  main-is:
+                       concat.hs
+  default-language:
+                       Haskell2010
+  build-depends:
+                       base >=4.8 && <5
+                       , bytestring >= 0.9.1.10 && < 0.11
+                       , lens >= 4 && < 5
+                       , sv
+                       , text
+                       , trifecta
+  ghc-options:
+                       -Wall
+  hs-source-dirs:
+                       test

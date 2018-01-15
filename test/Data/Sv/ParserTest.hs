@@ -145,8 +145,8 @@ recordTest =
       p "m,n,o\r\np,q,r" @?=/ uqa ("m":|["n","o"])
   ]
 
-separatedValuesTest :: Separator -> Newline -> Bool -> TestTree
-separatedValuesTest sep nl terminatedByNewline =
+separatedValuesTest :: Separator -> Newline -> Int -> TestTree
+separatedValuesTest sep nl newlines =
   let p :: ByteString -> Either String (Sv Text)
       p = r2e . parseByteString (separatedValues sep Unheaded) mempty
       ps = p . fold
@@ -154,7 +154,7 @@ separatedValuesTest sep nl terminatedByNewline =
       mkSv'' rs e = mkSv' sep Nothing e $ skrinpleMay nl rs
       s = singleton sep
       nls = newlineText nl
-      terminator = if terminatedByNewline then [nl] else []
+      terminator = replicate newlines nl
       termStr = foldMap newlineText terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
@@ -174,7 +174,7 @@ separatedValuesTest sep nl terminatedByNewline =
 
 svTest :: String -> Separator -> TestTree
 svTest name sep =
-  testGroup name $ separatedValuesTest sep <$> [CR, LF, CRLF] <*> [False, True]
+  testGroup name $ separatedValuesTest sep <$> [CR, LF, CRLF] <*> [0,1,2]
 
 csvTest :: TestTree
 csvTest = svTest "csv" comma
@@ -191,7 +191,7 @@ nsvTest = svTest "NULL separated values" '\0'
 crsvTest :: TestTree
 crsvTest =
   testGroup "carriage return separated values" $
-    separatedValuesTest '\r' <$> [LF] <*> [False, True]
+    separatedValuesTest '\r' <$> [LF] <*> [0,1,2]
 
 bssvTest :: TestTree
 bssvTest = svTest "backspace separated values" '\BS'
