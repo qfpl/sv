@@ -39,6 +39,8 @@ bug-reports:         https://github.com/qfpl/sv/issues
 build-type:          Simple
 extra-source-files:  changelog.md
                      , test/species.csv
+                     , test/ragged.csv
+                     , test/concat.csv
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.1
 
