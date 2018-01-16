@@ -83,7 +83,7 @@ prop_csvRoundTrip =
       genSpaces :: Gen [HorizontalSpace]
       genSpaces = Gen.list (Range.linear 0 10) genSpace
       genText :: Gen Text
-      genText  = Gen.text (Range.linear 0 100) Gen.alphaNum
+      genText  = Gen.text (Range.linear 1 100) Gen.alphaNum
       gen = genSvWithHeadedness (pure comma) genSpaces genText
       parseCsv :: CharParsing m => Headedness -> m (Sv Text)
       parseCsv = separatedValues comma

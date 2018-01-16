@@ -225,14 +225,14 @@ significance =
 
 Now we put it all together! This is the decoder for our Species data type
 defined above. We use our idDecode, a bunch of bytestrings, and then our
-categorical decoders, each wrapped in option since they might be missing.
+categorical decoders, each wrapped in orEmpty since they might be missing.
 It's all glued together with Applicative combinators.
 
 \begin{code}
 speciesDecoder :: FieldDecode' ByteString Species
 speciesDecoder = let s = byteString in
   Species <$> idDecode <*> s <*> s <*> s <*> s <*> s <*> s <*>
-    option nca <*> option epbc <*> option significance <*> option endemicity
+    orEmpty nca <*> orEmpty epbc <*> orEmpty significance <*> orEmpty endemicity
 \end{code}
 
 We call decodeFromFile to load, parse, and decode our file. Note that we're

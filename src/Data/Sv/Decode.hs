@@ -28,13 +28,16 @@ module Data.Sv.Decode (
 , ignore
 , replace
 , unit
+, emptyField
 , int
 , integer
 , float
 , double
 , choice
 , element
-, option
+, optionalField
+, ignoreFailure
+, orEmpty
 , choiceE
 , orElse
 , orElseE
@@ -70,6 +73,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Semigroup.Foldable (asum1)
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
@@ -189,14 +193,27 @@ float = named "float"
 double :: (FieldContents s, Textual e) => FieldDecode e s Double
 double = named "double"
 
+emptyField :: (FieldContents s, Textual e, Eq s) => FieldDecode e s ()
+emptyField = contents >>== \c ->
+  if c == "" then
+    pure ()
+  else
+    badDecode ("Expected emptiness but got " <> retext c)
+
 choice :: FieldDecode e s a -> FieldDecode e s a -> FieldDecode e s a
 choice = (<!>)
 
 element :: NonEmpty (FieldDecode e s a) -> FieldDecode e s a
 element = asum1
 
-option :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
-option f = Just <$> f <!> Nothing <$ ignore
+optionalField :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
+optionalField a = Just <$> a <!> pure Nothing
+
+ignoreFailure :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
+ignoreFailure a = Just <$> a <!> Nothing <$ ignore
+
+orEmpty :: (FieldContents s, Textual e, Eq s) => FieldDecode e s a -> FieldDecode e s (Maybe a)
+orEmpty a = Nothing <$ emptyField <!> Just <$> a
 
 choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
 choiceE a b = fmap Left a <!> fmap Right b

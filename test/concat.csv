@@ -1,0 +1,10 @@
+"name","age"
+John Doe,50
+Jane Smith,30
+Frank Cooper,45
+
+"item",        "stock", "price"
+"skateboard",  "5",     "$10"
+"fishing rod", "1",     "$500"
+"basket",      "20",    "$20"
+

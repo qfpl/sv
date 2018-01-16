@@ -20,6 +20,7 @@ module Data.Sv.Generators (
 import Control.Applicative ((<$>), liftA2, liftA3)
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Separated      (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
 import Hedgehog
@@ -102,21 +103,20 @@ genSeparated1 a b = Separated1 <$> a <*> genSeparated b a
 
 genCsvString :: Gen ByteString
 genCsvString =
-  let intercalate' :: (Semigroup m, Monoid m) => m -> [m] -> m
-      intercalate' _ [] = mempty
-      intercalate' _ (x:[]) = x
-      intercalate' m (x:y:zs) = x <> m <> intercalate' m (y:zs)
+  let intercalate' :: (Semigroup m, Monoid m) => m -> NonEmpty m -> m
+      intercalate' _ (x:|[]) = x
+      intercalate' m (x:|y:zs) = x <> m <> intercalate' m (y:|zs)
       genNewlineString :: Gen Builder
       genNewlineString = Gen.element (fmap fromByteString ["\n", "\r", "\r\n"])
-      genCsvRowString = intercalate' "," <$> Gen.list (Range.linear 1 100) genCsvField
+      genCsvRowString = intercalate' "," <$> Gen.nonEmpty (Range.linear 1 100) genCsvField
       enquote c s = fmap (\z -> c <> z <> c) s
       genCsvFieldString :: Gen Builder
       genCsvFieldString = fromByteString <$>
-        Gen.utf8 (Range.linear 0 50) (Gen.filter (`notElem` [',','"','\'']) Gen.unicode)
+        Gen.utf8 (Range.linear 1 50) (Gen.filter (`notElem` [',','"','\'','\n','\r']) Gen.unicode)
       genCsvField =
         Gen.choice [
           enquote "\"" genCsvFieldString
         , enquote "'" genCsvFieldString
         , genCsvFieldString
         ]
-  in  fmap toByteString $ intercalate' <$> genNewlineString <*> Gen.list (Range.linear 0 100) genCsvRowString
+  in  fmap toByteString $ intercalate' <$> genNewlineString <*> Gen.nonEmpty (Range.linear 0 100) genCsvRowString

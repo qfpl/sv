@@ -3,6 +3,7 @@
 module Data.Sv.Parser.Internal (
   separatedValues
   , separatedValuesC
+  , separatedValuesEof
   , csv
   , psv
   , tsv
@@ -20,7 +21,7 @@ import           Control.Applicative     (Alternative, (<|>), optional)
 import           Control.Lens            (review, view)
 import           Data.CharSet            (CharSet)
 import qualified Data.CharSet as CharSet (fromList, insert)
-import           Data.Functor            (($>), (<$>))
+import           Data.Functor            (($>), (<$>), void)
 import           Data.List.NonEmpty      (NonEmpty ((:|)))
 import           Data.Separated          (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
 import           Data.String             (IsString (fromString))
@@ -121,13 +122,16 @@ firstRecord :: (CharParsing m, Textual s) => Separator -> m (Record s)
 firstRecord sep = notFollowedBy (try ending) *> record sep
 
 subsequentRecord :: (CharParsing m, Textual s) => Separator -> m (Newline, Record s)
-subsequentRecord sep = (,) <$> try (newline <* notFollowedBy eof) <*> record sep
+subsequentRecord sep = (,) <$> try (newline <* notFollowedBy (void newline <|> eof)) <*> record sep
 
 separated :: CharParsing m => m (a,b) -> m (Separated a b)
 separated ab = Separated <$> many ab
 
 ending :: CharParsing m => m [Newline]
-ending = many newline <* eof
+ending =
+  [] <$ eof
+  <|> try (pure <$> newline <* eof)
+  <|> (:) <$> newline <*> ((:) <$> newline <*> many newline)
 
 header :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Maybe (Header s))
 header c h = case h of
@@ -143,6 +147,10 @@ separatedValuesC c =
   let s = view separator c
       h = view headedness c
   in  separatedValues s h
+
+separatedValuesEof :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
+separatedValuesEof sep h =
+  separatedValues sep h <* eof
 
 csv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 csv = separatedValues comma
