@@ -35,4 +35,4 @@ fixQuotes = over headerFields fixQuote . over recordFields fixQuote
         let sqs' = (set (middle . quote) DoubleQuote sqs)
         in  QuotedF sqs'
     headerFields = maybeHeader . traverse . headerRecord . fields . traverse
-    recordFields = records . traverseRecords . fields . traverse
+    recordFields = traverseRecords . fields . traverse

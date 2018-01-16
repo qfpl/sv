@@ -11,12 +11,11 @@ module Data.Sv.Record (
   , HasRecord (record, fields)
   , fieldsIso
   , singleField
-  , HasRecords (records, theRecords)
   , Records (Records, _theRecords)
+  , HasRecords (records, theRecords, traverseRecords)
   , emptyRecords
   , singleRecord
   , recordList
-  , traverseRecords
 ) where
 
 import Control.Lens       (Lens', Iso, Traversal', iso, view)
@@ -78,6 +77,9 @@ class HasRecords c s | c -> s where
   theRecords :: Lens' c (Maybe (Pesarated1 Newline (Record s)))
   {-# INLINE theRecords #-}
   theRecords = records . theRecords
+  traverseRecords :: Traversal' c (Record s)
+  traverseRecords = theRecords . traverse . traverse
+  {-# INLINE traverseRecords #-}
 
 instance HasRecords (Records s) s where
   {-# INLINE theRecords #-}
@@ -104,7 +106,3 @@ singleRecord s = Records (Just (Pesarated1 (Separated1 s mempty)))
 -- | Collect the list of 'Record's from anything that 'HasRecords'
 recordList :: HasRecords c s => c -> [Record s]
 recordList = foldMap toList . view theRecords
-
--- | traverse each 'Record' within a 'Records'
-traverseRecords :: Traversal' (Records s) (Record s)
-traverseRecords = theRecords . traverse . traverse
