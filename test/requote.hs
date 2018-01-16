@@ -32,7 +32,6 @@ fixQuotes = over headerFields fixQuote . over recordFields fixQuote
     fixQuote f = case f of
       UnquotedF a -> unspacedField DoubleQuote a
       QuotedF sqs ->
-        let sqs' = (set (middle . quote) DoubleQuote sqs)
-        in  QuotedF sqs'
-    headerFields = maybeHeader . traverse . headerRecord . fields . traverse
-    recordFields = traverseRecords . fields . traverse
+        QuotedF (set (middle.quote) DoubleQuote sqs)
+    headerFields = traverseHeader . traverseFields
+    recordFields = traverseRecords . traverseFields

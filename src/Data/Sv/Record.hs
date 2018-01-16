@@ -8,7 +8,7 @@
 module Data.Sv.Record (
   Record (Record, _fields)
   -- Optics
-  , HasRecord (record, fields)
+  , HasRecord (record, fields, traverseFields)
   , fieldsIso
   , singleField
   , Records (Records, _theRecords)
@@ -47,6 +47,9 @@ class HasRecord s t | s -> t where
   fields :: Lens' s (NonEmpty (Field t))
   {-# INLINE fields #-}
   fields = record . fields
+  traverseFields :: Traversal' s (Field t)
+  {-# INLINE traverseFields #-}
+  traverseFields = fields . traverse
 
 instance HasRecord (Record s) s where
   record = id

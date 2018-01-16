@@ -14,7 +14,7 @@
 -- parsing and decoding.
 module Data.Sv.Sv (
   Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)
-  , HasSv (sv, maybeHeader, finalNewlines)
+  , HasSv (sv, maybeHeader, traverseHeader, finalNewlines)
   , HasRecords (records, theRecords)
   , mkSv
   , mkSv'
@@ -33,7 +33,7 @@ module Data.Sv.Sv (
   , tab
 ) where
 
-import Control.Lens       (Lens')
+import Control.Lens       (Lens', Traversal')
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
 import Data.Monoid        ((<>))
@@ -41,7 +41,7 @@ import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
 import Data.Sv.Config     (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
-import Data.Sv.Record     (Record, Records (Records), HasRecords (records, theRecords), emptyRecords, recordList)
+import Data.Sv.Record     (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
 import Text.Newline       (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.
@@ -62,9 +62,12 @@ class (HasRecords c s, HasSeparator c) => HasSv c s | c -> s where
   sv :: Lens' c (Sv s)
   maybeHeader :: Lens' c (Maybe (Header s))
   {-# INLINE maybeHeader #-}
+  traverseHeader :: Traversal' c (Header s)
+  {-# INLINE traverseHeader #-}
   finalNewlines :: Lens' c [Newline]
   {-# INLINE finalNewlines #-}
   maybeHeader = sv . maybeHeader
+  traverseHeader = maybeHeader . traverse
   finalNewlines = sv . finalNewlines
 
 instance HasSeparator (Sv s) where
@@ -138,6 +141,10 @@ instance HasHeader (Header s) s where
     = fmap (Header x1) (f x2)
   headerRecord f (Header x1 x2)
     = fmap (\y -> Header y x2) (f x1)
+
+instance HasRecord (Header s) s where
+  record = headerRecord
+  {-# INLINE record #-}
 
 -- | Used to build 'Sv's that don't have a header
 noHeader :: Maybe (Header s)
