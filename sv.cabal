@@ -110,6 +110,7 @@ test-suite             tasty
                        tasty.hs
   other-modules:
                        Data.Sv.DecodeTest
+                       , Data.Sv.EncodeTest
                        , Data.Sv.ParserTest
                        , Data.Sv.PrintTest
                        , Data.Sv.Generators
