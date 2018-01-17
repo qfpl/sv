@@ -1,17 +1,19 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Datatype for a single field or "cell" of a CSV file
 module Data.Sv.Field (
     Field (UnquotedF, QuotedF)
+  , AsField (_Field, _UnquotedF, _QuotedF)
   , foldField
   , unspacedField
   , FieldContents (expandQuotes)
   , fieldContents
 ) where
 
-import Control.Lens        (review, view)
+import Control.Lens        (Prism', prism, review, view)
 import Data.Bifoldable     (Bifoldable (bifoldMap))
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BS
@@ -40,6 +42,27 @@ data Field s =
     UnquotedF s
   | QuotedF (Spaced (Quoted s))
   deriving (Eq, Ord, Show)
+
+-- | Classy prisms for 'Field'
+class AsField c s | c -> s where
+  _Field :: Prism' c (Field s)
+  _UnquotedF :: Prism' c s
+  _QuotedF :: Prism' c (Spaced (Quoted s))
+  _UnquotedF = _Field . _UnquotedF
+  _QuotedF = _Field . _QuotedF
+
+instance AsField (Field s) s where
+  _Field = id
+  _UnquotedF = prism UnquotedF
+    (\x -> case x of
+      UnquotedF y -> Right y
+      _           -> Left x
+    )
+  _QuotedF = prism QuotedF
+    (\x -> case x of
+      QuotedF y -> Right y
+      _         -> Left x
+    )
 
 -- | The catamorphism for @Field'@
 foldField :: (s -> b) -> (Spaced (Quoted s) -> b) -> Field s -> b
