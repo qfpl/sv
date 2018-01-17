@@ -1,8 +1,3 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-
 -- | Configuration to tell the parser what your file looks like.
 module Data.Sv.Config (
   SvConfig (SvConfig, _headedness, _separator, _parsingLib)

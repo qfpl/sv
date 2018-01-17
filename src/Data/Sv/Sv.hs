@@ -1,7 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances#-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}

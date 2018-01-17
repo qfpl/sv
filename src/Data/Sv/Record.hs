@@ -1,7 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE RankNTypes #-}
 
 -- | This file contains datatypes for Records. A record is a "line" or "row"
 -- of a CSV document
