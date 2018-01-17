@@ -11,6 +11,7 @@ module Text.Space
   , spaceToChar
   , charToSpace
   , spaces
+  , spacesToString
   , Spaced
   , spaced
   , unspaced
@@ -97,6 +98,9 @@ spaces =
   prism'
     (Text.pack . foldMap (pure . spaceToChar))
     (foldMap c2s . Text.unpack)
+
+spacesToString :: Spaces -> String
+spacesToString = map spaceToChar
 
 c2s :: Char -> Maybe Spaces
 c2s ' ' = Just single
