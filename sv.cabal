@@ -79,7 +79,7 @@ library
                        , attoparsec >= 0.12.1.4 && < 0.14
                        , base >=4.8 && <5
                        , bifunctors >= 5.1 && < 6
-                       , binary >= 0.8 && < 0.9
+                       , binary >= 0.8.3 && < 0.10
                        , bytestring >= 0.9.1.10 && < 0.11
                        , bytestring-show >= 0.3 && < 0.4
                        , charset >=0.3 && <=0.4
