@@ -1,8 +1,7 @@
 { mkDerivation, ansi-wl-pprint, attoparsec, base, bifunctors
-, binary, bytestring, bytestring-show, charset, containers
-, contravariant, hedgehog, lens, mtl, parsec, parsers, profunctors
-, QuickCheck, readable, semigroupoids, semigroups, separated
-, stdenv, tasty, tasty-hedgehog, tasty-hunit, tasty-quickcheck
+, bytestring, charset, containers, contravariant, hedgehog, lens
+, mtl, parsec, parsers, profunctors, readable, semigroupoids
+, semigroups, separated, stdenv, tasty, tasty-hedgehog, tasty-hunit
 , text, transformers, trifecta, validation
 }:
 mkDerivation {
@@ -10,15 +9,15 @@ mkDerivation {
   version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
-    ansi-wl-pprint attoparsec base bifunctors binary bytestring
-    bytestring-show charset containers contravariant lens mtl parsec
-    parsers profunctors readable semigroupoids semigroups separated
-    text transformers trifecta validation
+    ansi-wl-pprint attoparsec base bifunctors bytestring charset
+    containers contravariant lens mtl parsec parsers profunctors
+    readable semigroupoids semigroups separated text transformers
+    trifecta validation
   ];
   testHaskellDepends = [
-    ansi-wl-pprint base bytestring hedgehog lens parsers QuickCheck
+    ansi-wl-pprint base bytestring contravariant hedgehog lens parsers
     semigroupoids semigroups separated tasty tasty-hedgehog tasty-hunit
-    tasty-quickcheck text trifecta validation
+    text trifecta validation
   ];
   homepage = "https://github.com/qfpl/sv";
   description = "Parse and decode values which are separated, often by commas";
