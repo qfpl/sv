@@ -14,8 +14,8 @@ import Data.Foldable (fold)
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.List (intersperse)
-import Data.Monoid (First)
-import Data.Semigroup (Semigroup ((<>)))
+import Data.Monoid (First, (<>))
+import Data.Semigroup (Semigroup)
 import qualified Text.Show.ByteString as BS
 
 import Text.Newline (Newline (CRLF))
