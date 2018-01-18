@@ -18,6 +18,7 @@ import Data.List (intersperse)
 import Data.Monoid (First, (<>))
 import Data.Semigroup (Semigroup)
 
+import Data.Sv.Config (Separator, comma)
 import Text.Newline (Newline (CRLF))
 import Text.Space (Spaces, spacesToString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)
@@ -98,7 +99,7 @@ fromFoldMay g x = contramap (preview g) x
 
 data EncodeOptions =
   EncodeOptions {
-    separator :: Char
+    separator :: Separator
   , spacingBefore :: Spaces
   , spacingAfter :: Spaces
   , quote :: Maybe Quote
@@ -107,4 +108,4 @@ data EncodeOptions =
   }
 
 defaultEncodeOptions :: EncodeOptions
-defaultEncodeOptions = EncodeOptions ',' mempty mempty (Just DoubleQuote) CRLF True
+defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF True
