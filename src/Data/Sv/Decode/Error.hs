@@ -28,7 +28,7 @@ decodeError = AccFailure . DecodeErrors . pure
 unexpectedEndOfRow :: DecodeValidation e a
 unexpectedEndOfRow = decodeError UnexpectedEndOfRow
 
-expectedEndOfRow :: [Field e] -> DecodeValidation e a
+expectedEndOfRow :: [SpacedField e] -> DecodeValidation e a
 expectedEndOfRow = decodeError . ExpectedEndOfRow
 
 unknownCanonicalValue :: e -> [(e, [e])] -> DecodeValidation e a

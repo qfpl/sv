@@ -67,7 +67,6 @@ library
                        , Data.Functor.Compose.Extra
                        , Data.Semigroup.Foldable.Extra
                        , Text.Babel
-                       , Text.Between
                        , Text.Escaped
                        , Text.Newline
                        , Text.Quote

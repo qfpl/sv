@@ -5,10 +5,11 @@ module Data.Sv.Generators (
   , genSvWithHeadedness
   , genNewline
   , genSep
-  , genBetween
   , genEscaped
   , genQuote
+  , genSpaced
   , genField
+  , genSpacedField
   , genRecord
   , genRecords
   , genPesarated1
@@ -28,14 +29,13 @@ import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
-import Data.Sv.Field       (Field (QuotedF, UnquotedF))
+import Data.Sv.Field       (Field (Quoted, Unquoted))
 import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
-import Text.Between        (Between (Between))
 import Text.Escaped        (Escaped', escapeNel)
 import Text.Newline        (Newline (CRLF, LF))
-import Text.Space          (Spaces, Spaced)
-import Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted))
+import Text.Space          (Spaces, Spaced (Spaced))
+import Text.Quote          (Quote (SingleQuote, DoubleQuote))
 
 genSv :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Sv s)
 genSv sep spc s =
@@ -56,9 +56,9 @@ genSep :: Gen Separator
 genSep =
   Gen.element ['|', ',']
 
-genBetween :: Gen Spaces -> Gen str -> Gen (Spaced str)
-genBetween spc str =
-  liftA3 Between spc str spc
+genSpaced :: Gen Spaces -> Gen s -> Gen (Spaced s)
+genSpaced spc str =
+  liftA3 Spaced spc spc str
 
 genQuote :: Gen Quote
 genQuote =
@@ -68,20 +68,19 @@ genEscaped :: Gen a -> Gen (Escaped' a)
 genEscaped a =
   escapeNel <$> Gen.nonEmpty (Range.linear 1 5) a
 
-genQuoted :: Gen a -> Gen (Quoted a)
-genQuoted =
-  liftA2 Quoted genQuote . genEscaped
-
-genField :: Gen Spaces -> Gen s -> Gen (Field s)
-genField spc s =
+genField :: Gen s -> Gen (Field s)
+genField s =
   Gen.choice [
-    UnquotedF <$> s
-  , QuotedF <$> genBetween spc (genQuoted s)
+    Unquoted <$> s
+  , liftA2 Quoted genQuote (genEscaped s)
   ]
+
+genSpacedField :: Gen Spaces -> Gen s -> Gen (Spaced (Field s))
+genSpacedField spc s = genSpaced spc (genField s)
 
 genRecord :: Gen Spaces -> Gen s -> Gen (Record s)
 genRecord spc s =
-  Record <$> Gen.nonEmpty (Range.linear 1 10) (genField spc s)
+  Record <$> Gen.nonEmpty (Range.linear 1 10) (genSpacedField spc s)
 
 genHeader :: Gen Spaces -> Gen s -> Gen Newline -> Gen (Header s)
 genHeader spc s n =

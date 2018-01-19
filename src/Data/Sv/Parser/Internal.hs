@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 module Data.Sv.Parser.Internal (
   separatedValues
@@ -12,32 +13,34 @@ module Data.Sv.Parser.Internal (
   , singleQuotedField
   , doubleQuotedField
   , unquotedField
+  , spaced
+  , spacedField
   , record
   , records
   , ending
 ) where
 
-import           Control.Applicative     (Alternative, (<|>), optional)
+import           Control.Applicative     (Alternative ((<|>), empty), optional)
 import           Control.Lens            (review, view)
-import           Data.CharSet            (CharSet)
-import qualified Data.CharSet as CharSet (fromList, insert)
+import           Data.CharSet            (CharSet, (\\))
+import qualified Data.CharSet as CharSet (fromList, insert, singleton)
 import           Data.Functor            (($>), (<$>), void)
 import           Data.List.NonEmpty      (NonEmpty ((:|)))
+import           Data.Semigroup          ((<>))
 import           Data.Separated          (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
 import           Data.String             (IsString (fromString))
-import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, string)
+import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
 import           Data.Sv.Config          (SvConfig, headedness, separator)
 import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
-import           Data.Sv.Field           (Field (UnquotedF, QuotedF))
+import           Data.Sv.Field           (Field (Unquoted, Quoted))
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
-import           Text.Between            (Between (Between))
-import           Text.Escaped            (Escaped', escapeNel)
+import           Text.Escaped            (escapeNel)
 import           Text.Newline            (Newline (CR, CRLF, LF))
-import           Text.Space              (HorizontalSpace (Space, Tab), Spaced)
-import           Text.Quote              (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteChar)
+import           Text.Space              (HorizontalSpace (Space, Tab), Spaced, betwixt)
+import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 -- These two functions are in newer versions of the parsers package, but in
 -- order to maintain compatibility with older versions I've left them here.
@@ -51,11 +54,6 @@ singleQuotedField, doubleQuotedField :: (CharParsing m, Textual s) => m (Field s
 singleQuotedField = quotedField SingleQuote
 doubleQuotedField = quotedField DoubleQuote
 
-quoted :: CharParsing m => Quote -> m (Escaped' a) -> m (Quoted a)
-quoted q p =
-  let c = char (review quoteChar q)
-  in  Quoted q <$> between c c p
-
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
   let c = review quoteChar q
@@ -66,24 +64,35 @@ two a = [a,a]
 
 quotedField :: (CharParsing m, Textual s)=> Quote -> m (Field s)
 quotedField quote =
-  let qc = review quoteChar quote
+  let q = review quoteChar quote
+      c = char q
       escape = escapeQuote quote
-      chunks = fmap fromString (many (notChar qc)) `sepByNonEmpty` escape
-  in  QuotedF <$> spaced (quoted quote (escapeNel <$> chunks))
+      chunks = fmap fromString (many (notChar q)) `sepByNonEmpty` escape
+  in  Quoted quote <$> between c c (escapeNel <$> chunks)
 
-unquotedField :: IsString s => CharParsing m => Separator -> m (Field s)
-unquotedField sep = UnquotedF . fromString <$> many (fieldChar sep)
-
-fieldChar :: CharParsing m => Separator -> m Char
-fieldChar sep = noneOfSet (newlineOr sep)
+unquotedField :: (IsString s, CharParsing m) => Separator -> m (Field s)
+unquotedField sep =
+  let spaceSet = CharSet.fromList " \t" \\ CharSet.singleton sep
+      oneSpace = oneOfSet spaceSet
+      nonSpaceFieldChar = noneOfSet (newlineOr sep <> spaceSet)
+      terminalWhitespace = many oneSpace *> fieldEnder
+      fieldEnder = void (oneOfSet (newlineOr sep)) <|> eof
+  in  Unquoted . fromString <$>
+    many (
+      nonSpaceFieldChar
+      <|> (notFollowedBy (try terminalWhitespace)) *> oneSpace
+    )
 
 field :: (CharParsing m, Textual s) => Separator -> m (Field s)
 field sep =
   choice [
-    try singleQuotedField
-  , try doubleQuotedField
+    singleQuotedField
+  , doubleQuotedField
   , unquotedField sep
   ]
+
+spacedField :: (CharParsing m, Textual s) => Separator -> m (Spaced (Field s))
+spacedField = spaced <*> field
 
 newlineOr :: Char -> CharSet
 newlineOr c = CharSet.insert c newlines
@@ -97,18 +106,20 @@ newline =
     <|> CR <$ char '\r'
     <|> LF <$ char '\n'
 
-space :: CharParsing m => m HorizontalSpace
-space = char ' ' $> Space <|> char '\t' $> Tab
+space :: CharParsing m => Separator -> m HorizontalSpace
+space sep =
+  let removeIfSep c s = if sep == c then empty else char c $> s
+  in  removeIfSep ' ' Space <|> removeIfSep '\t' Tab
 
-spaces :: CharParsing m => m [HorizontalSpace]
-spaces = many space
+spaces :: CharParsing m => Separator -> m [HorizontalSpace]
+spaces = many . space
 
-spaced :: CharParsing m => m a -> m (Spaced a)
-spaced p = Between <$> spaces <*> p <*> spaces
+spaced :: CharParsing m => Separator -> m a -> m (Spaced a)
+spaced sep p = betwixt <$> spaces sep <*> p <*> spaces sep
 
 record :: (CharParsing m, Textual s) => Separator -> m (Record s)
 record sep =
-  Record <$> (field sep `sepEndByNonEmpty` char sep)
+  Record <$> (spacedField sep `sepEndByNonEmpty` char sep)
 
 records :: (CharParsing m, Textual s) => Separator -> m (Records s)
 records sep =

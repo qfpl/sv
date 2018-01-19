@@ -15,10 +15,10 @@ import Text.Parser.Char     (CharParsing)
 import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import Data.Sv.Sv          (Sv (Sv), Headedness, noHeader, comma)
-import Data.Sv.Field       (Field, unspacedField)
+import Data.Sv.Field       (Field (Quoted), SpacedField)
 import Data.Sv.Generators  (genSvWithHeadedness)
-import Data.Sv.Parser.Internal (field, separatedValues)
-import Data.Sv.Print       (displaySv, printField)
+import Data.Sv.Parser.Internal (spacedField, separatedValues)
+import Data.Sv.Print       (displaySv, printSpaced)
 import Data.Sv.Record      (emptyRecords, singleField, singleRecord)
 import Text.Babel          (toByteString)
 import Text.Space          (HorizontalSpace (Space, Tab))
@@ -46,7 +46,7 @@ printAfterParseRoundTrip parser display name s =
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
   let sep = comma
-      test = printAfterParseRoundTrip (field sep :: CharParsing m => m (Field ByteString)) (toByteString . printField)
+      test = printAfterParseRoundTrip (spacedField sep :: CharParsing m => m (SpacedField ByteString)) (toByteString . printSpaced)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -69,8 +69,9 @@ csvPrint =
           subject = Sv comma noHeader emptyRecords []
       in  displaySv subject @?= ""
   , testCase "empty quotes" $
-      let subject = Sv comma noHeader (singleRecord (singleField (unspacedField SingleQuote []))) []
-      in displaySv subject @?= "''"
+      let subject :: Sv ByteString
+          subject = Sv comma noHeader (singleRecord (singleField (Quoted SingleQuote mempty))) []
+      in displaySv subject @?= ("''" :: ByteString)
   ]
 
 csvRoundTrip :: TestTree
