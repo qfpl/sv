@@ -24,7 +24,6 @@ module Data.Sv.Decode (
 , lazyByteString
 , string
 , lazyText
-, trimmed
 , ignore
 , replace
 , unit
@@ -93,7 +92,7 @@ import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
 import Data.Sv.Field (FieldContents)
 import Data.Sv.Parser (separatedValues)
-import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText, trim)
+import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText)
 
 -- | Decodes a sv into a list of its values using the provided 'FieldDecode'
 decode :: (Textual s, Textual e) => FieldDecode e s a -> Sv s -> DecodeValidation e [a]
@@ -168,9 +167,6 @@ lazyText = LT.fromStrict <$> text
 -- consider using 'utf8'` instead.
 text :: FieldContents s => FieldDecode e s Text
 text = toText <$> contents
-
-trimmed :: FieldContents s => FieldDecode e s s
-trimmed = trim <$> contents
 
 ignore :: FieldContents s => FieldDecode e s ()
 ignore = replace ()
@@ -249,7 +245,7 @@ decodeRead' :: (Textual e, Readable a) => e -> FieldDecode e ByteString a
 decodeRead' e = decodeReadWithMsg (const e)
 
 decodeReadWithMsg :: (FieldContents s, Textual e, Readable a) => (s -> e) -> FieldDecode e s a
-decodeReadWithMsg e = trimmed >>== \c ->
+decodeReadWithMsg e = contents >>== \c ->
   maybe (badDecode (e c)) pure . fromBS . toByteString $ c
 
 named :: (Readable a, FieldContents s, Textual e) => s -> FieldDecode e s a
