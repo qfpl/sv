@@ -77,13 +77,6 @@ foldField u q fi = case fi of
   Unquoted s -> u s
   Quoted a b -> q (a,b)
 
-{-
--- | 'unspacedField' is a convenient constructor for quoted fields with
---   no spaces surrounding the quotes.
-quotedField :: Quote -> s -> Field s
-quotedField q = Quoted q . noEscape s
--}
-
 -- | Expands a Quoted, which is compact with all quotes the same, into a
 -- WithEscapes Quote, which is often a useful representation, particularly
 -- because of its instances of Bitraversable and friends.

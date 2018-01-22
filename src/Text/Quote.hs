@@ -10,12 +10,6 @@ module Text.Quote (
   , quoteChar
   , quoteText
   , quoteToString
-  {-
-  , Quoted (Quoted, _quote, _value)
-  , HasQuoted (quoted, quote, value)
-  , mkQuoted
-  , expand
-  -}
 ) where
 
 import Control.Lens (Prism', prism, prism', review)
