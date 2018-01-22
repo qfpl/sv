@@ -19,6 +19,7 @@ module Data.Sv.Decode (
 , decodeFromFile
 , contents
 , byteString
+, text
 , utf8
 , ascii
 , lazyByteString
