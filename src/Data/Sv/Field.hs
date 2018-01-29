@@ -7,6 +7,7 @@
 module Data.Sv.Field (
     Field (Unquoted, Quoted)
   , SpacedField
+  , Spaced (Spaced)
   , HasFields (fields)
   , AsField (_Field, _Unquoted, _Quoted)
   , foldField
@@ -32,7 +33,7 @@ import Data.Traversable    (Traversable (traverse))
 import Text.Babel
 import Text.Escaped        (Escaped (Escaped), Escaped')
 import Text.Quote          (Quote, quoteChar)
-import Text.Space          (Spaced)
+import Text.Space          (Spaced (Spaced))
 
 -- | A @Field'@ is a single cell from a CSV document.
 --   Its value is either surrounded by quotes (@Quoted@), or it is

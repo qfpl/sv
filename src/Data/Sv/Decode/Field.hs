@@ -5,6 +5,7 @@ module Data.Sv.Decode.Field (
 , (>>==)
 , fieldDecode
 , fieldDecode_
+, spacedFieldDecode
 , decodeMay
 , decodeMay'
 , promote

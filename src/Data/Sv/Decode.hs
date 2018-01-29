@@ -18,6 +18,8 @@ module Data.Sv.Decode (
 , parseDecode
 , decodeFromFile
 , contents
+, raw
+, untrimmed
 , byteString
 , text
 , utf8
@@ -59,7 +61,7 @@ module Data.Sv.Decode (
 , HasParsingLib (parsingLib)
 ) where
 
-import Control.Lens (alaf, view)
+import Control.Lens (alaf, review, view)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
@@ -91,9 +93,10 @@ import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
-import Data.Sv.Field (FieldContents)
+import Data.Sv.Field (Field (Unquoted, Quoted), FieldContents (fieldContents), SpacedField, Spaced (Spaced))
 import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText)
+import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
 
 -- | Decodes a sv into a list of its values using the provided 'FieldDecode'
 decode :: (Textual s, Textual e) => FieldDecode e s a -> Sv s -> DecodeValidation e [a]
@@ -137,6 +140,20 @@ decodeFromFile d maybeConfig fp =
         Attoparsec -> eitherToDecodeError (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
   in do sv <- parseIO
         pure (sv `bindValidation` decode d)
+
+-- | Succeeds with the whole field structure, including spacing and quoting information
+raw :: FieldDecode e s (SpacedField s)
+raw = spacedFieldDecode pure
+
+-- | Returns the field contents. This keeps the spacing around an unquoted field.
+untrimmed :: (FieldContents s, AsHorizontalSpace s, Semigroup s) => FieldDecode e s s
+untrimmed =
+  let sp :: (Monoid b, AsHorizontalSpace b) => Spaces -> b
+      sp = foldMap (review _HorizontalSpace)
+      zz (Spaced b a f) = case f of
+        Unquoted s -> sp b <> s <> sp a
+        Quoted _ _ -> fieldContents f
+  in  fmap zz raw
 
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: FieldContents s => FieldDecode e s s
