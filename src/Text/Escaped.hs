@@ -13,17 +13,25 @@ module Text.Escaped (
   , escapedLefts
   , noEscape
   , escapeNel
+  , escapeString
+  , escapeText
+  , escapeUtf8
+  , escapeLazyUtf8
 ) where
 
 import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), _Wrapped, Unwrapped, Rewrapped, Traversal, _Left, _Right)
 import Data.Bifoldable    (Bifoldable (bifoldMap))
 import Data.Bifunctor     (Bifunctor (bimap))
 import Data.Bitraversable (Bitraversable (bitraverse))
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid        (Monoid (mappend, mempty))
 import Data.Semigroup     (Semigroup ((<>)))
+import Data.Text          (Text)
+import qualified Data.Text as Text
 import Data.Traversable   (Traversable (traverse))
 
 -- | 'Escaped e a' is a list of characters separated by escape sequences.
@@ -37,7 +45,7 @@ import Data.Traversable   (Traversable (traverse))
 -- The 'bifoldMap' function is particularly useful for this type, as it can
 -- turn the whole thing back into a single textual value.
 newtype Escaped e a =
-  Escaped { _escapeList :: [Either e a]}
+  Escaped { _escapeList :: [Either e a] }
   deriving (Eq, Ord, Show)
 
 instance Escaped e1 a1 ~ t => Rewrapped (Escaped e2 a2) t
@@ -126,3 +134,23 @@ instance Semigroup Escape where
 instance Monoid Escape where
   mappend = (<>)
   mempty = Escape
+
+escapeString :: Char -> String -> String
+escapeString c s =
+  let doubleChar q z = if z == q then [q,q] else [z]
+  in  concatMap (doubleChar c) s
+
+escapeText :: Char -> Text -> Text
+escapeText c s =
+  let ct = Text.singleton c
+  in  Text.replace ct (ct <> ct) s
+
+escapeUtf8 :: Char -> B.ByteString -> B.ByteString
+escapeUtf8 c b =
+  let doubleB q z = if z == q then B.pack [q,q] else B.singleton z
+  in  B.concatMap (doubleB c) b
+
+escapeLazyUtf8 :: Char -> L.ByteString -> L.ByteString
+escapeLazyUtf8 c b =
+  let doubleL q z = if z == q then L.pack [q,q] else L.singleton z
+  in  L.concatMap (doubleL c) b
