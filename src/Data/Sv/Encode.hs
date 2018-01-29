@@ -6,6 +6,7 @@ module Data.Sv.Encode where
 import Prelude 
 import qualified Prelude as S (Show(..))
 
+import Control.Applicative ((<**>))
 import Control.Lens (Getting, preview, review)
 import Data.Bifoldable (bifoldMap)
 import qualified Data.Bool as B (bool)
@@ -17,7 +18,8 @@ import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.Monoid (First, (<>))
 import Data.Semigroup (Semigroup)
-import Data.Sequence (Seq, intersperse)
+import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
+import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
@@ -71,7 +73,7 @@ encodeRow opts e = BS.toLazyByteString . encodeRow' opts e
 
 encodeRow' :: EncodeOptions -> Encode a -> a -> BS.Builder
 encodeRow' opts e =
-  let addSeparators = intersperse (BS.char8 (separator opts))
+  let addSeparators = intersperseSeq (BS.char8 (separator opts))
       quotep = foldMap (BS.char8 . review quoteChar) (quote opts)
       addQuotes x = quotep <> x <> quotep
       bspaces = BS.string8 . spacesToString . spacingBefore $ opts
@@ -157,3 +159,9 @@ data EncodeOptions =
 
 defaultEncodeOptions :: EncodeOptions
 defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF False
+
+-- Added in containers 0.5.8, but we duplicate it here to support older GHCs
+intersperseSeq :: a -> Seq a -> Seq a
+intersperseSeq y xs = case viewl xs of
+  EmptyL -> S.empty
+  p :< ps -> p <| (ps <**> (const y <| S.singleton id))
