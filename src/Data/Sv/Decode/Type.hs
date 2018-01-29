@@ -18,7 +18,7 @@ import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
 
-import Data.Sv.Field (Field)
+import Data.Sv.Field (SpacedField)
 
 newtype FieldDecode e s a =
   FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
@@ -39,13 +39,13 @@ instance Alt (FieldDecode e s) where
                   AccSuccess (z,js) -> (AccSuccess z, js)
 
 newtype DecodeState s a =
-  DecodeState { getDecodeState :: State [Field s] a }
-  deriving (Functor, Apply, Applicative, Monad, MonadState [Field s])
+  DecodeState { getDecodeState :: State [SpacedField s] a }
+  deriving (Functor, Apply, Applicative, Monad, MonadState [SpacedField s])
 
 -- TODO eventually give this type a much better show
 data DecodeError e =
   UnexpectedEndOfRow
-  | ExpectedEndOfRow [Field e]
+  | ExpectedEndOfRow [SpacedField e]
   | UnknownCanonicalValue e [(e, [e])]
   | BadParse e
   | BadDecode e

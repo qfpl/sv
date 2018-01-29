@@ -1,6 +1,7 @@
 module Data.Sv.Print (
   printSv
 , printField
+, printSpaced
 , writeSvToFile
 , displaySv
 , displaySvLazy
@@ -21,9 +22,8 @@ import Data.Sv.Field
 import Data.Sv.Record (Record (Record), Records, theRecords)
 import Data.Sv.Sv (Sv (Sv), Header (Header), Separator)
 import Text.Babel (Textual (toByteString, toByteStringBuilder), singleton)
-import Text.Between
 import Text.Newline
-import Text.Space (spaceToChar)
+import Text.Space (spaceToChar, Spaced (Spaced))
 import Text.Quote
 
 printNewline :: Newline -> Builder
@@ -32,17 +32,21 @@ printNewline n = toByteStringBuilder (newlineText n :: LB.ByteString)
 printField :: Textual s => Field s -> Builder
 printField f =
   case f of
-    UnquotedF s -> toByteStringBuilder s
-    QuotedF (Between b (Quoted q ss) t) ->
+    Unquoted s -> toByteStringBuilder s
+    Quoted q ss ->
       let c = quoteToString q
           cc = c <> c
           s = bifoldMap (const cc) toByteStringBuilder ss
-          spc = foldMap (singleton . spaceToChar)
-      in  fold [spc b, c, s, c, spc t]
+      in  fold [c, s, c]
+
+printSpaced :: Textual s => Spaced (Field s) -> Builder
+printSpaced (Spaced b t a) =
+  let spc = foldMap (singleton . spaceToChar)
+  in  fold [spc b, printField a, spc t]
 
 printRecord :: Textual s => Separator -> Record s -> Builder
 printRecord sep (Record fs) =
-  intercalate1 (singleton sep) (fmap printField fs)
+  intercalate1 (singleton sep) (fmap printSpaced fs)
 
 printPesarated1 :: Textual s => Separator -> Pesarated1 Newline (Record s) -> Builder
 printPesarated1 sep = bifoldMap printNewline (printRecord sep)

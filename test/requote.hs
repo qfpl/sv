@@ -6,8 +6,8 @@ import Text.Trifecta (parseFromFile)
 import Data.Sv
 import Data.Sv.Parser (separatedValuesC)
 import Data.Sv.Print (writeSvToFile)
-import Text.Space (middle)
-import Text.Quote (Quote (DoubleQuote), quote)
+import Text.Escaped (noEscape)
+import Text.Quote (Quote (DoubleQuote))
 
 -- Manipulates the syntax directly with optics without decoding to data types
 -- Rewrites a file with inconsistent quoting to consistently use double quotes
@@ -30,8 +30,7 @@ fixQuotes = over headerFields fixQuote . over recordFields fixQuote
   where
     fixQuote :: Field a -> Field a
     fixQuote f = case f of
-      UnquotedF a -> unspacedField DoubleQuote a
-      QuotedF sqs ->
-        QuotedF (set (middle.quote) DoubleQuote sqs)
-    headerFields = traverseHeader . traverseFields
-    recordFields = traverseRecords . traverseFields
+      Unquoted a -> Quoted DoubleQuote (noEscape a)
+      Quoted _ v -> Quoted DoubleQuote v
+    headerFields = traverseHeader . fields
+    recordFields = traverseRecords . fields

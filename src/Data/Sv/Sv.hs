@@ -41,6 +41,7 @@ import Data.Traversable   (Traversable (traverse))
 
 import Data.Sv.Config     (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
 import Data.Sv.Record     (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
+import Data.Sv.Field      (HasFields (fields))
 import Text.Newline       (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.
@@ -144,6 +145,9 @@ instance HasHeader (Header s) s where
 instance HasRecord (Header s) s where
   record = headerRecord
   {-# INLINE record #-}
+
+instance HasFields (Header s) s where
+  fields = headerRecord . fields
 
 -- | Used to build 'Sv's that don't have a header
 noHeader :: Maybe (Header s)

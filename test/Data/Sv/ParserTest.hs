@@ -17,16 +17,15 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import           Data.Sv.Sv          (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
-import           Data.Sv.Field       (Field (QuotedF, UnquotedF))
+import           Data.Sv.Field       (Field (Quoted, Unquoted), SpacedField)
 import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parser.Internal (csv, field, doubleQuotedField, record, separatedValues, singleQuotedField)
+import           Data.Sv.Parser.Internal (csv, doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Record      (Record (Record))
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
-import           Text.Between        (uniform)
 import           Text.Escaped        (escapeNel, noEscape)
-import           Text.Space          (manySpaces, spaced)
-import           Text.Quote          (Quote (SingleQuote, DoubleQuote), Quoted (Quoted), quoteToString)
+import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
+import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
 
 test_Parser :: TestTree
 test_Parser =
@@ -56,23 +55,23 @@ r2e r = case r of
   -> Assertion
 (@?=/) l r = l @?= pure r
 
-qd, qs :: a -> Quoted a
+qd, qs :: a -> Field a
 qd = Quoted DoubleQuote . noEscape
 qs = Quoted SingleQuote . noEscape
 qsr :: s -> Record s
 qsr = Record . pure . nospc . qs
-uq :: s -> Field s
-uq = UnquotedF
+uq :: s -> SpacedField s
+uq = noSpaces . Unquoted
 uqa :: NonEmpty s -> Record s
 uqa = Record . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
-nospc :: Quoted s -> Field s
-nospc = QuotedF . uniform mempty
+nospc :: Field s -> SpacedField s
+nospc = noSpaces
 
-quotedFieldTest :: (forall m . CharParsing m => m (Field Text)) -> TestName -> Quote -> TestTree
+quotedFieldTest :: (forall m . CharParsing m => m (SpacedField Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =
-  let p :: [ByteString] -> Either String (Field Text)
+  let p :: [ByteString] -> Either String (SpacedField Text)
       p = r2e . parseByteString parser mempty . mconcat
       q = quoteToString quote
       qq = Quoted quote . noEscape
@@ -84,7 +83,7 @@ quotedFieldTest parser name quote =
         @?=/ nospc (qq "hello text")
   , testCase "capture space" $
       p ["   ", q, " spaced text  ", q, "     "]
-        @?=/ QuotedF (spaced (manySpaces 3) (manySpaces 5) (qq " spaced text  "))
+        @?=/ Spaced (manySpaces 3) (manySpaces 5) (qq " spaced text  ")
   , testCase "no closing quote" $
       assertBool "wasn't left" (isLeft (p [q, "no closing quote"   ]))
   , testCase "no opening quote" $
@@ -96,13 +95,13 @@ quotedFieldTest parser name quote =
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
-singleQuotedFieldTest = quotedFieldTest singleQuotedField "singleQuotedField" SingleQuote
-doubleQuotedFieldTest = quotedFieldTest doubleQuotedField "doubleQuotedField" DoubleQuote
+singleQuotedFieldTest = quotedFieldTest (spaced comma singleQuotedField) "singleQuotedField" SingleQuote
+doubleQuotedFieldTest = quotedFieldTest (spaced comma doubleQuotedField) "doubleQuotedField" DoubleQuote
 
 fieldTest :: TestTree
 fieldTest =
-  let p :: ByteString -> Either String (Field Text)
-      p = r2e . parseByteString (field comma) mempty
+  let p :: ByteString -> Either String (SpacedField Text)
+      p = r2e . parseByteString (spacedField comma) mempty
   in  testGroup "field" [
     testCase "doublequoted" $
       p "\"hello\"" @?=/ nospc (qd "hello")
@@ -111,11 +110,11 @@ fieldTest =
   , testCase "unquoted" $
       p "yes" @?=/ uq "yes"
   , testCase "spaced doublequoted" $
-      p "       \" spaces  \"    " @?=/ QuotedF (spaced (manySpaces 7) (manySpaces 4) (qd " spaces  "))
+      p "       \" spaces  \"    " @?=/ Spaced (manySpaces 7) (manySpaces 4) (qd " spaces  ")
   , testCase "spaced singlequoted" $
-      p "        ' more spaces ' " @?=/ QuotedF (spaced (manySpaces 8) (manySpaces 1) (qs " more spaces "))
+      p "        ' more spaces ' " @?=/ Spaced (manySpaces 8) (manySpaces 1) (qs " more spaces ")
   , testCase "spaced unquoted" $
-      p "  text  " @?=/ uq "  text  "
+      p "  some text   " @?=/ Spaced (manySpaces 2) (manySpaces 3) (Unquoted "some text")
   , testCase "fields can include the separator in single quotes" $
       p "'hello,there,'" @?=/ nospc (qs "hello,there,")
   , testCase "fields can include the separator in double quotes" $

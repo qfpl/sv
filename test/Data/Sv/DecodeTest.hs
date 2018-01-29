@@ -48,8 +48,8 @@ csv1 = intercalate "\r\n" [
 csv1' :: [V3 IntOrString]
 csv1' =
   [ I <$> V3 3 4 5
-  , V3 (S "quoted text") (S " unquoted text") (I 100)
-  , V3 (I 7) (S " unquoted text") (I 5)
+  , V3 (S "quoted text") (S "unquoted text") (I 100)
+  , V3 (I 7) (S "unquoted text") (I 5)
   ]
 
 cfg :: SvConfig

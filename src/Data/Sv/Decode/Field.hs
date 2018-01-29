@@ -5,6 +5,7 @@ module Data.Sv.Decode.Field (
 , (>>==)
 , fieldDecode
 , fieldDecode_
+, spacedFieldDecode
 , decodeMay
 , decodeMay'
 , promote
@@ -18,14 +19,15 @@ import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
 import Data.Validation (_AccValidation, bindValidation)
 
-import Data.Sv.Field (Field, FieldContents, fieldContents)
+import Data.Sv.Field (Field, SpacedField, FieldContents, fieldContents)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.State (runDecodeState)
 import Data.Sv.Decode.Type
 import Data.Sv.Record (Record, _fields)
 import Text.Babel (Textual (retext))
+import Text.Space (Spaced (_value))
 
-runFieldDecode :: FieldDecode e s a -> [Field s] -> (DecodeValidation e a, [Field s])
+runFieldDecode :: FieldDecode e s a -> [SpacedField s] -> (DecodeValidation e a, [SpacedField s])
 runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
 
 (==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
@@ -38,7 +40,10 @@ infixr 1 ==<<
 infixl 1 >>==
 
 fieldDecode_ :: (Field s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode_ f = FieldDecode . Compose . state $ \l ->
+fieldDecode_ f = spacedFieldDecode (f . _value)
+
+spacedFieldDecode :: (SpacedField s -> DecodeValidation e a) -> FieldDecode e s a
+spacedFieldDecode f = FieldDecode . Compose . state $ \l ->
   case l of
     [] -> (unexpectedEndOfRow, [])
     (x:xs) -> (f x, xs)
@@ -59,4 +64,4 @@ promote :: (Textual e, Textual s) => FieldDecode e s a -> Record s -> DecodeVali
 promote a rs =
   case runFieldDecode a . toList . _fields $ rs of
     (v, []) -> v
-    (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap retext) xs)
+    (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap (fmap retext)) xs)

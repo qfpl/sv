@@ -7,8 +7,8 @@
 module Data.Sv.Record (
   Record (Record, _fields)
   -- Optics
-  , HasRecord (record, fields, traverseFields)
-  , fieldsIso
+  , HasRecord (record, spacedFields)
+  , recordSpacedFieldsIso
   , singleField
   , Records (Records, _theRecords)
   , HasRecords (records, theRecords, traverseRecords)
@@ -24,49 +24,52 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Field      (Field)
+import Data.Sv.Field      (Field, HasFields (fields))
 import Text.Newline       (Newline)
+import Text.Space         (Spaced, spacedValue)
 
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
 -- by a separator (often a comma).
 newtype Record s =
   Record {
-    _fields :: NonEmpty (Field s)
+    _fields :: NonEmpty (Spaced (Field s))
   }
   deriving (Eq, Ord, Show)
 
--- | A 'Record' is isomorphic to a 'NonEmpty' list of 'Field's
-fieldsIso :: Iso (Record s) (Record a) (NonEmpty (Field s)) (NonEmpty (Field a))
-fieldsIso = iso _fields Record
+-- | A 'Record' is isomorphic to a 'NonEmpty' list of 'SpacedField's
+recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmpty (Spaced (Field s))) (NonEmpty (Spaced (Field a)))
+recordSpacedFieldsIso = iso _fields Record
+{-# INLINE recordSpacedFieldsIso #-}
 
 -- | Classy lenses for 'Record'
 class HasRecord s t | s -> t where
   record :: Lens' s (Record t)
-  fields :: Lens' s (NonEmpty (Field t))
-  {-# INLINE fields #-}
-  fields = record . fields
-  traverseFields :: Traversal' s (Field t)
-  {-# INLINE traverseFields #-}
-  traverseFields = fields . traverse
+  spacedFields :: Lens' s (NonEmpty (Spaced (Field t)))
+  {-# INLINE spacedFields #-}
+  spacedFields = record . spacedFields
 
 instance HasRecord (Record s) s where
   record = id
-  {-# INLINE fields #-}
-  fields = fieldsIso
+  {-# INLINE record #-}
+  spacedFields = recordSpacedFieldsIso
+  {-# INLINE spacedFields #-}
+
+instance HasFields (Record s) s where
+  fields = spacedFields . traverse . spacedValue
 
 instance Functor Record where
-  fmap f = Record . fmap (fmap f) . _fields
+  fmap f = Record . fmap (fmap (fmap f)) . _fields
 
 instance Foldable Record where
-  foldMap f = foldMap (foldMap f) . _fields
+  foldMap f = foldMap (foldMap (foldMap f)) . _fields
 
 instance Traversable Record where
-  traverse f = fmap Record . traverse (traverse f) . _fields
+  traverse f = fmap Record . traverse (traverse (traverse f)) . _fields
 
 -- | Build a 'Record' with just one 'Field'
 singleField :: Field s -> Record s
-singleField = Record . pure
+singleField = Record . pure . pure
 
 -- | A collection of records, separated by newlines.
 newtype Records s =

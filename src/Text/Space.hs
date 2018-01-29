@@ -1,4 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 -- | Large chunks of only space characters, represented efficiently as integers
 module Text.Space
@@ -12,20 +15,21 @@ module Text.Space
   , charToSpace
   , spaces
   , spacesToString
-  , Spaced
-  , spaced
+  , Spaced (Spaced, _before, _after, _value)
+  , HasSpaced (spaced, spacedValue, before, after)
+  , betwixt
+  , noSpaces
   , unspaced
-  , unspace
-  , module Text.Between
+  , removeSpaces
   )
 where
 
-import Control.Lens     (Prism', prism, prism')
+import Control.Lens     (Lens', Prism', prism, prism')
+import Data.Semigroup   (Semigroup ((<>)))
 import Data.Text        (Text)
 import qualified Data.Text as Text
 
 import Data.Sv.Lens.Util (singletonList, singletonText)
-import Text.Between
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
 -- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
@@ -107,18 +111,69 @@ c2s ' ' = Just single
 c2s '\t' = Just tab
 c2s _   = Nothing
 
--- | Something between spaces is 'Spaced'
-type Spaced = Between Spaces
+data Spaced a =
+  Spaced {
+    _before :: Spaces
+  , _after :: Spaces
+  , _value :: a
+  }
+  deriving (Eq, Ord, Show)
 
--- | Put the given argument between the given spaces.
--- Alias for @Text.Between.betwixt@
-spaced :: Spaces -> Spaces -> a -> Spaced a
-spaced = betwixt
+-- | Classy lenses for 'Spaced'
+class HasSpaced c s | c -> s where
+  spaced :: Lens' c (Spaced s)
+  after :: Lens' c Spaces
+  {-# INLINE after #-}
+  before :: Lens' c Spaces
+  {-# INLINE before #-}
+  spacedValue :: Lens' c s
+  {-# INLINE spacedValue #-}
+  after = spaced . after
+  before = spaced . before
+  spacedValue = spaced . spacedValue
+
+instance HasSpaced (Spaced a) a where
+  {-# INLINE after #-}
+  {-# INLINE before #-}
+  {-# INLINE spacedValue #-}
+  spaced = id
+  before f (Spaced x y z) = fmap (\w -> Spaced w y z) (f x)
+  spacedValue f (Spaced x y z) = fmap (Spaced x y) (f z)
+  after f (Spaced x y z) = fmap (\w -> Spaced x w z) (f y)
+
+instance Functor Spaced where
+  fmap f (Spaced b t a) = Spaced b t (f a)
+
+-- | Appends the right parameter on the inside of the left parameter
+--
+-- Eg. Spaced "   " () " " *> Spaced "\t\t\t" () "\t \t" == Spaced "   \t\t\t" () "\t \t "
+instance Applicative Spaced where
+  pure = unspaced
+  Spaced b t f <*> Spaced b' t' a = Spaced (b <> b') (t' <> t) (f a)
+
+instance Foldable Spaced where
+  foldMap f = f . _value
+
+instance Traversable Spaced where
+  traverse f (Spaced b t a) = fmap (Spaced b t) (f a)
+
+-- | 'betwixt' is just the constructor for 'Spaced' with a different
+-- argument order, which is sometimes useful.
+betwixt :: Spaces -> a -> Spaces -> Spaced a
+betwixt b a t = Spaced b t a
+
+-- | 'unspaced a' is an 'a' that is between two empty 's's.
+unspaced :: a -> Spaced a
+unspaced = uniform mempty
+
+-- | `uniform spaces a` is 'a' between two of the same 'spaces'.
+uniform :: Spaces -> a -> Spaced a
+uniform s a = Spaced s s a
 
 -- | Put the given argument between no spaces
-unspaced :: a -> Spaced a
-unspaced = betwixt mempty mempty
+noSpaces :: a -> Spaced a
+noSpaces = uniform mempty
 
 -- | Remove spaces from the argument
-unspace :: Spaced a -> Spaced a
-unspace = unspaced . _middle
+removeSpaces :: Spaced a -> Spaced a
+removeSpaces = unspaced . _value
