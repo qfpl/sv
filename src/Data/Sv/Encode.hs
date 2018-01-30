@@ -30,6 +30,42 @@ import Text.Newline (Newline (CRLF), newlineText)
 import Text.Space (Spaces, spacesToString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)
 
+-- | To produce a CSV file from data types, build an 'Encode' for your data
+-- type. This module contains primitives, combinators, and type class instances
+-- to help you to do so.
+--
+-- 'Encode' is a 'Contravariant' functor, as well as a 'Divisible' and
+-- 'Decidable'. 'Divisible' is the contravariant form of 'Applicative',
+-- while 'Decidable' is the contravariant form of 'Control.Applicative.Alternative'.
+-- These type classes will provide useful combinators for working with 'Encode's.
+--
+-- Specialised to 'Encode', the function 'divide' from 'Divisible' has the type:
+--
+-- @
+-- divide :: (a -> (b,c)) -> Encode b -> Encode c -> Encode a
+-- @
+--
+-- which can be read "if 'a' can be split into a 'b' and a 'c', and I can handle
+-- 'b', and I can handle 'c', then I can handle an 'a'".
+-- Here the "I can handle"
+-- part corresponds to the 'Encode'. If we think of (covariant) functors as
+-- being "full of" 'a', then we can think of contravariant functors as being
+-- "able to handle" 'a'.
+--
+-- How does it work? Perform the split on the 'a', handle the 'b' by converting
+-- it into some text,
+-- handle the 'c' by also converting it to some text, then put each of those
+-- text fragments into their own field in the CSV.
+--
+-- Similarly, the function 'choose' from 'Decidable', specialsed to 'Encode', has
+-- the type:
+--
+-- @
+-- choose :: (a -> Either b c) -> Encode b -> Encode c -> Encode a
+-- @
+--
+-- which can be read "if 'a' is either 'b' or 'c', and I can handle 'b',
+-- and I can handle 'c', then I can handle 'a'".
 newtype Encode a =
   Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
   deriving (Semigroup, Monoid)
