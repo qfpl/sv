@@ -35,14 +35,16 @@ import Text.Escaped        (Escaped (Escaped), Escaped')
 import Text.Quote          (Quote, quoteChar)
 import Text.Space          (Spaced (Spaced))
 
--- | A @Field'@ is a single cell from a CSV document.
---   Its value is either surrounded by quotes (@Quoted@), or it is
---   @Unquoted@.
+-- | A 'Field' is a single cell from a CSV document.
+--
+-- Its value is either 'Quoted', which indicates the type of quote
+-- surrounding the value, or it is 'Unquoted', containing only the value.
 data Field s =
     Unquoted s
   | Quoted Quote (Escaped' s)
   deriving (Eq, Ord, Show)
 
+-- | 'Field's are very often surrounded by spaces
 type SpacedField a = Spaced (Field a)
 
 -- | Classy prisms for 'Field'
@@ -66,6 +68,7 @@ instance AsField (Field s) s where
       _          -> Left x
     )
 
+-- | Classy 'Traversal'' for things containing 'Field's
 class HasFields c s | c -> s where
   fields :: Traversal' c (Field s)
 

@@ -107,6 +107,8 @@ c2s ' ' = Just single
 c2s '\t' = Just tab
 c2s _   = Nothing
 
+-- | 'Spaced' is a value with zero or many horizontal spaces around it on
+-- both sides.
 data Spaced a =
   Spaced {
     _before :: Spaces

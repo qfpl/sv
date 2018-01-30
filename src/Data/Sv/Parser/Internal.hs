@@ -1,6 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
+-- | This module contains internal implementation details of sv's parser.
+-- As the "Internal" name suggests, this file is exempt from the PVP. Depend
+-- on this module at your own risk!
 module Data.Sv.Parser.Internal (
   separatedValues
   , separatedValuesC
