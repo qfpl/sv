@@ -60,7 +60,6 @@ library
                        , Data.Sv.Decode.Type
                        , Data.Sv.Encode
                        , Data.Sv.Field
-                       , Data.Sv.Lens.Util
                        , Data.Sv.Parser
                        , Data.Sv.Parser.Internal
                        , Data.Sv.Print

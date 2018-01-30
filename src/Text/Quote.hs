@@ -8,15 +8,11 @@ module Text.Quote (
   Quote (SingleQuote, DoubleQuote)
   , AsQuote (_Quote, _SingleQuote, _DoubleQuote)
   , quoteChar
-  , quoteText
   , quoteToString
 ) where
 
 import Control.Lens (Prism', prism, prism', review)
 import Data.String (IsString (fromString))
-import Data.Text (Text)
-
-import Data.Sv.Lens.Util (singletonList, singletonText)
 
 -- | A sum type for quote characters. Either single or double quotes.
 data Quote =
@@ -44,12 +40,6 @@ instance AsQuote Quote where
 instance AsQuote Char where
   _Quote = quoteChar
 
-instance (a ~ Char) => AsQuote [a] where
-  _Quote = singletonList . _Quote
-
-instance AsQuote Text where
-  _Quote = quoteText
-
 -- | Convert a Quote to the Char it represents.
 quoteChar :: Prism' Char Quote
 quoteChar =
@@ -61,11 +51,6 @@ quoteChar =
       '\'' -> Just SingleQuote
       '"'  -> Just DoubleQuote
       _    -> Nothing)
-
--- | Convert a 'Quote' into a String.
--- Useful when concatenating strings
-quoteText :: Prism' Text Quote
-quoteText = singletonText . quoteChar
 
 -- | Convert a quote to a 'String'. Works for any stringy type, like 'Text'
 -- or 'ByteString'.

@@ -29,8 +29,6 @@ import Data.Semigroup   (Semigroup ((<>)))
 import Data.Text        (Text)
 import qualified Data.Text as Text
 
-import Data.Sv.Lens.Util (singletonList, singletonText)
-
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
 -- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
 data HorizontalSpace =
@@ -62,12 +60,6 @@ instance AsHorizontalSpace HorizontalSpace where
 
 instance AsHorizontalSpace Char where
   _HorizontalSpace = prism' spaceToChar charToSpace
-
-instance (a ~ Char) => AsHorizontalSpace [a] where
-  _HorizontalSpace = singletonList . _HorizontalSpace
-
-instance AsHorizontalSpace Text where
-  _HorizontalSpace = singletonText . _HorizontalSpace
 
 -- | Helpful alias for lists of 'Space's
 type Spaces = [HorizontalSpace]
