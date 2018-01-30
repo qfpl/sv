@@ -45,18 +45,25 @@ import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Space              (HorizontalSpace (Space, Tab), Spaced, betwixt)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)
 
--- These two functions are in newer versions of the parsers package, but in
--- order to maintain compatibility with older versions I've left them here.
+-- | This function is in newer versions of the parsers package, but in
+-- order to maintain compatibility with older versions I've left it here.
 sepByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 
+-- | This function is in newer versions of the parsers package, but in
+-- order to maintain compatibility with older versions I've left it here.
 sepEndByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
 sepEndByNonEmpty p sep = (:|) <$> p <*> ((sep *> sepEndBy p sep) <|> pure [])
 
-singleQuotedField, doubleQuotedField :: (CharParsing m, Textual s) => m (Field s)
+-- | Parse a field surrounded by single quotes
+singleQuotedField :: (CharParsing m, Textual s) => m (Field s)
 singleQuotedField = quotedField SingleQuote
+
+-- | Parse a field surrounded by double quotes
+doubleQuotedField :: (CharParsing m, Textual s) => m (Field s)
 doubleQuotedField = quotedField DoubleQuote
 
+-- | Given a quote, parse its escaped form (which is it repeated twice)
 escapeQuote :: CharParsing m => Quote -> m Char
 escapeQuote q =
   let c = review quoteChar q
@@ -73,6 +80,7 @@ quotedField quote =
       chunks = fmap fromString (many (notChar q)) `sepByNonEmpty` escape
   in  Quoted quote <$> between c c (escapeNel <$> chunks)
 
+-- | Parse a field that is not surrounded by quotes
 unquotedField :: (IsString s, CharParsing m) => Separator -> m (Field s)
 unquotedField sep =
   let spaceSet = CharSet.fromList " \t" \\ CharSet.singleton sep
@@ -86,6 +94,7 @@ unquotedField sep =
       <|> (notFollowedBy (try terminalWhitespace)) *> oneSpace
     )
 
+-- | Parse a field, be it quoted or unquoted
 field :: (CharParsing m, Textual s) => Separator -> m (Field s)
 field sep =
   choice [
@@ -94,6 +103,7 @@ field sep =
   , unquotedField sep
   ]
 
+-- | Parse a field with its surrounding spacing
 spacedField :: (CharParsing m, Textual s) => Separator -> m (Spaced (Field s))
 spacedField = spaced <*> field
 
@@ -117,13 +127,16 @@ space sep =
 spaces :: CharParsing m => Separator -> m [HorizontalSpace]
 spaces = many . space
 
+-- | Combinator to parse some data surrounded by spaces
 spaced :: CharParsing m => Separator -> m a -> m (Spaced a)
 spaced sep p = betwixt <$> spaces sep <*> p <*> spaces sep
 
+-- | Parse an entire record, or "row"
 record :: (CharParsing m, Textual s) => Separator -> m (Record s)
 record sep =
   Record <$> (spacedField sep `sepEndByNonEmpty` char sep)
 
+-- | Parse many records, or "rows"
 records :: (CharParsing m, Textual s) => Separator -> m (Records s)
 records sep =
   Records <$> optional (
@@ -141,36 +154,44 @@ subsequentRecord sep = (,) <$> try (newline <* notFollowedBy (void newline <|> e
 separated :: CharParsing m => m (a,b) -> m (Separated a b)
 separated ab = Separated <$> many ab
 
+-- | Parse zero or many newlines
 ending :: CharParsing m => m [Newline]
 ending =
   [] <$ eof
   <|> try (pure <$> newline <* eof)
   <|> (:) <$> newline <*> ((:) <$> newline <*> many newline)
 
+-- | Maybe parse the header row of a CSV file, depending on the given 'Headedness'
 header :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Maybe (Header s))
 header c h = case h of
   Unheaded -> pure noHeader
   Headed -> mkHeader <$> record c <*> newline
 
+-- | Parse an Sv
 separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
 separatedValues sep h =
   Sv sep <$> header sep h <*> records sep <*> ending
 
+-- | Convenience function to parse an Sv given its config
 separatedValuesC :: (CharParsing m, Textual s) => SvConfig -> m (Sv s)
 separatedValuesC c =
   let s = view separator c
       h = view headedness c
   in  separatedValues s h
 
+-- | Parse an Sv and ensure the end of the file follows.
 separatedValuesEof :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
 separatedValuesEof sep h =
   separatedValues sep h <* eof
 
+-- | Parse comma-separated values
 csv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 csv = separatedValues comma
 
+-- | Parse pipe-separated values
 psv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 psv = separatedValues pipe
 
+-- | Parse tab-separated values
 tsv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
 tsv = separatedValues tab
