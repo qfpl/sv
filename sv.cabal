@@ -66,14 +66,13 @@ library
                        , Data.Sv.Print
                        , Data.Sv.Record
                        , Data.Sv.Sv
-                       , Data.Functor.Compose.Extra
-                       , Data.Semigroup.Foldable.Extra
                        , Text.Babel
                        , Text.Escaped
                        , Text.Newline
                        , Text.Quote
                        , Text.Space
-  -- other-modules:
+  other-modules:       Data.Functor.Compose.Extra
+                       , Data.Semigroup.Foldable.Extra
   -- other-extensions:    
   build-depends:       ansi-wl-pprint >= 0.6.6 && < 0.7
                        , attoparsec >= 0.12.1.4 && < 0.14
