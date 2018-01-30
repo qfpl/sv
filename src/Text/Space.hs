@@ -13,8 +13,8 @@ module Text.Space
   , tab
   , spaceToChar
   , charToSpace
-  , spaces
-  , spacesToString
+  , spacesText
+  , spacesString
   , Spaced (Spaced, _before, _after, _value)
   , HasSpaced (spaced, spacedValue, before, after)
   , betwixt
@@ -96,15 +96,19 @@ charToSpace c = case c of
   '\t' -> Just Tab
   _    -> Nothing
 
--- | Parse 'Text' into 'Spaces', or turn spaces into text
-spaces :: Prism' Text Spaces
-spaces =
+-- | Parse 'Text' into 'Spaces', or turn spaces into 'Text'
+spacesText :: Prism' Text Spaces
+spacesText =
   prism'
     (Text.pack . foldMap (pure . spaceToChar))
     (foldMap c2s . Text.unpack)
 
-spacesToString :: Spaces -> String
-spacesToString = map spaceToChar
+-- | Parse 'String' into 'Spaces', or convert 'Spaces' into 'String'
+spacesString :: Prism' String Spaces
+spacesString =
+  prism'
+    (fmap spaceToChar)
+    (foldMap c2s)
 
 c2s :: Char -> Maybe Spaces
 c2s ' ' = Just single

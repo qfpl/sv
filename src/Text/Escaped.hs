@@ -135,21 +135,51 @@ instance Monoid Escape where
   mappend = (<>)
   mempty = Escape
 
+-- | Replaces all occurrences of the given character with two occurrences of that
+-- character, non-recursively, in the given 'String'.
+--
+-- >>> escapeString ''' "hello 'string'"
+-- "hello ''string''"
+--
 escapeString :: Char -> String -> String
 escapeString c s =
   let doubleChar q z = if z == q then [q,q] else [z]
   in  concatMap (doubleChar c) s
 
+-- | Replaces all occurrences of the given character with two occurrences of that
+-- character in the given 'Text'
+--
+-- Assuming @{- LANGUAGE OverloadedStrings -}@:
+--
+-- >>> escapeString ''' "hello 'text'"
+-- "hello ''text''"
+--
 escapeText :: Char -> Text -> Text
 escapeText c s =
   let ct = Text.singleton c
   in  Text.replace ct (ct <> ct) s
 
+-- | Replaces all occurrences of the given character with two occurrences of that
+-- character in the given ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
+--
+-- Assuming @{- LANGUAGE OverloadedStrings -}@:
+--
+-- >>> escapeString ''' "hello 'bytestring'"
+-- "hello ''bytestring''"
+--
 escapeUtf8 :: Char -> B.ByteString -> B.ByteString
 escapeUtf8 c b =
   let doubleB q z = if z == q then B.pack [q,q] else B.singleton z
   in  B.concatMap (doubleB c) b
 
+-- | Replaces all occurrences of the given character with two occurrences of that
+-- character in the given lazy ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
+--
+-- Assuming @{- LANGUAGE OverloadedStrings -}@:
+--
+-- >>> escapeString ''' "hello 'lazy bytestring'"
+-- "hello ''lazy bytestring''"
+--
 escapeLazyUtf8 :: Char -> L.ByteString -> L.ByteString
 escapeLazyUtf8 c b =
   let doubleL q z = if z == q then L.pack [q,q] else L.singleton z

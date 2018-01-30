@@ -27,7 +27,7 @@ import Data.Void (absurd)
 import Data.Sv.Config (Separator, comma)
 import Text.Escaped (escapeString, escapeText, escapeUtf8, escapeLazyUtf8)
 import Text.Newline (Newline (CRLF), newlineText)
-import Text.Space (Spaces, spacesToString)
+import Text.Space (Spaces, spacesString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)
 
 -- | To produce a CSV file from data types, build an 'Encode' for your data
@@ -112,8 +112,8 @@ encodeRow' opts e =
   let addSeparators = intersperseSeq (BS.charUtf8 (separator opts))
       quotep = foldMap (BS.charUtf8 . review quoteChar) (quote opts)
       addQuotes x = quotep <> x <> quotep
-      bspaces = BS.stringUtf8 . spacesToString . spacingBefore $ opts
-      aspaces = BS.stringUtf8 . spacesToString . spacingAfter $ opts
+      bspaces = BS.stringUtf8 . review spacesString . spacingBefore $ opts
+      aspaces = BS.stringUtf8 . review spacesString . spacingAfter $ opts
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
