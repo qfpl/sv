@@ -14,6 +14,8 @@ License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
+
+Newtypes to keep track of which text is in an escaped form and which is not
 -}
 
 module Text.Escape (
@@ -42,6 +44,7 @@ import Data.Traversable   (Traversable)
 
 import Text.Babel (Textual)
 
+-- | Wrapper for text that is known to be in an unescaped form
 newtype Unescaped a =
   Unescaped { getUnescaped :: a }
   deriving (Eq, Ord, Show, Semigroup, Monoid, Functor, Foldable, Traversable)
@@ -52,6 +55,7 @@ instance Wrapped (Unescaped a) where
   type Unwrapped (Unescaped a) = a
   _Wrapped' = iso (\ (Unescaped a) -> a) Unescaped
 
+-- | Classy lenses for 'Unescaped'
 class HasUnescaped c a | c -> a where
   unescaped :: Lens' c (Unescaped a)
   unescapedValue :: Lens' c a
@@ -64,10 +68,15 @@ instance HasUnescaped (Unescaped a) a where
   unescapedValue = _Wrapped'
   {-# INLINE unescapedValue #-}
 
+-- | Wrapper for text that is known to be in an escaped form.
+--
+-- The constructor should not be called directly unless you know the
+-- appropriate escape, and have performed it yourself.
 newtype Escaped a =
   UnsafeEscaped a
   deriving (Eq, Ord, Show, Semigroup, Monoid, Foldable)
 
+-- | Unwrap an 'Escaped' value. This is intentionally not a record selector.
 getRawEscaped :: Escaped a -> a
 getRawEscaped (UnsafeEscaped a) = a
 
@@ -133,6 +142,8 @@ escapeChar :: Char -> Char -> Escaped String
 escapeChar c b =
   UnsafeEscaped $ if c == b then [b,b] else [b]
 
+-- | This class is for text in which a particular character can be escaped to
+-- produce an 'Escaped'
 class Textual a => Escapable a where
   escape :: Char -> a -> Escaped a
   escape_ :: Char -> Unescaped a -> Escaped a
