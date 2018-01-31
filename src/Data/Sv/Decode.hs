@@ -44,6 +44,7 @@ module Data.Sv.Decode (
 , integer
 , float
 , double
+, boolean
 , choice
 , element
 , optionalField
@@ -214,6 +215,13 @@ float = named "float"
 
 double :: (Textual s, Textual e) => FieldDecode e s Double
 double = named "double"
+
+boolean :: (Textual s, Textual e, Ord s) => FieldDecode e s Bool
+boolean =
+  categorical' [
+    (False, ["false", "False", "FALSE", "f", "F", "0", "n", "N", "no", "No", "NO", "off", "Off", "OFF"])
+  , (True, ["true", "True", "TRUE", "t", "T", "1", "y", "Y", "yes", "Yes", "YES", "on", "On", "ON"])
+  ]
 
 emptyField :: (Textual s, Textual e, Eq s) => FieldDecode e s ()
 emptyField = contents >>== \c ->
