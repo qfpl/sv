@@ -84,6 +84,7 @@ instance Traversable Field where
     Unquoted s -> Unquoted <$> f s
     Quoted q v -> Quoted q <$> traverse f v
 
+-- | Lens into the contents of a Field, regardless of whether it's quoted or unquoted
 fieldContents :: Lens (Field s) (Field t) s t
 fieldContents =
   lens (foldField id (getUnescaped.snd)) $ \f b -> case f of
