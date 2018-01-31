@@ -19,7 +19,7 @@ import Data.Foldable       (Foldable (foldMap))
 import Data.Functor        (Functor (fmap))
 import Data.Traversable    (Traversable (traverse))
 
-import Text.Escaped        (Unescaped (Unescaped, getUnescaped))
+import Text.Escape         (Unescaped (Unescaped, getUnescaped))
 import Text.Quote          (Quote)
 import Text.Space          (Spaced (Spaced))
 

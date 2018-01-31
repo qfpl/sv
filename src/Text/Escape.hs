@@ -8,7 +8,7 @@
 {-# LANGUAGE DeriveTraversable#-}
 
 -- | Chunks of text separated by escape sequences
-module Text.Escaped (
+module Text.Escape (
   Unescaped (Unescaped, getUnescaped)
   , HasUnescaped (unescaped, unescapedValue)
   , Escaped (UnsafeEscaped)

@@ -40,7 +40,7 @@ import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, H
 import           Data.Sv.Field           (Field (Unquoted, Quoted))
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
-import           Text.Escaped            (Unescaped (Unescaped))
+import           Text.Escape             (Unescaped (Unescaped))
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Space              (HorizontalSpace (Space, Tab), Spaced, betwixt)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)

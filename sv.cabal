@@ -67,7 +67,7 @@ library
                        , Data.Sv.Record
                        , Data.Sv.Sv
                        , Text.Babel
-                       , Text.Escaped
+                       , Text.Escape
                        , Text.Newline
                        , Text.Quote
                        , Text.Space

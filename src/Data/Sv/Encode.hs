@@ -26,7 +26,7 @@ import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
 
 import Data.Sv.Config (Separator, comma)
-import Text.Escaped (Escaped, getRawEscaped, Escapable (escape), escapeChar)
+import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (Newline (CRLF), newlineText)
 import Text.Space (Spaces, spacesString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)

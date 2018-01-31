@@ -24,7 +24,7 @@ import           Data.Sv.Parser.Internal (csv, doubleQuotedField, record, separa
 import           Data.Sv.Record      (Record (Record))
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
-import           Text.Escaped        (Unescaped (Unescaped))
+import           Text.Escape         (Unescaped (Unescaped))
 import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
 import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
 

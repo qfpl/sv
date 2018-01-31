@@ -32,7 +32,7 @@ import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, getHeadedness,
 import Data.Sv.Field       (Field (Quoted, Unquoted))
 import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
-import Text.Escaped        (Escaped, Escapable (escape), Unescaped (Unescaped))
+import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced (Spaced))
 import Text.Quote          (Quote (SingleQuote, DoubleQuote))

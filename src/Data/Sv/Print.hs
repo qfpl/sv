@@ -21,7 +21,7 @@ import Data.Sv.Field
 import Data.Sv.Record (Record (Record), Records, theRecords)
 import Data.Sv.Sv (Sv (Sv), Header (Header), Separator)
 import Text.Babel (Textual (toByteString, toByteStringBuilder), singleton)
-import Text.Escaped (getRawEscaped, Escapable (escape_))
+import Text.Escape (getRawEscaped, Escapable (escape_))
 import Text.Newline
 import Text.Space (spaceToChar, Spaced (Spaced))
 import Text.Quote
