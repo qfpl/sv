@@ -18,6 +18,7 @@ module Data.Sv.Field (
   , Spaced (Spaced)
   , HasFields (fields)
   , AsField (_Field, _Unquoted, _Quoted)
+  , unescapedField
   , foldField
   , fieldContents
 ) where
@@ -39,6 +40,21 @@ data Field s =
     Unquoted s
   | Quoted Quote (Unescaped s)
   deriving (Eq, Ord, Show)
+
+instance Functor Field where
+  fmap f fi = case fi of
+    Unquoted s -> Unquoted (f s)
+    Quoted q v -> Quoted q (fmap f v)
+
+instance Foldable Field where
+  foldMap f fi = case fi of
+    Unquoted s -> f s
+    Quoted _ v -> foldMap f v
+
+instance Traversable Field where
+  traverse f fi = case fi of
+    Unquoted s -> Unquoted <$> f s
+    Quoted q v -> Quoted q <$> traverse f v
 
 -- | 'Field's are very often surrounded by spaces
 type SpacedField a = Spaced (Field a)
@@ -71,26 +87,15 @@ class HasFields c s | c -> s where
 instance HasFields (Field s) s where
   fields = id
 
+-- | Build a quoted field with a normal string
+unescapedField :: Quote -> s -> Field s
+unescapedField q s = Quoted q (Unescaped s)
+
 -- | The catamorphism for @Field'@
 foldField :: (s -> b) -> ((Quote, Unescaped s) -> b) -> Field s -> b
 foldField u q fi = case fi of
   Unquoted s -> u s
   Quoted a b -> q (a,b)
-
-instance Functor Field where
-  fmap f fi = case fi of
-    Unquoted s -> Unquoted (f s)
-    Quoted q v -> Quoted q (fmap f v)
-
-instance Foldable Field where
-  foldMap f fi = case fi of
-    Unquoted s -> f s
-    Quoted _ v -> foldMap f v
-
-instance Traversable Field where
-  traverse f fi = case fi of
-    Unquoted s -> Unquoted <$> f s
-    Quoted q v -> Quoted q <$> traverse f v
 
 -- | Lens into the contents of a Field, regardless of whether it's quoted or unquoted
 fieldContents :: Lens (Field s) (Field t) s t
