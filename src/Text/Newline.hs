@@ -1,6 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | A sum type for line endings
+{-|
+Module      : Text.Newline
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+A sum type for line endings
+-}
+
 module Text.Newline (
   Newline (CR, LF, CRLF)
   , AsNewline(_Newline, _CR, _LF, _CRLF)

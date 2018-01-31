@@ -3,7 +3,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
--- | Large chunks of only space characters, represented efficiently as integers
+{-|
+Module      : Text.Space
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+Large chunks of only space characters, represented efficiently as integers
+-}
+
 module Text.Space
   ( HorizontalSpace (Space, Tab)
   , AsHorizontalSpace (_HorizontalSpace, _Space, _Tab)

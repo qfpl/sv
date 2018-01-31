@@ -3,7 +3,17 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- | A sum type for quote characters
+{-|
+Module      : Text.Quote
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+A sum type for quote characters
+-}
+
 module Text.Quote (
   Quote (SingleQuote, DoubleQuote)
   , AsQuote (_Quote, _SingleQuote, _DoubleQuote)

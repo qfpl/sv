@@ -2,8 +2,17 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
--- | This file contains datatypes for Records. A record is a "line" or "row"
--- of a CSV document
+{-|
+Module      : Data.Sv.Record
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+This module contains datatypes for Records. A record is a "line" or "row"
+of a CSV document
+-}
 module Data.Sv.Record (
   Record (Record, _fields)
   -- Optics

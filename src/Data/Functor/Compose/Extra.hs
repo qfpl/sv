@@ -1,5 +1,14 @@
 {-# LANGUAGE RankNTypes #-}
 
+{-|
+Module      : Data.Functor.Compose.Extra
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+-}
+
 module Data.Functor.Compose.Extra (
   lmapC
 , rmapC

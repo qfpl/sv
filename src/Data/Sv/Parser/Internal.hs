@@ -1,9 +1,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
--- | This module contains internal implementation details of sv's parser.
--- As the "Internal" name suggests, this file is exempt from the PVP. Depend
--- on this module at your own risk!
+{-|
+Module      : Data.Sv.Parser.Internal
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+This module contains internal implementation details of sv's parser.
+As the Internal name suggests, this file is exempt from the PVP. Depend
+on this module at your own risk!
+-}
+
 module Data.Sv.Parser.Internal (
   separatedValues
   , separatedValuesC

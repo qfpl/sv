@@ -1,10 +1,19 @@
 {-# LANGUAGE TypeFamilies #-}
 
--- | This is a slow, dreadful solution to The String Problem. It seems to work
---though.
---
--- Backpack could probably be used to replace this with something much better,
--- but I'm going to wait for it to mature more first.
+{-|
+Module      : Text.Babel
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+This is a slow, dreadful solution to The String Problem. It seems to work
+though.
+
+Backpack could probably be used to replace this with something much better,
+but I'm going to wait for it to mature more first.
+-}
 module Text.Babel 
   (
     Textual (..)

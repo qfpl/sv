@@ -7,7 +7,15 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable#-}
 
--- | Chunks of text separated by escape sequences
+{-|
+Module      : Text.Escape
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+-}
+
 module Text.Escape (
   Unescaped (Unescaped, getUnescaped)
   , HasUnescaped (unescaped, unescapedValue)

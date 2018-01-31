@@ -5,12 +5,22 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 
--- | This file defines a datatype for a complete Sv document.
--- The datatype preserves information such as whitespace so that the original
--- text can be recovered.
---
--- In the usual workflow, this type is only an intermediate stage between
--- parsing and decoding.
+{-|
+Module      : Data.Sv.Sv
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+This file defines a datatype for a complete Sv document.
+The datatype preserves information such as whitespace so that the original
+text can be recovered.
+
+In the usual workflow, this type is only an intermediate stage between
+parsing and decoding.
+-}
+
 module Data.Sv.Sv (
   Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)
   , HasSv (sv, maybeHeader, traverseHeader, finalNewlines)

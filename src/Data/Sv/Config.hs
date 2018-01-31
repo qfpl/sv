@@ -1,4 +1,14 @@
--- | Configuration to tell the parser what your file looks like.
+{-|
+Module      : Data.Sv.Config
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+Configuration to tell the parser what your file looks like.
+-}
+
 module Data.Sv.Config (
   SvConfig (SvConfig, _headedness, _separator, _parsingLib)
 , HasSvConfig (svConfig)

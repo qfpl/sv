@@ -2,16 +2,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
--- | This module contains data structures, combinators, and primitives for
--- decoding an 'Sv' into a list of your Haskell datatype.
---
--- A file can be read with 'decodeFromFile'. If you already have the text
--- data in memory, it can be decoded with 'parseDecode'.
--- You will need a 'FieldDecode' for your desired type.
---
--- A 'FieldDecode' can be built using the primitives in this file. 'FieldDecode'
--- is an 'Applicative' and an 'Alternative', allowing for composition of these
--- values.
+{-|
+Module      : Data.Sv.Decode
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+
+This module contains data structures, combinators, and primitives for
+decoding an 'Sv' into a list of your Haskell datatype.
+
+A file can be read with 'decodeFromFile'. If you already have the text
+data in memory, it can be decoded with 'parseDecode'.
+You will need a 'FieldDecode' for your desired type.
+
+A 'FieldDecode' can be built using the primitives in this file. 'FieldDecode'
+is an 'Applicative' and an 'Alternative', allowing for composition of these
+values.
+-}
 
 module Data.Sv.Decode (
   decode
