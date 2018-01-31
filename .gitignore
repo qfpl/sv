@@ -8,5 +8,5 @@
 /.cabal-sandbox
 /cabal.sandbox.config
 /cabal.project.local
-/test/requote-fixed.csv
+/test/requote.fixed.csv
 

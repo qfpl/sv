@@ -15,4 +15,3 @@ main =
   , test_Decode
   , test_Encode
   ]
-
