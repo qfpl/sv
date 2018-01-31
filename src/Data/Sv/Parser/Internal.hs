@@ -40,15 +40,10 @@ import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, H
 import           Data.Sv.Field           (Field (Unquoted, Quoted))
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
-import           Text.Escaped            (escapeNel)
+import           Text.Escaped            (Unescaped (Unescaped))
 import           Text.Newline            (Newline (CR, CRLF, LF))
 import           Text.Space              (HorizontalSpace (Space, Tab), Spaced, betwixt)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)
-
--- | This function is in newer versions of the parsers package, but in
--- order to maintain compatibility with older versions I've left it here.
-sepByNonEmpty :: Alternative m => m a -> m sep -> m (NonEmpty a)
-sepByNonEmpty p sep = (:|) <$> p <*> many (sep *> p)
 
 -- | This function is in newer versions of the parsers package, but in
 -- order to maintain compatibility with older versions I've left it here.
@@ -72,13 +67,12 @@ escapeQuote q =
 two :: a -> [a]
 two a = [a,a]
 
-quotedField :: (CharParsing m, Textual s)=> Quote -> m (Field s)
+quotedField :: (CharParsing m, Textual s) => Quote -> m (Field s)
 quotedField quote =
   let q = review quoteChar quote
       c = char q
-      escape = escapeQuote quote
-      chunks = fmap fromString (many (notChar q)) `sepByNonEmpty` escape
-  in  Quoted quote <$> between c c (escapeNel <$> chunks)
+      cc = escapeQuote quote
+  in  Quoted quote . Unescaped . fromString <$> between c c (many (cc <|> notChar q))
 
 -- | Parse a field that is not surrounded by quotes
 unquotedField :: (IsString s, CharParsing m) => Separator -> m (Field s)

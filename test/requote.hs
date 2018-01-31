@@ -6,7 +6,7 @@ import Text.Trifecta (parseFromFile)
 import Data.Sv
 import Data.Sv.Parser (separatedValuesC)
 import Data.Sv.Print (writeSvToFile)
-import Text.Escaped (noEscape)
+import Text.Escaped (Unescaped (Unescaped))
 import Text.Quote (Quote (DoubleQuote))
 
 -- Manipulates the syntax directly with optics without decoding to data types
@@ -30,7 +30,7 @@ fixQuotes = over headerFields fixQuote . over recordFields fixQuote
   where
     fixQuote :: Field a -> Field a
     fixQuote f = case f of
-      Unquoted a -> Quoted DoubleQuote (noEscape a)
+      Unquoted a -> Quoted DoubleQuote (Unescaped a)
       Quoted _ v -> Quoted DoubleQuote v
     headerFields = traverseHeader . fields
     recordFields = traverseRecords . fields

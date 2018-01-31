@@ -56,7 +56,6 @@ module Data.Sv.Decode (
 , module Data.Sv.Decode.Field
 , module Data.Sv.Decode.State
 , module Data.Sv.Decode.Type
-, FieldContents
 , ParsingLib (Trifecta, Attoparsec)
 , HasParsingLib (parsingLib)
 ) where
@@ -93,7 +92,7 @@ import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
-import Data.Sv.Field (Field (Unquoted, Quoted), FieldContents (fieldContents), SpacedField, Spaced (Spaced))
+import Data.Sv.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
 import Data.Sv.Parser (separatedValues)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText)
 import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
@@ -146,21 +145,21 @@ raw :: FieldDecode e s (SpacedField s)
 raw = spacedFieldDecode pure
 
 -- | Returns the field contents. This keeps the spacing around an unquoted field.
-untrimmed :: (FieldContents s, AsHorizontalSpace s, Semigroup s) => FieldDecode e s s
+untrimmed :: (Textual s, AsHorizontalSpace s, Semigroup s) => FieldDecode e s s
 untrimmed =
   let sp :: (Monoid b, AsHorizontalSpace b) => Spaces -> b
       sp = foldMap (review _HorizontalSpace)
-      zz (Spaced b a f) = case f of
+      spaceIfNecessary (Spaced b a f) = case f of
         Unquoted s -> sp b <> s <> sp a
-        Quoted _ _ -> fieldContents f
-  in  fmap zz raw
+        Quoted _ _ -> view fieldContents f
+  in  fmap spaceIfNecessary raw
 
 -- | Get the contents of a field without doing any decoding. This never fails.
-contents :: FieldContents s => FieldDecode e s s
+contents :: FieldDecode e s s
 contents = fieldDecode pure
 
 -- | Get the contents of a field as a bytestring.
-byteString :: FieldContents s => FieldDecode e s ByteString
+byteString :: Textual s => FieldDecode e s ByteString
 byteString = toByteString <$> contents
 
 -- | Get the contents of a UTF8 encoded field as 'Text'
@@ -172,10 +171,10 @@ utf8 = contents >>==
 ascii :: IsString e => FieldDecode e ByteString Text
 ascii = utf8
 
-lazyByteString :: FieldContents s => FieldDecode e s LBS.ByteString
+lazyByteString :: Textual s => FieldDecode e s LBS.ByteString
 lazyByteString = toLazyByteString <$> contents
 
-string :: FieldContents s => FieldDecode e s String
+string :: Textual s => FieldDecode e s String
 string = toString <$> contents
 
 lazyText :: IsString e => FieldDecode e ByteString LT.Text
@@ -183,31 +182,31 @@ lazyText = LT.fromStrict <$> text
 
 -- | Decode the field as 'Text'. If your input string is a ByteString,
 -- consider using 'utf8'` instead.
-text :: FieldContents s => FieldDecode e s Text
+text :: Textual s => FieldDecode e s Text
 text = toText <$> contents
 
-ignore :: FieldContents s => FieldDecode e s ()
+ignore :: FieldDecode e s ()
 ignore = replace ()
 
-replace :: FieldContents s => a -> FieldDecode e s a
+replace :: a -> FieldDecode e s a
 replace a = a <$ contents
 
-unit :: FieldContents s => FieldDecode e s ()
+unit :: FieldDecode e s ()
 unit = ignore
 
-int :: (FieldContents s, Textual e) => FieldDecode e s Int
+int :: (Textual s, Textual e) => FieldDecode e s Int
 int = named "int"
 
-integer :: (FieldContents s, Textual e) => FieldDecode e s Integer
+integer :: (Textual s, Textual e) => FieldDecode e s Integer
 integer = named "integer"
 
-float :: (FieldContents s, Textual e) => FieldDecode e s Float
+float :: (Textual s, Textual e) => FieldDecode e s Float
 float = named "float"
 
-double :: (FieldContents s, Textual e) => FieldDecode e s Double
+double :: (Textual s, Textual e) => FieldDecode e s Double
 double = named "double"
 
-emptyField :: (FieldContents s, Textual e, Eq s) => FieldDecode e s ()
+emptyField :: (Textual s, Textual e, Eq s) => FieldDecode e s ()
 emptyField = contents >>== \c ->
   if c == "" then
     pure ()
@@ -220,30 +219,30 @@ choice = (<!>)
 element :: NonEmpty (FieldDecode e s a) -> FieldDecode e s a
 element = asum1
 
-optionalField :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
+optionalField :: FieldDecode e s a -> FieldDecode e s (Maybe a)
 optionalField a = Just <$> a <!> pure Nothing
 
-ignoreFailure :: FieldContents s => FieldDecode e s a -> FieldDecode e s (Maybe a)
+ignoreFailure :: FieldDecode e s a -> FieldDecode e s (Maybe a)
 ignoreFailure a = Just <$> a <!> Nothing <$ ignore
 
-orEmpty :: (FieldContents s, Textual e, Eq s) => FieldDecode e s a -> FieldDecode e s (Maybe a)
+orEmpty :: (Textual s, Textual e, Eq s) => FieldDecode e s a -> FieldDecode e s (Maybe a)
 orEmpty a = Nothing <$ emptyField <!> Just <$> a
 
 choiceE :: FieldDecode e s a -> FieldDecode e s b -> FieldDecode e s (Either a b)
 choiceE a b = fmap Left a <!> fmap Right b
 
-orElse :: FieldContents s => FieldDecode e s a -> a -> FieldDecode e s a
+orElse :: FieldDecode e s a -> a -> FieldDecode e s a
 orElse f a = f <!> replace a
 
-orElseE :: FieldContents s => FieldDecode e s b -> a -> FieldDecode e s (Either a b)
+orElseE :: FieldDecode e s b -> a -> FieldDecode e s (Either a b)
 orElseE b a = swapE <$> choiceE b (replace a)
   where
     swapE = either Right Left
 
-categorical :: (FieldContents s, Ord s, Textual e, Show a) => [(a, s)] -> FieldDecode e s a
+categorical :: (Ord s, Textual s, Textual e, Show a) => [(a, s)] -> FieldDecode e s a
 categorical = categorical' . fmap (fmap pure)
 
-categorical' :: forall a s e. (FieldContents s, Ord s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
+categorical' :: forall a s e. (Ord s, Textual s, Textual e, Show a) => [(a, [s])] -> FieldDecode e s a
 categorical' as =
   let as' :: [(a, Set s)]
       as' = fmap (second fromList) as
@@ -256,17 +255,17 @@ categorical' as =
     decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
       alaf First foldMap (go s) as'
 
-decodeRead :: (Readable a, FieldContents s, Textual e) => FieldDecode e s a
+decodeRead :: (Readable a, Textual s, Textual e) => FieldDecode e s a
 decodeRead = decodeReadWithMsg (mappend "Couldn't parse " . retext)
 
 decodeRead' :: (Textual e, Readable a) => e -> FieldDecode e ByteString a
 decodeRead' e = decodeReadWithMsg (const e)
 
-decodeReadWithMsg :: (FieldContents s, Textual e, Readable a) => (s -> e) -> FieldDecode e s a
+decodeReadWithMsg :: (Textual s, Textual e, Readable a) => (s -> e) -> FieldDecode e s a
 decodeReadWithMsg e = contents >>== \c ->
   maybe (badDecode (e c)) pure . fromBS . toByteString $ c
 
-named :: (Readable a, FieldContents s, Textual e) => s -> FieldDecode e s a
+named :: (Readable a, Textual s, Textual e) => s -> FieldDecode e s a
 named name =
   let vs' = ['a','e','i','o','u']
       vs  = fmap toUpper vs' ++ vs'
@@ -280,32 +279,32 @@ named name =
 ---- Promoting parsers to 'FieldDecode's
 
 -- | Build a 'FieldDecode' from a parser from the 'parsers' library.
-parser :: (FieldContents s, Textual e) => (forall m . CharParsing m => m a) -> FieldDecode e s a
+parser :: (Textual s, Textual e) => (forall m . CharParsing m => m a) -> FieldDecode e s a
 parser = trifecta
 
 -- | Build a 'FieldDecode' from a Trifecta parser
-trifecta :: (FieldContents s, Textual e) => T.Parser a -> FieldDecode e s a
+trifecta :: (Textual s, Textual e) => T.Parser a -> FieldDecode e s a
 trifecta =
   mkParserFunction
     (resultToDecodeError BadDecode)
     (flip parseByteString mempty)
 
 -- | Build a 'FieldDecode' from an Attoparsec parser
-attoparsec :: (FieldContents s, Textual e) => A.Parser a -> FieldDecode e s a
+attoparsec :: (Textual s, Textual e) => A.Parser a -> FieldDecode e s a
 attoparsec =
   mkParserFunction
     (eitherToDecodeError (BadDecode . fromString))
     parseOnly
 
 -- | Build a 'FieldDecode' from a Parsec parser
-parsec :: (FieldContents s, Textual e) => Parsec ByteString () a -> FieldDecode e s a
+parsec :: (Textual s, Textual e) => Parsec ByteString () a -> FieldDecode e s a
 parsec =
   mkParserFunction
     (eitherToDecodeError (BadDecode . showT))
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::
-  (CharParsing p, FieldContents s, Textual e)
+  (CharParsing p, Textual s, Textual e)
   => (f a -> DecodeValidation e a)
   -> (p a -> ByteString -> f a)
   -> p a

@@ -7,6 +7,7 @@ import           Data.ByteString      (ByteString)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
+import           Data.Semigroup       (Semigroup ((<>)))
 import           Data.Text            (Text)
 import           Hedgehog
 import           Test.Tasty           (TestName, TestTree, testGroup)
@@ -23,7 +24,7 @@ import           Data.Sv.Parser.Internal (csv, doubleQuotedField, record, separa
 import           Data.Sv.Record      (Record (Record))
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
-import           Text.Escaped        (escapeNel, noEscape)
+import           Text.Escaped        (Unescaped (Unescaped))
 import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
 import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
 
@@ -56,8 +57,8 @@ r2e r = case r of
 (@?=/) l r = l @?= pure r
 
 qd, qs :: a -> Field a
-qd = Quoted DoubleQuote . noEscape
-qs = Quoted SingleQuote . noEscape
+qd = Quoted DoubleQuote . Unescaped
+qs = Quoted SingleQuote . Unescaped
 qsr :: s -> Record s
 qsr = Record . pure . nospc . qs
 uq :: s -> SpacedField s
@@ -74,7 +75,7 @@ quotedFieldTest parser name quote =
   let p :: [ByteString] -> Either String (SpacedField Text)
       p = r2e . parseByteString parser mempty . mconcat
       q = quoteToString quote
-      qq = Quoted quote . noEscape
+      qq = Quoted quote . Unescaped
   in testGroup name [
     testCase "empty" $
       p [q,q] @?=/ nospc (qq "")
@@ -91,7 +92,7 @@ quotedFieldTest parser name quote =
   , testCase "no quotes" $
       assertBool "wasn't left" (isLeft (p [   "no quotes"          ]))
   , testCase "quoted field can handle escaped quotes" $
-     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (escapeNel ("yes" :| ["no"])))
+     p [q,"yes", q, q, "no", q] @?=/ nospc (Quoted quote (Unescaped ("yes" <> quoteToString quote <> "no")))
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree

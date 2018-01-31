@@ -11,28 +11,16 @@ module Data.Sv.Field (
   , HasFields (fields)
   , AsField (_Field, _Unquoted, _Quoted)
   , foldField
-  , FieldContents (fieldContents)
-  , expand
+  , fieldContents
 ) where
 
-import Control.Lens        (Prism', Traversal', prism, review)
-import Data.Bifunctor      (first)
-import Data.Bifoldable     (Bifoldable (bifoldMap))
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Builder as BS
-import qualified Data.ByteString.Lazy as LBS
+import Control.Lens        (Lens, Prism', Traversal', lens, prism)
 import Data.Foldable       (Foldable (foldMap))
 import Data.Functor        (Functor (fmap))
-import Data.Monoid         (Monoid)
-import Data.Profunctor     (Profunctor (dimap))
-import Data.Text           (Text)
-import qualified Data.Text.Lazy as Lazy
-import Data.Text.Lazy.Builder as TB (Builder, fromText, fromLazyText, toLazyText)
 import Data.Traversable    (Traversable (traverse))
 
-import Text.Babel
-import Text.Escaped        (Escaped (Escaped), Escaped')
-import Text.Quote          (Quote, quoteChar)
+import Text.Escaped        (Unescaped (Unescaped, getUnescaped))
+import Text.Quote          (Quote)
 import Text.Space          (Spaced (Spaced))
 
 -- | A 'Field' is a single cell from a CSV document.
@@ -41,7 +29,7 @@ import Text.Space          (Spaced (Spaced))
 -- surrounding the value, or it is 'Unquoted', containing only the value.
 data Field s =
     Unquoted s
-  | Quoted Quote (Escaped' s)
+  | Quoted Quote (Unescaped s)
   deriving (Eq, Ord, Show)
 
 -- | 'Field's are very often surrounded by spaces
@@ -51,7 +39,7 @@ type SpacedField a = Spaced (Field a)
 class HasFields c s => AsField c s | c -> s where
   _Field :: Prism' c (Field s)
   _Unquoted :: Prism' c s
-  _Quoted :: Prism' c (Quote, Escaped' s)
+  _Quoted :: Prism' c (Quote, Unescaped s)
   _Unquoted = _Field . _Unquoted
   _Quoted = _Field . _Quoted
 
@@ -76,18 +64,10 @@ instance HasFields (Field s) s where
   fields = id
 
 -- | The catamorphism for @Field'@
-foldField :: (s -> b) -> ((Quote, Escaped' s) -> b) -> Field s -> b
+foldField :: (s -> b) -> ((Quote, Unescaped s) -> b) -> Field s -> b
 foldField u q fi = case fi of
   Unquoted s -> u s
   Quoted a b -> q (a,b)
-
--- | Expands a Quoted, which is compact with all quotes the same, into a
--- WithEscapes Quote, which is often a useful representation, particularly
--- because of its instances of Bitraversable and friends.
-expand :: Field a -> Escaped Quote a
-expand f = case f of
-  Unquoted a -> Escaped [Right a]
-  Quoted q v -> first (const q) v
 
 instance Functor Field where
   fmap f fi = case fi of
@@ -104,47 +84,8 @@ instance Traversable Field where
     Unquoted s -> Unquoted <$> f s
     Quoted q v -> Quoted q <$> traverse f v
 
--- | Overloads the values in fields, which are stringy and may contain escape
--- sequences.
-class Textual a => FieldContents a where
-  -- | Extracts the value from a field, expanding escape sequences.
-  --
-  -- eg. the field @Escaped quote -> "" <-@ would become @Escaped quote -> " <-@
-  fieldContents :: Field a -> a
-
-instance FieldContents String where
-  fieldContents (Unquoted a) = a
-  fieldContents (Quoted q v) =
-    let c = review quoteChar q
-    in  bifoldMap (const [c]) id v
-
-instance FieldContents TB.Builder where
-  fieldContents = expandQuotesTB
-
-instance FieldContents Lazy.Text where
-  fieldContents = dimap (fmap TB.fromLazyText) TB.toLazyText expandQuotesTB
-
-instance FieldContents Text where
-  fieldContents = dimap (fmap TB.fromText) (Lazy.toStrict . TB.toLazyText) expandQuotesTB
-
-instance FieldContents BS.Builder where
-  fieldContents = expandQuotesBSB
-
-instance FieldContents BS.ByteString where
-  fieldContents = dimap (fmap BS.byteString) (LBS.toStrict . BS.toLazyByteString) expandQuotesBSB
-
-instance FieldContents LBS.ByteString where
-  fieldContents = dimap (fmap BS.lazyByteString) BS.toLazyByteString expandQuotesBSB
-
-expandQuotes :: Monoid a => (Quote -> a) -> Field a -> a
-expandQuotes _  (Unquoted a) = a
-expandQuotes qb (Quoted q v) =
-  bifoldMap (const (qb q)) id v
-
-expandQuotesBSB :: Field BS.Builder -> BS.Builder
-expandQuotesBSB =
-  expandQuotes (BS.char7 . review quoteChar)
-
-expandQuotesTB :: Field TB.Builder -> TB.Builder
-expandQuotesTB =
-  expandQuotes (singleton . review quoteChar)
+fieldContents :: Lens (Field s) (Field t) s t
+fieldContents =
+  lens (foldField id (getUnescaped.snd)) $ \f b -> case f of
+    Unquoted _ -> Unquoted b
+    Quoted q _ -> Quoted q (Unescaped b)

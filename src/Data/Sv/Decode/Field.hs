@@ -19,7 +19,7 @@ import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Compose.Extra (rmapC)
 import Data.Validation (_AccValidation, bindValidation)
 
-import Data.Sv.Field (Field, SpacedField, FieldContents, fieldContents)
+import Data.Sv.Field (Field, SpacedField, fieldContents)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.State (runDecodeState)
 import Data.Sv.Decode.Type
@@ -48,8 +48,8 @@ spacedFieldDecode f = FieldDecode . Compose . state $ \l ->
     [] -> (unexpectedEndOfRow, [])
     (x:xs) -> (f x, xs)
 
-fieldDecode :: FieldContents s => (s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecode f = fieldDecode_ (f . fieldContents)
+fieldDecode :: (s -> DecodeValidation e a) -> FieldDecode e s a
+fieldDecode f = fieldDecode_ (f . view fieldContents)
 
 decodeMay :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 decodeMay ab e a = decodeMay' e (ab a)

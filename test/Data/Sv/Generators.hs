@@ -32,7 +32,7 @@ import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, getHeadedness,
 import Data.Sv.Field       (Field (Quoted, Unquoted))
 import Data.Sv.Record      (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
-import Text.Escaped        (Escaped', escapeNel)
+import Text.Escaped        (Escaped, Escapable (escape), Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced (Spaced))
 import Text.Quote          (Quote (SingleQuote, DoubleQuote))
@@ -64,15 +64,18 @@ genQuote :: Gen Quote
 genQuote =
   Gen.element [SingleQuote, DoubleQuote]
 
-genEscaped :: Gen a -> Gen (Escaped' a)
-genEscaped a =
-  escapeNel <$> Gen.nonEmpty (Range.linear 1 5) a
+genEscaped :: Escapable a => Separator -> Gen a -> Gen (Escaped a)
+genEscaped c a =
+  escape c <$> a
+
+genUnescaped :: Gen a -> Gen (Unescaped a)
+genUnescaped = fmap Unescaped
 
 genField :: Gen s -> Gen (Field s)
 genField s =
   Gen.choice [
     Unquoted <$> s
-  , liftA2 Quoted genQuote (genEscaped s)
+  , liftA2 Quoted genQuote (genUnescaped s)
   ]
 
 genSpacedField :: Gen Spaces -> Gen s -> Gen (Spaced (Field s))

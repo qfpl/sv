@@ -8,6 +8,7 @@ import qualified Prelude as S (Show(..))
 
 import Control.Applicative ((<**>))
 import Control.Lens (Getting, preview, review)
+import Control.Monad (join)
 import Data.Bifoldable (bifoldMap)
 import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
@@ -25,7 +26,7 @@ import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
 
 import Data.Sv.Config (Separator, comma)
-import Text.Escaped (escapeString, escapeText, escapeUtf8, escapeLazyUtf8)
+import Text.Escaped (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (Newline (CRLF), newlineText)
 import Text.Space (Spaces, spacesString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)
@@ -86,11 +87,11 @@ instance Decidable Encode where
 mkEncodeWithOpts :: (EncodeOptions -> a -> BS.Builder) -> Encode a
 mkEncodeWithOpts = Encode . (fmap (fmap pure))
 
-builder :: (a -> BS.Builder) -> Encode a
-builder = Encode . pure . fmap pure
+unsafeBuilder :: (a -> BS.Builder) -> Encode a
+unsafeBuilder = Encode . pure . fmap pure
 
 mkEncodeBS :: (a -> LBS.ByteString) -> Encode a
-mkEncodeBS = builder . fmap BS.lazyByteString
+mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 
 encode :: EncodeOptions -> Encode a -> [a] -> LBS.ByteString
 encode opts enc = BS.toLazyByteString . encode' opts enc
@@ -118,7 +119,7 @@ encodeRow' opts e =
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
 showEncode :: S.Show a => Encode a
-showEncode = builder (BS.stringUtf8 . show)
+showEncode = contramap show string
 
 nop :: Encode a
 nop = Encode mempty
@@ -133,52 +134,55 @@ orEmpty :: Encode a -> Encode (Maybe a)
 orEmpty = choose (maybe (Left ()) Right) empty
 
 char :: Encode Char
-char = builder BS.charUtf8
+char = escaped' escapeChar BS.stringUtf8 BS.charUtf8 -- BS.charUtf8
 
 int :: Encode Int
-int = builder BS.intDec
+int = unsafeBuilder BS.intDec
 
 integer :: Encode Integer
-integer = builder BS.integerDec
+integer = unsafeBuilder BS.integerDec
 
 float :: Encode Float
-float = builder BS.floatDec
+float = unsafeBuilder BS.floatDec
 
 double :: Encode Double
-double = builder BS.doubleDec
+double = unsafeBuilder BS.doubleDec
 
-escaped :: (s -> BS.Builder) -> (Char -> s -> s) -> Encode s
-escaped b escape = mkEncodeWithOpts $ \opts s ->
-  b $ case quote opts of
-    Nothing -> s
-    Just q -> escape (review quoteChar q) s
+escaped :: Escapable s => (s -> BS.Builder) -> Encode s
+escaped = join (escaped' escape)
+
+escaped' :: (Char -> s -> Escaped t) -> (t -> BS.Builder) -> (s -> BS.Builder) -> Encode s
+escaped' esc tb sb = mkEncodeWithOpts $ \opts s ->
+  case quote opts of
+    Nothing -> sb s
+    Just q -> tb $ getRawEscaped (esc (review quoteChar q) s)
 
 string :: Encode String
-string = escaped BS.stringUtf8 escapeString
+string = escaped BS.stringUtf8
 
 text :: Encode T.Text
-text = escaped (BS.byteString . T.encodeUtf8) escapeText
+text = escaped (BS.byteString . T.encodeUtf8)
 
 lazyByteString :: Encode LBS.ByteString
-lazyByteString = escaped BS.lazyByteString escapeLazyUtf8
+lazyByteString = escaped BS.lazyByteString
 
 byteString :: Encode Strict.ByteString
-byteString = escaped BS.byteString escapeUtf8
+byteString = escaped BS.byteString
 
 unsafeString :: Encode String
-unsafeString = builder BS.stringUtf8
+unsafeString = unsafeBuilder BS.stringUtf8
 
 unsafeText :: Encode T.Text
-unsafeText = builder (BS.byteString . T.encodeUtf8)
+unsafeText = unsafeBuilder (BS.byteString . T.encodeUtf8)
 
 unsafeByteStringBuilder :: Encode BS.Builder
-unsafeByteStringBuilder = builder id
+unsafeByteStringBuilder = unsafeBuilder id
 
 unsafeByteString :: Encode Strict.ByteString
-unsafeByteString = builder BS.byteString
+unsafeByteString = unsafeBuilder BS.byteString
 
 unsafeLazyByteString :: Encode LBS.ByteString
-unsafeLazyByteString = builder BS.lazyByteString
+unsafeLazyByteString = unsafeBuilder BS.lazyByteString
 
 boolTrueFalse :: Encode Bool
 boolTrueFalse = mkEncodeBS $ B.bool "False" "True"

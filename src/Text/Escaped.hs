@@ -2,138 +2,66 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable#-}
 
 -- | Chunks of text separated by escape sequences
 module Text.Escaped (
-  Escaped (Escaped, _escapeList)
-  , HasEscaped (escaped, escapeList)
-  , Escape (Escape)
-  , Escaped'
-  , escapedRights
-  , escapedLefts
-  , noEscape
-  , escapeNel
+  Unescaped (Unescaped, getUnescaped)
+  , HasUnescaped (unescaped, unescapedValue)
+  , Escaped (UnsafeEscaped)
+  , getRawEscaped
   , escapeString
   , escapeText
   , escapeUtf8
   , escapeLazyUtf8
+  , escapeChar
+  , Escapable (escape, escape_)
 ) where
 
-import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), _Wrapped, Unwrapped, Rewrapped, Traversal, _Left, _Right)
-import Data.Bifoldable    (Bifoldable (bifoldMap))
-import Data.Bifunctor     (Bifunctor (bimap))
-import Data.Bitraversable (Bitraversable (bitraverse))
+import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), Unwrapped, Rewrapped)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
-import Data.Foldable      (Foldable (foldMap))
-import Data.Functor       (Functor (fmap))
-import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Monoid        (Monoid (mappend, mempty))
+import Data.Foldable      (Foldable)
+import Data.Functor       (Functor)
+import Data.Monoid        (Monoid)
 import Data.Semigroup     (Semigroup ((<>)))
 import Data.Text          (Text)
 import qualified Data.Text as Text
-import Data.Traversable   (Traversable (traverse))
+import Data.Traversable   (Traversable)
 
--- | 'Escaped e a' is a list of characters separated by escape sequences.
---
--- @a@ can happily be 'Char', but you could just as easily use 'Text' to make
--- sure tricky characters work properly. This is also much faster.
---
--- @e@ is the escape sequence, which should be represented by a bespoke sum
--- type rather than something like 'Text'.
---
--- The 'bifoldMap' function is particularly useful for this type, as it can
--- turn the whole thing back into a single textual value.
-newtype Escaped e a =
-  Escaped { _escapeList :: [Either e a] }
-  deriving (Eq, Ord, Show)
+import Text.Babel (Textual)
 
-instance Escaped e1 a1 ~ t => Rewrapped (Escaped e2 a2) t
+newtype Unescaped a =
+  Unescaped { getUnescaped :: a }
+  deriving (Eq, Ord, Show, Semigroup, Monoid, Functor, Foldable, Traversable)
 
-instance Wrapped (Escaped e a) where
-  type Unwrapped (Escaped e a) =
-    [Either e a]
-  _Wrapped' =
-    iso (\ (Escaped x) -> x) Escaped
+instance Unescaped a1 ~ t => Rewrapped (Unescaped a2) t
 
--- | Traverse all the non-escapes in an 'Escaped'
-escapedRights ::
-  Traversal (Escaped e a) (Escaped e b) a b
-escapedRights =
-  _Wrapped . traverse . _Right
+instance Wrapped (Unescaped a) where
+  type Unwrapped (Unescaped a) = a
+  _Wrapped' = iso (\ (Unescaped a) -> a) Unescaped
 
--- | Traverse all the escapes in an 'Escaped'
-escapedLefts ::
-  Traversal (Escaped e a) (Escaped f a) e f
-escapedLefts =
-  _Wrapped . traverse . _Left
+class HasUnescaped c a | c -> a where
+  unescaped :: Lens' c (Unescaped a)
+  unescapedValue :: Lens' c a
+  {-# INLINE unescapedValue #-}
+  unescapedValue = unescaped . unescapedValue
 
--- | Classy lenses for `Escaped`
-class HasEscaped c e a | c -> e a where
-  escaped :: Lens' c (Escaped e a)
-  escapeList :: Lens' c [Either e a]
-  {-# INLINE escapeList #-}
-  escapeList = escaped . escapeList
+instance HasUnescaped (Unescaped a) a where
+  unescaped = id
+  {-# INLINE unescaped #-}
+  unescapedValue = _Wrapped'
+  {-# INLINE unescapedValue #-}
 
-instance HasEscaped (Escaped e a) e a where
-  {-# INLINE escapeList #-}
-  escaped = id
-  escapeList = iso _escapeList Escaped
+newtype Escaped a =
+  UnsafeEscaped a
+  deriving (Eq, Ord, Show, Semigroup, Monoid, Foldable)
 
-instance Semigroup (Escaped e a) where
-  Escaped x <> Escaped y = Escaped (x <> y)
-
-instance Monoid (Escaped e a) where
-  mappend = (<>)
-  mempty = Escaped mempty
-
-instance Functor (Escaped e) where
-  fmap = bimap id
-
-instance Foldable (Escaped e) where
-  foldMap = bifoldMap (const mempty)
-
-instance Traversable (Escaped e) where
-  traverse = bitraverse pure
-
-instance Bifunctor Escaped where
-  bimap f g = Escaped . fmap (bimap f g) . _escapeList
-
-instance Bifoldable Escaped where
-  bifoldMap f g = foldMap (bifoldMap f g) . _escapeList
-
-instance Bitraversable Escaped where
-  bitraverse f g = fmap Escaped . traverse (bitraverse f g) . _escapeList
-
--- | 'Escaped'' is for text which only has one valid escape sequence
---
--- This representation only works when there is one escape
--- sequence, as it does not contain any information about which escape sequence
--- occured. The @Escaped@ type is used directly for that purpose.
-type Escaped' = Escaped Escape
-
--- | noEscape is a dramatically-named singleton constructor for Escaped.
-noEscape :: a -> Escaped' a
-noEscape = Escaped . pure . pure
-
--- | Put escape sequences in between the elements of a non-empty list.
-escapeNel :: NonEmpty a -> Escaped' a
-escapeNel as = case as of
-  (a :|   []) -> noEscape a
-  (a :| x:xs) -> Escaped $ Right a : Left Escape : _escapeList (escapeNel (x:|xs))
-
--- | A trivial type to be our sole escape sequence. The actual value of the escape is
--- determined externally.
-data Escape =
-  Escape
-  deriving (Eq, Ord, Show)
-
-instance Semigroup Escape where
-  Escape <> Escape = Escape
-
-instance Monoid Escape where
-  mappend = (<>)
-  mempty = Escape
+getRawEscaped :: Escaped a -> a
+getRawEscaped (UnsafeEscaped a) = a
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character, non-recursively, in the given 'String'.
@@ -141,46 +69,75 @@ instance Monoid Escape where
 -- >>> escapeString ''' "hello 'string'"
 -- "hello ''string''"
 --
-escapeString :: Char -> String -> String
+escapeString :: Char -> String -> Escaped String
 escapeString c s =
   let doubleChar q z = if z == q then [q,q] else [z]
-  in  concatMap (doubleChar c) s
+  in  UnsafeEscaped (concatMap (doubleChar c) s)
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given 'Text'
 --
 -- Assuming @{- LANGUAGE OverloadedStrings -}@:
 --
--- >>> escapeString ''' "hello 'text'"
+-- >>> escapeText ''' "hello 'text'"
 -- "hello ''text''"
 --
-escapeText :: Char -> Text -> Text
+escapeText :: Char -> Text -> Escaped Text
 escapeText c s =
   let ct = Text.singleton c
-  in  Text.replace ct (ct <> ct) s
+  in  UnsafeEscaped (Text.replace ct (ct <> ct) s)
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
 --
 -- Assuming @{- LANGUAGE OverloadedStrings -}@:
 --
--- >>> escapeString ''' "hello 'bytestring'"
+-- >>> escapeUtf8 ''' "hello 'bytestring'"
 -- "hello ''bytestring''"
 --
-escapeUtf8 :: Char -> B.ByteString -> B.ByteString
+escapeUtf8 :: Char -> B.ByteString -> Escaped B.ByteString
 escapeUtf8 c b =
   let doubleB q z = if z == q then B.pack [q,q] else B.singleton z
-  in  B.concatMap (doubleB c) b
+  in  UnsafeEscaped (B.concatMap (doubleB c) b)
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given lazy ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
 --
 -- Assuming @{- LANGUAGE OverloadedStrings -}@:
 --
--- >>> escapeString ''' "hello 'lazy bytestring'"
+-- >>> escapeLazyUtf8 ''' "hello 'lazy bytestring'"
 -- "hello ''lazy bytestring''"
 --
-escapeLazyUtf8 :: Char -> L.ByteString -> L.ByteString
+escapeLazyUtf8 :: Char -> L.ByteString -> Escaped L.ByteString
 escapeLazyUtf8 c b =
   let doubleL q z = if z == q then L.pack [q,q] else L.singleton z
-  in  L.concatMap (doubleL c) b
+  in  UnsafeEscaped (L.concatMap (doubleL c) b)
+
+-- | Escape a character, which must return a string.
+--
+-- >>> escapeChar ''' '''
+-- "''"
+--
+-- >>> escapeChar ''' 'z'
+-- "z"
+--
+escapeChar :: Char -> Char -> Escaped String
+escapeChar c b =
+  UnsafeEscaped $ if c == b then [b,b] else [b]
+
+class Textual a => Escapable a where
+  escape :: Char -> a -> Escaped a
+  escape_ :: Char -> Unescaped a -> Escaped a
+  escape_ c = escape c . getUnescaped
+
+instance Escapable String where
+  escape = escapeString
+
+instance Escapable Text where
+  escape = escapeText
+
+instance Escapable B.ByteString where
+  escape = escapeUtf8
+
+instance Escapable L.ByteString where
+  escape = escapeLazyUtf8
