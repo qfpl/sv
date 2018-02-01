@@ -15,8 +15,8 @@ module Data.Sv.Decode.Field (
 , fieldDecode
 , fieldDecodeWithQuotes
 , fieldDecodeWithSpaces
-, decodeMay
-, decodeMay'
+, validateMay
+, validateMay'
 , promote
 ) where
 

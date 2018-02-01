@@ -19,10 +19,11 @@ module Data.Sv.Decode.Error (
 , unknownCanonicalValue
 , badParse
 , badDecode
-, decodeEither
-, decodeMay
-, decodeMay'
-, decodeTrifectaResult
+, validateEither
+, validateEither'
+, validateMay
+, validateMay'
+, validateTrifectaResult
 ) where
 
 import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
@@ -58,20 +59,24 @@ badParse = decodeError . BadParse
 badDecode :: e -> DecodeValidation e a
 badDecode = decodeError . BadDecode
 
--- | Convert a Trifecta 'Result' to a DecodeValidation
-decodeTrifectaResult :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
-decodeTrifectaResult f result = case result of
-  Success a -> pure a
-  Failure e -> decodeError . f . showT . _errDoc $ e
-
 -- | Build a 'DecodeValidation' from an 'Either'
-decodeEither :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
-decodeEither f = either (decodeError . f) pure
+validateEither :: Either (DecodeError e) a -> DecodeValidation e a
+validateEither = validateEither' id
+
+-- | Build a 'DecodeValidation' from an 'Either', given a function to build the error.
+validateEither' :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
+validateEither' f = either (decodeError . f) pure
 
 -- | Build a 'DecodeValidation' from a 'Maybe'
-decodeMay :: DecodeError e -> Maybe b -> DecodeValidation e b
-decodeMay e = maybe (decodeError e) pure
+validateMay :: DecodeError e -> Maybe b -> DecodeValidation e b
+validateMay e = maybe (decodeError e) pure
 
 -- | Build a 'DecodeValidation' from a function that returns a 'Maybe'
-decodeMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
-decodeMay' ab e a = decodeMay e (ab a)
+validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
+validateMay' ab e a = validateMay e (ab a)
+
+-- | Convert a Trifecta 'Result' to a DecodeValidation
+validateTrifectaResult :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
+validateTrifectaResult f result = case result of
+  Success a -> pure a
+  Failure e -> decodeError . f . showT . _errDoc $ e

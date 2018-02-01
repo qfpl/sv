@@ -26,6 +26,9 @@ module Data.Sv.Decode (
   decode
 , parseDecode
 , decodeFromFile
+, decodeMay
+, decodeEither
+, decodeEither'
 , contents
 , raw
 , untrimmed
@@ -127,8 +130,8 @@ parseDecode d maybeConfig s =
       p :: CharParsing f => f (Sv s)
       p = separatedValues sep h
       parse = case lib of
-        Trifecta -> decodeTrifectaResult BadParse . parseByteString p mempty . toByteString
-        Attoparsec -> decodeEither (BadParse . fromString) . parseOnly p . toByteString
+        Trifecta -> validateTrifectaResult BadParse . parseByteString p mempty . toByteString
+        Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p . toByteString
   in  parse s `bindValidation` decode d
 
 decodeFromFile ::
@@ -145,10 +148,19 @@ decodeFromFile d maybeConfig fp =
       p :: (CharParsing f, Textual s) => f (Sv s)
       p = separatedValues sep h
       parseIO = case lib of
-        Trifecta -> decodeTrifectaResult BadParse <$> parseFromFileEx p fp
-        Attoparsec -> decodeEither (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
+        Trifecta -> validateTrifectaResult BadParse <$> parseFromFileEx p fp
+        Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
   in do sv <- parseIO
         pure (sv `bindValidation` decode d)
+
+decodeMay :: DecodeError e -> (s -> Maybe a) -> FieldDecode e s a
+decodeMay e f = fieldDecode (validateMay e . f)
+
+decodeEither :: (s -> Either (DecodeError e) a) -> FieldDecode e s a
+decodeEither f = fieldDecode (validateEither . f)
+
+decodeEither' :: (e -> DecodeError e') -> (s -> Either e a) -> FieldDecode e' s a
+decodeEither' e f = fieldDecode (validateEither' e . f)
 
 -- | Succeeds with the whole field structure, including spacing and quoting information
 raw :: FieldDecode e s (SpacedField s)
@@ -269,7 +281,7 @@ categorical' as =
         then Just a
         else Nothing
   in  contents >>== \s ->
-    decodeMay (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
+    validateMay (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
       alaf First foldMap (go s) as'
 
 decodeRead :: (Readable a, Textual s, Textual e) => FieldDecode e s a
@@ -303,21 +315,21 @@ parser = trifecta
 trifecta :: (Textual s, Textual e) => T.Parser a -> FieldDecode e s a
 trifecta =
   mkParserFunction
-    (decodeTrifectaResult BadDecode)
+    (validateTrifectaResult BadDecode)
     (flip parseByteString mempty)
 
 -- | Build a 'FieldDecode' from an Attoparsec parser
 attoparsec :: (Textual s, Textual e) => A.Parser a -> FieldDecode e s a
 attoparsec =
   mkParserFunction
-    (decodeEither (BadDecode . fromString))
+    (validateEither' (BadDecode . fromString))
     parseOnly
 
 -- | Build a 'FieldDecode' from a Parsec parser
 parsec :: (Textual s, Textual e) => Parsec ByteString () a -> FieldDecode e s a
 parsec =
   mkParserFunction
-    (decodeEither (BadDecode . showT))
+    (validateEither' (BadDecode . showT))
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::
@@ -329,3 +341,4 @@ mkParserFunction ::
 mkParserFunction err run p =
   let p' = p <* eof
   in  byteString >>== (err . run p')
+{-# INLINE mkParserFunction #-}
