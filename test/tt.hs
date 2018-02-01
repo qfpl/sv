@@ -1,16 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 import Control.Applicative ((<|>))
 import Control.Lens
 import Control.Monad (unless)
+import Data.ByteString (ByteString)
 import Data.Functor (($>))
 import Data.Text (Text)
-import Data.Thyme
-import System.Locale (defaultTimeLocale)
+import Data.Time
+--import System.Locale (defaultTimeLocale)
 import System.Exit (exitFailure)
 import Text.Parser.Char (char)
 import Text.Parser.Token (integer)
 
 import Data.Sv hiding (integer)
-
 
 -- Table tennis handicaps
 
@@ -27,18 +29,18 @@ data Difference =
   deriving (Eq, Ord, Show)
 
 data Handicap =
-  Handicap YearMonthDay Difference Name Name
+  Handicap Day Difference Name Name
   deriving (Eq, Ord, Show)
 
-ymd :: FieldDecode' Text YearMonthDay
-ymd = attoparsec (
-    buildTime <$> timeParser defaultTimeLocale "%Y%m%d"
-  )
+day :: FieldDecode' ByteString Day
+day =
+  string >>==
+    validateMay (BadDecode "Invalid time") . parseTimeM True defaultTimeLocale "%Y%0m%0d"
 
-handicap :: FieldDecode' Text Handicap
-handicap = Handicap <$> ymd <*> difference <*> text <*> text
+handicap :: FieldDecode' ByteString Handicap
+handicap = Handicap <$> day <*> difference <*> utf8 <*> utf8
 
-difference :: FieldDecode' Text Difference
+difference :: FieldDecode' ByteString Difference
 difference = attoparsec (
     (char '+' $> Plus <|> char '-' $> Minus) <*> integer
   )
