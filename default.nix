@@ -12,15 +12,15 @@ let
     separated = pkgs.fetchFromGitHub {
       owner = "qfpl";
       repo = "separated";
-      rev = "0db19e31c20b8456c06163338d9b94841faa4049";
-      sha256 = "1hil4kqknc6qmd5a6nlxdb6yfm5l7rf1pqdjkl6m0bxz6d6r5za5";
+      rev = "0.3.0";
+      sha256 = "0qmm0bmnkv0dbdncb3f917zdabw3saqy1mrn0ihx0m0kl9v6hdld";
     };
 
-    tasty-hedgehog = pkgs.fetchFromGitHub {
+    validation = pkgs.fetchFromGitHub {
       owner = "qfpl";
-      repo = "tasty-hedgehog";
-      rev = "0.1.0.1";
-      sha256 = "04pmr9q70gakd327sywpxr7qp8jnl3b0y2sqxxxcj6zj2q45q38m";
+      repo = "validation";
+      rev = "0.6.2";
+      sha256 = "02fabbgsbn47gh794alnfkrfs1nh9rpwc7dqig6bq9sx7v26j2qf";
     };
   };
 
@@ -28,7 +28,7 @@ let
     overrides = self: super: {
       parsers = pkgs.haskell.lib.dontCheck super.parsers;
       separated = import sources.separated { inherit nixpkgs compiler; };
-      tasty-hedgehog = import sources.tasty-hedgehog {};
+      validation= import sources.validation { inherit nixpkgs compiler; };
     };
   };
 
