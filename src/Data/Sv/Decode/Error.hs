@@ -19,9 +19,10 @@ module Data.Sv.Decode.Error (
 , unknownCanonicalValue
 , badParse
 , badDecode
-, resultToDecodeError
-, eitherToDecodeError
-, eitherToDecodeError'
+, decodeEither
+, decodeMay
+, decodeMay'
+, decodeTrifectaResult
 ) where
 
 import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
@@ -29,7 +30,7 @@ import Text.Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
 import Data.Sv.Field
-import Text.Babel (Textual, retext, showT)
+import Text.Babel (Textual, showT)
 
 -- | Build a failing 'DecodeValidation'
 decodeError :: DecodeError e -> DecodeValidation e a
@@ -58,15 +59,19 @@ badDecode :: e -> DecodeValidation e a
 badDecode = decodeError . BadDecode
 
 -- | Convert a Trifecta 'Result' to a DecodeValidation
-resultToDecodeError :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
-resultToDecodeError f result = case result of
+decodeTrifectaResult :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
+decodeTrifectaResult f result = case result of
   Success a -> pure a
   Failure e -> decodeError . f . showT . _errDoc $ e
 
--- | Convert an 'Either' to a DecodeValidation
-eitherToDecodeError :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
-eitherToDecodeError f = either (decodeError . f) pure
+-- | Build a 'DecodeValidation' from an 'Either'
+decodeEither :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
+decodeEither f = either (decodeError . f) pure
 
--- | Convert an 'Either' to a DecodeValidation, changing its string type
-eitherToDecodeError' :: (Textual e, Textual e') => (e' -> DecodeError e'') -> Either e a -> DecodeValidation e'' a
-eitherToDecodeError' f = either (decodeError . f . retext) pure
+-- | Build a 'DecodeValidation' from a 'Maybe'
+decodeMay :: DecodeError e -> Maybe b -> DecodeValidation e b
+decodeMay e = maybe (decodeError e) pure
+
+-- | Build a 'DecodeValidation' from a function that returns a 'Maybe'
+decodeMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
+decodeMay' ab e a = decodeMay e (ab a)

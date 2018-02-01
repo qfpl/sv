@@ -127,8 +127,8 @@ parseDecode d maybeConfig s =
       p :: CharParsing f => f (Sv s)
       p = separatedValues sep h
       parse = case lib of
-        Trifecta -> resultToDecodeError BadParse . parseByteString p mempty . toByteString
-        Attoparsec -> eitherToDecodeError (BadParse . fromString) . parseOnly p . toByteString
+        Trifecta -> decodeTrifectaResult BadParse . parseByteString p mempty . toByteString
+        Attoparsec -> decodeEither (BadParse . fromString) . parseOnly p . toByteString
   in  parse s `bindValidation` decode d
 
 decodeFromFile ::
@@ -145,14 +145,14 @@ decodeFromFile d maybeConfig fp =
       p :: (CharParsing f, Textual s) => f (Sv s)
       p = separatedValues sep h
       parseIO = case lib of
-        Trifecta -> resultToDecodeError BadParse <$> parseFromFileEx p fp
-        Attoparsec -> eitherToDecodeError (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
+        Trifecta -> decodeTrifectaResult BadParse <$> parseFromFileEx p fp
+        Attoparsec -> decodeEither (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
   in do sv <- parseIO
         pure (sv `bindValidation` decode d)
 
 -- | Succeeds with the whole field structure, including spacing and quoting information
 raw :: FieldDecode e s (SpacedField s)
-raw = spacedFieldDecode pure
+raw = fieldDecodeWithSpaces pure
 
 -- | Returns the field contents. This keeps the spacing around an unquoted field.
 untrimmed :: (Textual s, AsHorizontalSpace s, Semigroup s) => FieldDecode e s s
@@ -269,7 +269,7 @@ categorical' as =
         then Just a
         else Nothing
   in  contents >>== \s ->
-    decodeMay' (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
+    decodeMay (UnknownCanonicalValue (retext s) (fmap (bimap showT (fmap retext)) as)) $
       alaf First foldMap (go s) as'
 
 decodeRead :: (Readable a, Textual s, Textual e) => FieldDecode e s a
@@ -303,21 +303,21 @@ parser = trifecta
 trifecta :: (Textual s, Textual e) => T.Parser a -> FieldDecode e s a
 trifecta =
   mkParserFunction
-    (resultToDecodeError BadDecode)
+    (decodeTrifectaResult BadDecode)
     (flip parseByteString mempty)
 
 -- | Build a 'FieldDecode' from an Attoparsec parser
 attoparsec :: (Textual s, Textual e) => A.Parser a -> FieldDecode e s a
 attoparsec =
   mkParserFunction
-    (eitherToDecodeError (BadDecode . fromString))
+    (decodeEither (BadDecode . fromString))
     parseOnly
 
 -- | Build a 'FieldDecode' from a Parsec parser
 parsec :: (Textual s, Textual e) => Parsec ByteString () a -> FieldDecode e s a
 parsec =
   mkParserFunction
-    (eitherToDecodeError (BadDecode . showT))
+    (decodeEither (BadDecode . showT))
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::

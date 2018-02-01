@@ -98,7 +98,8 @@ mkEncodeWithOpts :: (EncodeOptions -> a -> BS.Builder) -> Encode a
 mkEncodeWithOpts = Encode . (fmap (fmap pure))
 
 unsafeBuilder :: (a -> BS.Builder) -> Encode a
-unsafeBuilder = Encode . pure . fmap pure
+unsafeBuilder b = Encode (\_ a -> pure (b a))
+{-# INLINE unsafeBuilder #-}
 
 mkEncodeBS :: (a -> LBS.ByteString) -> Encode a
 mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
@@ -128,23 +129,39 @@ encodeRow' opts e =
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
+constE :: Strict.ByteString -> Encode a
+constE = Encode . pure . pure . pure . BS.byteString
+
 showEncode :: S.Show a => Encode a
 showEncode = contramap show string
 
 nop :: Encode a
-nop = Encode mempty
+nop = conquer
 
 empty :: Encode a
 empty = Encode (pure (pure (pure mempty)))
 
-orNothing :: Encode a -> Encode (Maybe a)
-orNothing = choose (maybe (Left ()) Right) conquer
-
 orEmpty :: Encode a -> Encode (Maybe a)
 orEmpty = choose (maybe (Left ()) Right) empty
 
+(?>) :: Encode a -> Encode () -> Encode (Maybe a)
+(?>) = flip (<?)
+{-# INLINE (?>) #-}
+
+(<?) :: Encode () -> Encode a -> Encode (Maybe a)
+(<?) = choose (maybe (Left ()) Right)
+{-# INLINE (<?) #-}
+
+(?>>) :: Encode a -> Strict.ByteString -> Encode (Maybe a)
+(?>>) a s = a ?> constE s
+{-# INLINE (?>>) #-}
+
+(<<?) :: Strict.ByteString -> Encode a -> Encode (Maybe a)
+(<<?) = flip (?>>)
+{-# INLINE (<<?) #-}
+
 char :: Encode Char
-char = escaped' escapeChar BS.stringUtf8 BS.charUtf8 -- BS.charUtf8
+char = escaped' escapeChar BS.stringUtf8 BS.charUtf8
 
 int :: Encode Int
 int = unsafeBuilder BS.intDec
@@ -213,7 +230,7 @@ bool10 :: Encode Bool
 bool10 = mkEncodeBS $ B.bool "0" "1"
 
 fromFold :: Getting (First a) s a -> Encode a -> Encode s
-fromFold g x = fromFoldMay g $ orNothing x
+fromFold g = fromFoldMay g . choose (maybe (Left ()) Right) conquer
 
 fromFoldMay :: Getting (First a) s a -> Encode (Maybe a) -> Encode s
 fromFoldMay g x = contramap (preview g) x
