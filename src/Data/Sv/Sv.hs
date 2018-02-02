@@ -49,9 +49,9 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Config     (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
-import Data.Sv.Record     (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
 import Data.Sv.Field      (HasFields (fields))
+import Data.Sv.Parser.Options (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
+import Data.Sv.Record     (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
 import Text.Newline       (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.

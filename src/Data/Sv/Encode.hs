@@ -71,7 +71,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
 
-import Data.Sv.Config (Separator, comma)
+import Data.Sv.Parser.Options (Separator, comma)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (Newline (CRLF), newlineText)
 import Text.Space (Spaces, spacesString)

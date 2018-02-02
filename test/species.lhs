@@ -42,7 +42,7 @@ The parser needs some configuration to parse our file. For example, it
 needs to know which separator character we're using - in our case: comma.
 We set up our config by modifying the default config using lens, but you
 could just as easily modify it with record syntax, or build a config from
-scratch using the types and values defined in Data.Sv.Config
+scratch using the types and values defined in Data.Sv.Parser.Options
 
 The only setting we're changing is the choice of parsing library. The
 default parsing library used is Trifecta because of its very helpful

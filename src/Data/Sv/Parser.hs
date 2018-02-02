@@ -13,6 +13,8 @@ module Data.Sv.Parser (
 , csv
 , psv
 , tsv
+, module Data.Sv.Parser.Options
 ) where
 
 import Data.Sv.Parser.Internal (separatedValues, separatedValuesWithOpts, csv, psv, tsv)
+import Data.Sv.Parser.Options

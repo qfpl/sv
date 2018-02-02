@@ -99,7 +99,7 @@ import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
 import qualified Text.Trifecta as T (Parser)
 
-import Data.Sv.Config (ParseOptions, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
+import Data.Sv.Parser.Options (ParseOptions, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
 import Data.Sv.Sv (Sv, recordList)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
