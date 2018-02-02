@@ -53,7 +53,7 @@ import Prelude
 import qualified Prelude as S (Show(..))
 
 import Control.Applicative ((<**>))
-import Control.Lens (Getting, preview, review)
+import Control.Lens (Getting, Lens', preview, review)
 import Control.Monad (join)
 import Data.Bifoldable (bifoldMap)
 import qualified Data.Bool as B (bool)
@@ -110,8 +110,8 @@ encode opts enc = BS.toLazyByteString . encode' opts enc
 encode' :: EncodeOptions -> Encode a -> [a] -> BS.Builder
 encode' opts e as =
   let enc = encodeRow' opts e
-      nl  = newlineText (newline opts)
-      terminal = if terminalNewline opts then nl else mempty
+      nl  = newlineText (_newline opts)
+      terminal = if _terminalNewline opts then nl else mempty
   in  case as of
     [] -> terminal
     (a:as') -> enc a <> mconcat [nl <> enc a' | a' <- as'] <> terminal
@@ -121,11 +121,11 @@ encodeRow opts e = BS.toLazyByteString . encodeRow' opts e
 
 encodeRow' :: EncodeOptions -> Encode a -> a -> BS.Builder
 encodeRow' opts e =
-  let addSeparators = intersperseSeq (BS.charUtf8 (separator opts))
-      quotep = foldMap (BS.charUtf8 . review quoteChar) (quote opts)
+  let addSeparators = intersperseSeq (BS.charUtf8 (_separator opts))
+      quotep = foldMap (BS.charUtf8 . review quoteChar) (_quote opts)
       addQuotes x = quotep <> x <> quotep
-      bspaces = BS.stringUtf8 . review spacesString . spacingBefore $ opts
-      aspaces = BS.stringUtf8 . review spacesString . spacingAfter $ opts
+      bspaces = BS.stringUtf8 . review spacesString . _spacingBefore $ opts
+      aspaces = BS.stringUtf8 . review spacesString . _spacingAfter $ opts
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
@@ -180,7 +180,7 @@ escaped = join (escaped' escape)
 
 escaped' :: (Char -> s -> Escaped t) -> (t -> BS.Builder) -> (s -> BS.Builder) -> Encode s
 escaped' esc tb sb = mkEncodeWithOpts $ \opts s ->
-  case quote opts of
+  case _quote opts of
     Nothing -> sb s
     Just q -> tb $ getRawEscaped (esc (review quoteChar q) s)
 
@@ -237,13 +237,55 @@ fromFoldMay g x = contramap (preview g) x
 
 data EncodeOptions =
   EncodeOptions {
-    separator :: Separator
-  , spacingBefore :: Spaces
-  , spacingAfter :: Spaces
-  , quote :: Maybe Quote
-  , newline :: Newline
-  , terminalNewline :: Bool
+    _separator :: Separator
+  , _spacingBefore :: Spaces
+  , _spacingAfter :: Spaces
+  , _quote :: Maybe Quote
+  , _newline :: Newline
+  , _terminalNewline :: Bool
   }
+
+class HasEncodeOptions c where
+  encodeOptions :: Lens' c EncodeOptions
+  newline :: Lens' c Newline
+  {-# INLINE newline #-}
+  quote :: Lens' c (Maybe Quote)
+  {-# INLINE quote #-}
+  separator :: Lens' c Separator
+  {-# INLINE separator #-}
+  spacingAfter :: Lens' c Spaces
+  {-# INLINE spacingAfter #-}
+  spacingBefore :: Lens' c Spaces
+  {-# INLINE spacingBefore #-}
+  terminalNewline :: Lens' c Bool
+  {-# INLINE terminalNewline #-}
+  newline = encodeOptions . newline
+  quote = encodeOptions . quote
+  separator = encodeOptions . separator
+  spacingAfter = encodeOptions . spacingAfter
+  spacingBefore = encodeOptions . spacingBefore
+  terminalNewline = encodeOptions . terminalNewline
+
+instance HasEncodeOptions EncodeOptions where
+  {-# INLINE newline #-}
+  {-# INLINE quote #-}
+  {-# INLINE separator #-}
+  {-# INLINE spacingAfter #-}
+  {-# INLINE spacingBefore #-}
+  {-# INLINE terminalNewline #-}
+  encodeOptions = id
+  newline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions x1 x2 x3 x4 y x6) (f x5)
+  quote f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions x1 x2 x3 y x5 x6) (f x4)
+  separator f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions y x2 x3 x4 x5 x6) (f x1)
+  spacingAfter f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions x1 x2 y x4 x5 x6) (f x3)
+  spacingBefore f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions x1 y x3 x4 x5 x6) (f x2)
+  terminalNewline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
+    fmap (\ y -> EncodeOptions x1 x2 x3 x4 x5 y) (f x6)
 
 defaultEncodeOptions :: EncodeOptions
 defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF False
