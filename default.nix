@@ -12,8 +12,8 @@ let
     separated = pkgs.fetchFromGitHub {
       owner = "qfpl";
       repo = "separated";
-      rev = "0.3.0";
-      sha256 = "0qmm0bmnkv0dbdncb3f917zdabw3saqy1mrn0ihx0m0kl9v6hdld";
+      rev = "0.3.2.1-nix";
+      sha256 = "07f3nh1b4jvqq7lfyxp3ndgzap4dj31lbdjlgrjazrcd2h4zwdln";
     };
 
     validation = pkgs.fetchFromGitHub {
