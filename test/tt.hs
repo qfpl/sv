@@ -19,8 +19,8 @@ import Data.Sv hiding (integer)
 file :: FilePath
 file = "test/tt-handicap.csv"
 
-config :: SvConfig
-config = defaultConfig & (headedness .~ Unheaded)
+config :: ParseOptions
+config = defaultParseOptions & (headedness .~ Unheaded)
 
 type Name = Text
 

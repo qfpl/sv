@@ -12,7 +12,7 @@ import Data.Semigroup
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
-import Data.Sv (SvConfig, defaultConfig, Headedness (Unheaded), headedness)
+import Data.Sv (ParseOptions, defaultParseOptions, Headedness (Unheaded), headedness)
 import Data.Sv.Decode
 
 test_Decode :: TestTree
@@ -52,10 +52,10 @@ csv1' =
   , V3 (I 7) (S "unquoted text") (I 5)
   ]
 
-cfg :: SvConfig
-cfg = defaultConfig & headedness .~ Unheaded
+opts :: ParseOptions
+opts = defaultParseOptions & headedness .~ Unheaded
 
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      parseDecode v3ios (Just cfg) csv1 @?= pure csv1'
+      parseDecode v3ios (Just opts) csv1 @?= pure csv1'

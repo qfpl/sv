@@ -52,8 +52,8 @@ Hence we're using Attoparsec, which has less helpful error messages but
 can handle this encoding.
 
 \begin{code}
-config :: SvConfig
-config = defaultConfig & (parsingLib .~ Attoparsec)
+config :: ParseOptions
+config = defaultParseOptions & (parsingLib .~ Attoparsec)
 \end{code}
 
 This is the type we've made for our rows. It was designed by observing

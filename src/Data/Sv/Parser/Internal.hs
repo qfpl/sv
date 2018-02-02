@@ -16,7 +16,7 @@ on this module at your own risk!
 
 module Data.Sv.Parser.Internal (
   separatedValues
-  , separatedValuesC
+  , separatedValuesWithOpts
   , separatedValuesEof
   , csv
   , psv
@@ -45,7 +45,7 @@ import           Data.String             (IsString (fromString))
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
-import           Data.Sv.Config          (SvConfig, headedness, separator)
+import           Data.Sv.Config          (ParseOptions, headedness, separator)
 import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
 import           Data.Sv.Field           (Field (Unquoted, Quoted))
 import           Data.Sv.Record          (Record (Record), Records (Records))
@@ -176,9 +176,9 @@ separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (S
 separatedValues sep h =
   Sv sep <$> header sep h <*> records sep <*> ending
 
--- | Convenience function to parse an Sv given its config
-separatedValuesC :: (CharParsing m, Textual s) => SvConfig -> m (Sv s)
-separatedValuesC c =
+-- | Convenience function to parse an Sv given parser options
+separatedValuesWithOpts :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s)
+separatedValuesWithOpts c =
   let s = view separator c
       h = view headedness c
   in  separatedValues s h

@@ -99,7 +99,7 @@ import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
 import qualified Text.Trifecta as T (Parser)
 
-import Data.Sv.Config (SvConfig, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultConfig)
+import Data.Sv.Config (ParseOptions, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
 import Data.Sv.Sv (Sv, recordList)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
@@ -119,14 +119,14 @@ parseDecode ::
   forall e s a.
   (Textual e, Textual s)
   => FieldDecode e s a
-  -> Maybe SvConfig
+  -> Maybe ParseOptions
   -> s
   -> DecodeValidation e [a]
-parseDecode d maybeConfig s =
-  let config = fromMaybe defaultConfig maybeConfig
-      sep = view separator config
-      h = view headedness config
-      lib = view parsingLib config
+parseDecode d maybeOptions s =
+  let opts = fromMaybe defaultParseOptions maybeOptions
+      sep = view separator opts
+      h = view headedness opts
+      lib = view parsingLib opts
       p :: CharParsing f => f (Sv s)
       p = separatedValues sep h
       parse = case lib of
@@ -137,14 +137,14 @@ parseDecode d maybeConfig s =
 decodeFromFile ::
   (MonadIO m, Textual e, Textual s)
   => FieldDecode e s a
-  -> Maybe SvConfig
+  -> Maybe ParseOptions
   -> FilePath
   -> m (DecodeValidation e [a])
-decodeFromFile d maybeConfig fp =
-  let config = fromMaybe defaultConfig maybeConfig
-      sep = view separator config
-      h = view headedness config
-      lib = view parsingLib config
+decodeFromFile d maybeOptions fp =
+  let opts = fromMaybe defaultParseOptions maybeOptions
+      sep = view separator opts
+      h = view headedness opts
+      lib = view parsingLib opts
       p :: (CharParsing f, Textual s) => f (Sv s)
       p = separatedValues sep h
       parseIO = case lib of

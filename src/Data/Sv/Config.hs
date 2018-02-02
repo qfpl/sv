@@ -10,9 +10,9 @@ Configuration to tell the parser what your file looks like.
 -}
 
 module Data.Sv.Config (
-  SvConfig (SvConfig, _headedness, _separator, _parsingLib)
-, HasSvConfig (svConfig)
-, defaultConfig
+  ParseOptions (ParseOptions, _headedness, _separator, _parsingLib)
+, HasParseOptions (parseOptions)
+, defaultParseOptions
 , orDefault
 , Separator
 , HasSeparator (separator)
@@ -31,48 +31,48 @@ module Data.Sv.Config (
 import Control.Lens (Lens', lens)
 import Data.Maybe (fromMaybe)
 
--- | An 'SvConfig' informs the parser how to parse your file.
+-- | An 'ParseOptions' informs the parser how to parse your file.
 --
 -- This includes the separator, whether or not a header row is present, and
 -- allows the user to choose which parsing library to use, between Trifecta
 -- and Attoparsec.
 --
--- A default is provided as 'defaultConfig', seen below.
-data SvConfig =
-  SvConfig {
+-- A default is provided as 'defaultParseOptions', seen below.
+data ParseOptions =
+  ParseOptions {
     _separator :: Separator
   , _headedness :: Headedness
   , _parsingLib :: ParsingLib
   }
 
--- | Classy lenses for 'SvConfig'
-class (HasSeparator c, HasHeadedness c, HasParsingLib c) => HasSvConfig c where
-  svConfig :: Lens' c SvConfig
+-- | Classy lenses for 'ParseOptions'
+class (HasSeparator c, HasHeadedness c, HasParsingLib c) => HasParseOptions c where
+  parseOptions :: Lens' c ParseOptions
 
-instance HasSvConfig SvConfig where
-  svConfig = id
-  {-# INLINE svConfig #-}
+instance HasParseOptions ParseOptions where
+  parseOptions = id
+  {-# INLINE parseOptions #-}
 
-instance HasSeparator SvConfig where
+instance HasSeparator ParseOptions where
   separator =
     lens _separator (\c s -> c { _separator = s })
 
-instance HasHeadedness SvConfig where
+instance HasHeadedness ParseOptions where
   headedness =
     lens _headedness (\c h -> c { _headedness = h })
 
-instance HasParsingLib SvConfig where
+instance HasParsingLib ParseOptions where
   parsingLib =
     lens _parsingLib (\c p -> c { _parsingLib = p })
 
--- | 'defultConfig' is used to parse a CSV file featuring a header row, using
+-- | 'defaultParseOptions' is used to parse a CSV file featuring a header row, using
 -- Trifecta as the parsing library.
-defaultConfig :: SvConfig
-defaultConfig = SvConfig defaultSeparator defaultHeadedness defaultParsingLib
+defaultParseOptions :: ParseOptions
+defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness defaultParsingLib
 
--- | Use the 'defaultConfig' in the case of 'Nothing'
-orDefault :: Maybe SvConfig -> SvConfig
-orDefault = fromMaybe defaultConfig
+-- | Use the 'defaultParseOptions' in the case of 'Nothing'
+orDefault :: Maybe ParseOptions -> ParseOptions
+orDefault = fromMaybe defaultParseOptions
 
 -- | Does the 'Sv' have a 'Header' or not? A header is a row at the beginning
 -- of a file which contains the string names of each of the columns.
