@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 {-|
@@ -60,11 +61,13 @@ import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Foldable (fold)
+import Data.Foldable (fold, toList)
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
+import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (First, (<>))
 import Data.Semigroup (Semigroup)
+import Data.Separated (skrinple)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
@@ -72,9 +75,13 @@ import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
 
 import Data.Sv.Parser.Options (Separator, comma)
+import Data.Sv.Sv (Sv (Sv), Header (Header))
+import Data.Sv.Field (Field (Unquoted), SpacedField, unescapedField)
+import Data.Sv.Record (Record (Record), Records (Records))
+import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (Newline (CRLF), newlineText)
-import Text.Space (Spaces, spacesString)
+import Text.Space (Spaces, Spaced (Spaced), spacesString)
 import Text.Quote (Quote (DoubleQuote), quoteChar)
 
 newtype Encode a =
@@ -128,6 +135,28 @@ encodeRow' opts e =
       aspaces = BS.stringUtf8 . review spacesString . _spacingAfter $ opts
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
+
+encodeSv :: forall s a . Escapable s => EncodeOptions -> Encode a -> Maybe (NonEmpty s) -> [a] -> Maybe (Sv Strict.ByteString)
+encodeSv opts e headerStrings as =
+  let encoded :: [Seq BS.Builder]
+      encoded = getEncode e opts <$> as
+      nl = _newline opts
+      sep = _separator opts
+      mkSpaced = Spaced (_spacingBefore opts) (_spacingAfter opts)
+      mkField = maybe Unquoted unescapedField (_quote opts)
+      mkHeader r = Header r nl
+      mkRecord :: NonEmpty z -> Record z
+      mkRecord = Record . fmap (mkSpaced . mkField)
+      header :: Maybe (Header Strict.ByteString)
+      header = mkHeader . mkRecord . fmap toByteString <$> headerStrings
+      rs :: Maybe (Records Strict.ByteString)
+      rs = Records . fmap (skrinple nl) . nonEmpty <$> traverse b2r encoded
+      terminal = if _terminalNewline opts then [nl] else []
+      b2f :: BS.Builder -> SpacedField Strict.ByteString
+      b2f = mkSpaced . mkField . LBS.toStrict . BS.toLazyByteString
+      b2r :: Seq BS.Builder -> Maybe (Record Strict.ByteString)
+      b2r = fmap Record . nonEmpty . toList . fmap b2f
+  in  fmap (\r -> Sv sep header r terminal) rs
 
 constE :: Strict.ByteString -> Encode a
 constE = Encode . pure . pure . pure . BS.byteString
