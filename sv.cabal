@@ -68,8 +68,7 @@ library
                        , Text.Newline
                        , Text.Quote
                        , Text.Space
-  other-modules:       Data.Functor.Compose.Extra
-                       , Data.Semigroup.Foldable.Extra
+  -- other-modules:
   -- other-extensions:    
   build-depends:       ansi-wl-pprint >= 0.6.6 && < 0.7
                        , attoparsec >= 0.12.1.4 && < 0.14

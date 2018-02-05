@@ -25,7 +25,6 @@ import Control.Lens (view)
 import Control.Monad.State (state)
 import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
-import Data.Functor.Compose.Extra (rmapC)
 import Data.Validation (_AccValidation, bindValidation)
 
 import Data.Sv.Field (Field, SpacedField, fieldContents)
@@ -51,6 +50,8 @@ infixl 1 >>==
 (==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
 (==<<) f (FieldDecode c) =
   FieldDecode (rmapC (`bindValidation` (view _AccValidation . f)) c)
+    where
+      rmapC g (Compose fga) = Compose (fmap g fga)
 infixr 1 ==<<
 
 -- | Build a 'FieldDecode' from a function.
