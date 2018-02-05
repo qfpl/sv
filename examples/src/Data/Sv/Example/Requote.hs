@@ -1,3 +1,5 @@
+module Data.Sv.Example.Requote where
+
 import Control.Lens
 import Data.Text (Text)
 import System.Exit (exitFailure)
@@ -12,11 +14,14 @@ import Data.Sv.Print (writeSvToFile)
 import Text.Escape (Unescaped (Unescaped))
 import Text.Quote (Quote (DoubleQuote))
 
+original :: FilePath
+original = "csv/requote.csv"
+
 fixed :: FilePath
-fixed = "test/requote.fixed.csv"
+fixed = "csv/requote.fixed.csv"
 
 golden :: FilePath
-golden = "test/requote.golden.csv"
+golden = "csv/requote.golden.csv"
 
 main :: IO ()
 main = defaultMain $
@@ -30,7 +35,7 @@ config = defaultParseOptions
 
 requote :: IO ()
 requote = do
-  svMay <- parseFromFile (separatedValuesWithOpts config) "test/requote.csv"
+  svMay <- parseFromFile (separatedValuesWithOpts config) original
   case svMay of
     Nothing -> exitFailure
     Just s ->

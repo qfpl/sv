@@ -1,3 +1,5 @@
+module Data.Sv.Example.Concat where
+
 import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Text.Trifecta (TokenParsing, CharParsing, integer, parseFromFile, string)
@@ -7,7 +9,7 @@ import Data.Sv hiding (integer, parser, string)
 import Text.Babel (Textual)
 
 file :: FilePath
-file = "test/concat.csv"
+file = "csv/concat.csv"
 
 type Name = Text
 type Age = Int

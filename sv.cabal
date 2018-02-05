@@ -38,14 +38,11 @@ homepage:            https://github.com/qfpl/sv
 bug-reports:         https://github.com/qfpl/sv/issues
 build-type:          Simple
 extra-source-files:  changelog.md
-                     , test/species.csv
-                     , test/ragged.csv
-                     , test/concat.csv
-                     , test/requote.csv
-                     , test/requote.golden.csv
-                     , test/tt-handicap.csv
 cabal-version:       >=1.10
-tested-with:         GHC == 7.10.3, GHC == 8.0.2, GHC == 8.2.2
+tested-with:         GHC == 7.10.3
+                     , GHC == 8.0.2
+                     , GHC == 8.2.2
+                     , GHC == 8.4.1
 
 source-repository    head
   type:              git
@@ -132,106 +129,6 @@ test-suite             tasty
                        , text >= 1.0 && < 1.3
                        , trifecta >= 1.5 && < 1.8
                        , validation >= 0.6.2 && < 1
-  ghc-options:
-                       -Wall
-  hs-source-dirs:
-                       test
-
-
-test-suite             species
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       species.lhs
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , bytestring >= 0.9.1.10 && < 0.11
-                       , lens >= 4 && < 5
-                       , sv
-  ghc-options:
-                       -Wall
-  hs-source-dirs:
-                       test
-
-
-test-suite             requote
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       requote.hs
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , bytestring >= 0.9.1.10 && < 0.11
-                       , lens >= 4 && < 5
-                       , tasty >= 0.11 && < 0.12
-                       , tasty-golden >= 2.3 && < 2.4
-                       , text >= 1.0 && < 1.3
-                       , trifecta >= 1.5 && < 1.8
-                       , sv
-  ghc-options:
-                       -Wall
-  hs-source-dirs:
-                       test
-
-test-suite             ragged
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       ragged.hs
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , bytestring >= 0.9.1.10 && < 0.11
-                       , lens >= 4 && < 5
-                       , semigroupoids >= 5 && <6
-                       , sv
-                       , text >= 1.0 && < 1.3
-  ghc-options:
-                       -Wall
-  hs-source-dirs:
-                       test
-
-
-test-suite             concat
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       concat.hs
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , bytestring >= 0.9.1.10 && < 0.11
-                       , lens >= 4 && < 5
-                       , text >= 1.0 && < 1.3
-                       , trifecta >= 1.5 && < 1.8
-                       , sv
-  ghc-options:
-                       -Wall
-  hs-source-dirs:
-                       test
-
-
-test-suite             tt
-  type:
-                       exitcode-stdio-1.0
-  main-is:
-                       tt.hs
-  default-language:
-                       Haskell2010
-  build-depends:
-                       base >=4.8 && <5
-                       , bytestring >= 0.9.1.10 && < 0.11
-                       , lens >= 4 && < 5
-                       , parsers >=0.12 && <0.13
-                       , text >= 1.0 && < 1.3
-                       , time >= 1.6 && < 1.10
-                       , sv
   ghc-options:
                        -Wall
   hs-source-dirs:

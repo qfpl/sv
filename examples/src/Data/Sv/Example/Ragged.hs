@@ -1,3 +1,5 @@
+module Data.Sv.Example.Ragged where
+
 import Data.Functor.Alt
 import Data.ByteString (ByteString)
 import Data.Text (Text)
@@ -6,7 +8,7 @@ import System.Exit (exitFailure)
 import Data.Sv
 
 file :: FilePath
-file = "test/ragged.csv"
+file = "csv/ragged.csv"
 
 type Name = Text
 type Age = Int

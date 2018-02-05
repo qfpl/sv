@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module Data.Sv.Example.TableTennis where
+
 import Control.Applicative ((<|>))
 import Control.Lens
 import Control.Monad (unless)
@@ -17,7 +19,7 @@ import Data.Sv hiding (integer)
 -- Table tennis handicaps
 
 file :: FilePath
-file = "test/tt-handicap.csv"
+file = "csv/tt-handicap.csv"
 
 config :: ParseOptions
 config = defaultParseOptions & (headedness .~ Unheaded)

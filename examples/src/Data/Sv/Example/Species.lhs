@@ -10,7 +10,7 @@
 --
 -- This is a literate Haskell file. If you are reading the haddock,
 -- we recommend that instead you view the source to follow along.
-module Main where
+module Data.Sv.Example.Species where
 
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
@@ -35,7 +35,7 @@ incompatible with UTF-8.
 
 \begin{code}
 file :: FilePath
-file = "test/species.csv"
+file = "csv/species.csv"
 \end{code}
 
 The parser needs some configuration to parse our file. For example, it
