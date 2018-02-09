@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-|
 Module      : Data.Sv.Record
@@ -18,6 +19,7 @@ module Data.Sv.Record (
   -- Optics
   , HasRecord (record, spacedFields)
   , recordSpacedFieldsIso
+  , emptyRecord
   , singleField
   , Records (Records, _theRecords)
   , HasRecords (records, theRecords, traverseRecords)
@@ -30,10 +32,11 @@ import Control.Lens       (Lens', Iso, Traversal', iso, view)
 import Data.Foldable      (Foldable (foldMap), toList)
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty)
+import Data.Semigroup     (Semigroup)
 import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Field      (Field, HasFields (fields))
+import Data.Sv.Field      (Field (Unquoted), HasFields (fields))
 import Text.Newline       (Newline)
 import Text.Space         (Spaced, spacedValue)
 
@@ -44,7 +47,7 @@ newtype Record s =
   Record {
     _fields :: NonEmpty (Spaced (Field s))
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Semigroup)
 
 -- | A 'Record' is isomorphic to a 'NonEmpty' list of 'SpacedField's
 recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmpty (Spaced (Field s))) (NonEmpty (Spaced (Field a)))
@@ -75,6 +78,17 @@ instance Foldable Record where
 
 instance Traversable Record where
   traverse f = fmap Record . traverse (traverse (traverse f)) . _fields
+
+-- | Build an empty record.
+--
+-- According to RFC 4180, a record must have at least one field.
+-- But a field can be the empty string. So this is the closest we can get to
+-- an empty record.
+--
+-- Note that this does not make 'Record' a 'Monoid'. It is not a lawful unit
+-- for the 'Semigroup' operation.
+emptyRecord :: Monoid s => Record s
+emptyRecord = singleField (Unquoted mempty)
 
 -- | Build a 'Record' with just one 'Field'
 singleField :: Field s -> Record s

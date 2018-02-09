@@ -77,7 +77,7 @@ import Data.Void (absurd)
 import Data.Sv.Parser.Options (Separator, comma)
 import Data.Sv.Sv (Sv (Sv), Header (Header))
 import Data.Sv.Field (Field (Unquoted), SpacedField, unescapedField)
-import Data.Sv.Record (Record (Record), Records (Records))
+import Data.Sv.Record (Record (Record), Records (Records), emptyRecord)
 import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (Newline (CRLF), newlineText)
@@ -136,7 +136,7 @@ encodeRow' opts e =
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
-encodeSv :: forall s a . Escapable s => EncodeOptions -> Encode a -> Maybe (NonEmpty s) -> [a] -> Maybe (Sv Strict.ByteString)
+encodeSv :: forall s a . Escapable s => EncodeOptions -> Encode a -> Maybe (NonEmpty s) -> [a] -> Sv Strict.ByteString
 encodeSv opts e headerStrings as =
   let encoded :: [Seq BS.Builder]
       encoded = getEncode e opts <$> as
@@ -149,14 +149,15 @@ encodeSv opts e headerStrings as =
       mkRecord = Record . fmap (mkSpaced . mkField)
       header :: Maybe (Header Strict.ByteString)
       header = mkHeader . mkRecord . fmap toByteString <$> headerStrings
-      rs :: Maybe (Records Strict.ByteString)
-      rs = Records . fmap (skrinple nl) . nonEmpty <$> traverse b2r encoded
+      rs :: Records Strict.ByteString
+      rs = l2rs (b2r <$> encoded)
+      l2rs = Records . fmap (skrinple nl) . nonEmpty
       terminal = if _terminalNewline opts then [nl] else []
       b2f :: BS.Builder -> SpacedField Strict.ByteString
       b2f = mkSpaced . mkField . LBS.toStrict . BS.toLazyByteString
-      b2r :: Seq BS.Builder -> Maybe (Record Strict.ByteString)
-      b2r = fmap Record . nonEmpty . toList . fmap b2f
-  in  fmap (\r -> Sv sep header r terminal) rs
+      b2r :: Seq BS.Builder -> Record Strict.ByteString
+      b2r = maybe emptyRecord Record . nonEmpty . toList . fmap b2f
+  in  Sv sep header rs terminal
 
 constE :: Strict.ByteString -> Encode a
 constE = Encode . pure . pure . pure . BS.byteString
