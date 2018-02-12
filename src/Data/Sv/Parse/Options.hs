@@ -10,7 +10,7 @@ Configuration to tell the parser what your file looks like.
 -}
 
 module Data.Sv.Parse.Options (
-  ParseOptions (ParseOptions, _headedness, _separator, _parsingLib)
+  ParseOptions (ParseOptions, _headedness, _parseSeparator, _parsingLib)
 , HasParseOptions (parseOptions, endOnBlankLine)
 , defaultParseOptions
 , orDefault
@@ -38,7 +38,7 @@ data ParseOptions =
   ParseOptions {
   -- | Which separator does the file use? Usually this is 'comma', but it can
   -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
-    _separator :: Separator
+    _parseSeparator :: Separator
 
   -- | Whether there is a header row with column names or not.
   , _headedness :: Headedness
@@ -64,7 +64,7 @@ instance HasParseOptions ParseOptions where
 
 instance HasSeparator ParseOptions where
   separator =
-    lens _separator (\c s -> c { _separator = s })
+    lens _parseSeparator (\c s -> c { _parseSeparator = s })
 
 instance HasHeadedness ParseOptions where
   headedness =

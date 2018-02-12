@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -57,8 +56,8 @@ module Data.Sv.Encode (
 , unsafeBuilder
 
 -- * Options
-, EncodeOptions (EncodeOptions, _separator, _spacingBefore, _spacingAfter, _quote, _newline, _terminalNewline)
-, HasEncodeOptions (encodeOptions, separator, spacingBefore, spacingAfter, quote, newline, terminalNewline)
+, EncodeOptions (..)
+, HasEncodeOptions (..)
 
 -- * Running an Encode
 , defaultEncodeOptions
@@ -112,52 +111,33 @@ import qualified Prelude as P
 import Prelude hiding (const)
 
 import Control.Applicative ((<$>), (<**>))
-import Control.Lens (Getting, Lens', preview, review)
+import Control.Lens (Getting, preview, review, view)
 import Control.Monad (join)
-import Data.Bifoldable (bifoldMap)
 import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (fold, foldMap, toList)
-import Data.Functor.Contravariant
-import Data.Functor.Contravariant.Divisible
+import Data.Functor.Contravariant (Contravariant (contramap))
+import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose))
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
-import Data.Semigroup (Semigroup)
 import Data.Separated (skrinple)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-import Data.Void (absurd)
 
-import Data.Sv.Parse.Options (Separator, comma)
-import Data.Sv.Sv (Sv (Sv), Header (Header))
+import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions)
+import Data.Sv.Encode.Type (Encode (Encode, getEncode))
 import Data.Sv.Field (Field (Unquoted), SpacedField, unescapedField)
 import Data.Sv.Record (Record (Record), Records (Records), emptyRecord)
+import Data.Sv.Sv (Sv (Sv), Header (Header))
 import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
-import Text.Newline (Newline (CRLF), newlineText)
-import Text.Space (Spaces, Spaced (Spaced), spacesString)
-import Text.Quote (Quote (DoubleQuote), quoteChar)
-
-newtype Encode a =
-  Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
-  deriving (Semigroup, Monoid)
-
-instance Contravariant Encode where
-  contramap f (Encode g) = Encode $ fmap (. f) g
-
-instance Divisible Encode where
-  conquer = Encode mempty
-  divide f (Encode x) (Encode y) =
-    Encode $ \e a -> bifoldMap (x e) (y e) (f a)
-
-instance Decidable Encode where
-  lose f = Encode (P.const (absurd . f))
-  choose f (Encode x) (Encode y) =
-    Encode $ \e a -> either (x e) (y e) (f a)
+import Text.Newline (newlineText)
+import Text.Space (Spaced (Spaced), spacesString)
+import Text.Quote (quoteChar)
 
 mkEncodeWithOpts :: (EncodeOptions -> a -> BS.Builder) -> Encode a
 mkEncodeWithOpts = Encode . (fmap (fmap pure))
@@ -186,11 +166,11 @@ encodeRow opts e = BS.toLazyByteString . encodeRow' opts e
 
 encodeRow' :: EncodeOptions -> Encode a -> a -> BS.Builder
 encodeRow' opts e =
-  let addSeparators = intersperseSeq (BS.charUtf8 (_separator opts))
-      quotep = foldMap (BS.charUtf8 . review quoteChar) (_quote opts)
+  let addSeparators = intersperseSeq (BS.charUtf8 (view separator opts))
+      quotep = foldMap (BS.charUtf8 . review quoteChar) (view quote opts)
       addQuotes x = quotep <> x <> quotep
-      bspaces = BS.stringUtf8 . review spacesString . _spacingBefore $ opts
-      aspaces = BS.stringUtf8 . review spacesString . _spacingAfter $ opts
+      bspaces = BS.stringUtf8 . review spacesString . view spacingBefore $ opts
+      aspaces = BS.stringUtf8 . review spacesString . view spacingAfter $ opts
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 
@@ -198,8 +178,8 @@ encodeSv :: forall s a . Escapable s => EncodeOptions -> Encode a -> Maybe (NonE
 encodeSv opts e headerStrings as =
   let encoded :: [Seq BS.Builder]
       encoded = getEncode e opts <$> as
-      nl = _newline opts
-      sep = _separator opts
+      nl = view newline opts
+      sep = view separator opts
       mkSpaced = Spaced (_spacingBefore opts) (_spacingAfter opts)
       mkField = maybe Unquoted unescapedField (_quote opts)
       mkHeader r = Header r nl
@@ -322,61 +302,6 @@ fromFold g = fromFoldMay g . choose (maybe (Left ()) Right) conquer
 
 fromFoldMay :: Getting (First a) s a -> Encode (Maybe a) -> Encode s
 fromFoldMay g x = contramap (preview g) x
-
-data EncodeOptions =
-  EncodeOptions {
-    _separator :: Separator
-  , _spacingBefore :: Spaces
-  , _spacingAfter :: Spaces
-  , _quote :: Maybe Quote
-  , _newline :: Newline
-  , _terminalNewline :: Bool
-  }
-
-class HasEncodeOptions c where
-  encodeOptions :: Lens' c EncodeOptions
-  newline :: Lens' c Newline
-  {-# INLINE newline #-}
-  quote :: Lens' c (Maybe Quote)
-  {-# INLINE quote #-}
-  separator :: Lens' c Separator
-  {-# INLINE separator #-}
-  spacingAfter :: Lens' c Spaces
-  {-# INLINE spacingAfter #-}
-  spacingBefore :: Lens' c Spaces
-  {-# INLINE spacingBefore #-}
-  terminalNewline :: Lens' c Bool
-  {-# INLINE terminalNewline #-}
-  newline = encodeOptions . newline
-  quote = encodeOptions . quote
-  separator = encodeOptions . separator
-  spacingAfter = encodeOptions . spacingAfter
-  spacingBefore = encodeOptions . spacingBefore
-  terminalNewline = encodeOptions . terminalNewline
-
-instance HasEncodeOptions EncodeOptions where
-  {-# INLINE newline #-}
-  {-# INLINE quote #-}
-  {-# INLINE separator #-}
-  {-# INLINE spacingAfter #-}
-  {-# INLINE spacingBefore #-}
-  {-# INLINE terminalNewline #-}
-  encodeOptions = id
-  newline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions x1 x2 x3 x4 y x6) (f x5)
-  quote f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions x1 x2 x3 y x5 x6) (f x4)
-  separator f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions y x2 x3 x4 x5 x6) (f x1)
-  spacingAfter f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions x1 x2 y x4 x5 x6) (f x3)
-  spacingBefore f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions x1 y x3 x4 x5 x6) (f x2)
-  terminalNewline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
-    fmap (\ y -> EncodeOptions x1 x2 x3 x4 x5 y) (f x6)
-
-defaultEncodeOptions :: EncodeOptions
-defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF False
 
 -- Added in containers 0.5.8, but we duplicate it here to support older GHCs
 intersperseSeq :: a -> Seq a -> Seq a

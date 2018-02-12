@@ -15,11 +15,15 @@ module Data.Sv (
 , module Data.Sv.Decode
 , module Data.Sv.Decode.Type
 , module Data.Sv.Decode.Field
+, module Data.Sv.Encode.Type
+, module Data.Sv.Encode.Options
 ) where
 
 import Data.Sv.Decode (decode, parseDecode, decodeFromFile, decodeMay, decodeEither, decodeEither')
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.Type
+import Data.Sv.Encode.Options
+import Data.Sv.Encode.Type
 import Data.Sv.Field
 import Data.Sv.Parse
 import Data.Sv.Record
