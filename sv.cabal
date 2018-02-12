@@ -62,6 +62,7 @@ library
                        , Data.Sv.Parse.Internal
                        , Data.Sv.Parse.Options
                        , Data.Sv.Print
+                       , Data.Sv.Syntax
                        , Data.Sv.Syntax.Field
                        , Data.Sv.Syntax.Record
                        , Data.Sv.Syntax.Sv
