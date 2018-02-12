@@ -6,7 +6,8 @@ import Data.Text (Text)
 import Text.Trifecta (TokenParsing, CharParsing, integer, parseFromFile, string)
 import System.Exit (exitFailure)
 
-import Data.Sv hiding (integer, parser, string)
+import Data.Sv
+import qualified Data.Sv.Decode as D
 import Text.Babel (Textual)
 
 file :: FilePath
@@ -20,7 +21,7 @@ type Age = Int
 data Person = Person Name Age deriving Show
 
 person :: FieldDecode' ByteString Person
-person = Person <$> utf8 <*> int
+person = Person <$> D.utf8 <*> D.int
 
 type Stock = Int
 -- TODO use a harder type than Integer
@@ -31,7 +32,7 @@ cost :: TokenParsing m => m Cost
 cost = string "$" *> fmap Cost integer
 
 item :: FieldDecode' ByteString Item
-item = Item <$> utf8 <*> int <*> trifecta cost
+item = Item <$> D.utf8 <*> D.int <*> D.trifecta cost
 
 sv2 :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s, Sv s)
 sv2 o = (,) <$> separatedValues o <*> separatedValues o

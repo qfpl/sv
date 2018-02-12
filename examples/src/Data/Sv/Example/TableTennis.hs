@@ -9,12 +9,12 @@ import Data.ByteString (ByteString)
 import Data.Functor (($>))
 import Data.Text (Text)
 import Data.Time
---import System.Locale (defaultTimeLocale)
 import System.Exit (exitFailure)
 import Text.Parser.Char (char)
 import Text.Parser.Token (integer)
 
-import Data.Sv hiding (integer)
+import Data.Sv
+import qualified Data.Sv.Decode as D
 
 -- Table tennis handicaps
 
@@ -36,14 +36,14 @@ data Handicap =
 
 day :: FieldDecode' ByteString Day
 day =
-  string >>==
+  D.string >>==
     validateMay (BadDecode "Invalid time") . parseTimeM True defaultTimeLocale "%Y%0m%0d"
 
 handicap :: FieldDecode' ByteString Handicap
-handicap = Handicap <$> day <*> difference <*> utf8 <*> utf8
+handicap = Handicap <$> day <*> difference <*> D.utf8 <*> D.utf8
 
 difference :: FieldDecode' ByteString Difference
-difference = attoparsec (
+difference = D.attoparsec (
     (char '+' $> Plus <|> char '-' $> Minus) <*> integer
   )
 

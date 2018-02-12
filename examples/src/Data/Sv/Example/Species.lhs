@@ -17,6 +17,7 @@ import Data.ByteString (ByteString)
 import System.Exit (exitFailure)
 
 import Data.Sv
+import qualified Data.Sv.Decode as D
 
 \end{code}
 
@@ -107,7 +108,7 @@ decoding into.
 
 \begin{code}
 idDecode :: FieldDecode ByteString ByteString ID
-idDecode = ID <$> int
+idDecode = ID <$> D.int
 \end{code}
 
 This is a sum type for the different categories defined by the
@@ -135,7 +136,7 @@ messages when a field does not parse as any known category.
 \begin{code}
 nca :: FieldDecode' ByteString NcaCode
 nca =
-  categorical [
+  D.categorical [
     (NExtinct, "PE")
   , (NCriticallyEndangered, "CE")
   , (NEndangered, "E")
@@ -164,7 +165,7 @@ data EpbcCode
 
 epbc :: FieldDecode' ByteString EpbcCode
 epbc =
-  categorical [
+  D.categorical [
     (EExtinct, "EX")
   , (EWildExtinct, "WX")
   , (ECriticallyEndangered, "CE")
@@ -189,7 +190,7 @@ data Endemicity
 
 endemicity :: FieldDecode' ByteString Endemicity
 endemicity =
-  categorical [
+  D.categorical [
     (QueenslandEndemic, "Q")
   , (AustralianEndemic, "QA")
   , (QldAndInternational, "QI")
@@ -217,7 +218,7 @@ data Significance
 
 significance :: FieldDecode' ByteString Significance
 significance =
-  categorical' [
+  D.categorical' [
     (Y, ["Y", "y", "yes"])
   , (N, ["N", "n", "no"])
   ]
@@ -230,9 +231,9 @@ It's all glued together with Applicative combinators.
 
 \begin{code}
 speciesDecoder :: FieldDecode' ByteString Species
-speciesDecoder = let s = byteString in
+speciesDecoder = let s = D.byteString in
   Species <$> idDecode <*> s <*> s <*> s <*> s <*> s <*> s <*>
-    orEmpty nca <*> orEmpty epbc <*> orEmpty significance <*> orEmpty endemicity
+    D.orEmpty nca <*> D.orEmpty epbc <*> D.orEmpty significance <*> D.orEmpty endemicity
 \end{code}
 
 We call decodeFromFile to load, parse, and decode our file. Note that we're

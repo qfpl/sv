@@ -6,6 +6,7 @@ import Data.Text (Text)
 import System.Exit (exitFailure)
 
 import Data.Sv
+import qualified Data.Sv.Decode as D
 
 file :: FilePath
 file = "csv/ragged.csv"
@@ -20,9 +21,9 @@ data Person =
 
 personDecoder :: FieldDecode ByteString ByteString Person
 personDecoder =
-  OneName <$> utf8 <*> int
+  OneName <$> D.utf8 <*> D.int
   <!>
-  TwoNames <$> utf8 <*> utf8 <*> int
+  TwoNames <$> D.utf8 <*> D.utf8 <*> D.int
 
 main :: IO ()
 main = do

@@ -14,6 +14,7 @@ module Data.Sv.Decode.Type (
   FieldDecode (..)
 , FieldDecode'
 , DecodeState (..)
+, module Data.Validation
 , DecodeValidation
 , DecodeError (..)
 , DecodeErrors (..)
