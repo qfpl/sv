@@ -28,7 +28,7 @@ import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
 
-import Data.Sv.Field (SpacedField)
+import Data.Sv.Syntax.Field (SpacedField)
 
 -- | A 'FieldDecode e s a' is for decoding some fields from a CSV row into our type 'a'.
 --
@@ -61,8 +61,8 @@ instance Alt (FieldDecode e s) where
                   AccFailure e -> (AccFailure e, hs)
                   AccSuccess (z,js) -> (AccSuccess z, js)
 
--- | As we decode a row of data, we walk through its 'Data.Sv.Field's. This 'Monad'
--- keeps track of our remaining 'Data.Sv.Field's.
+-- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
+-- keeps track of our remaining 'Data.Sv.Syntax.Field's.
 newtype DecodeState s a =
   DecodeState { getDecodeState :: State [SpacedField s] a }
   deriving (Functor, Apply, Applicative, Monad, MonadState [SpacedField s])

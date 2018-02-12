@@ -14,8 +14,9 @@ module Data.Sv.Decode.State (
 ) where
 
 import Control.Monad.State (state, runState)
-import Data.Sv.Field (SpacedField)
+
 import Data.Sv.Decode.Type (DecodeState (..))
+import Data.Sv.Syntax.Field (SpacedField)
 
 -- | Convenient helper to build a DecodeState
 decodeState :: ([SpacedField s] -> (a, [SpacedField s])) -> DecodeState s a

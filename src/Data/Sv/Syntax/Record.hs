@@ -4,7 +4,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-|
-Module      : Data.Sv.Record
+Module      : Data.Sv.Syntax.Record
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -14,7 +14,7 @@ Portability : non-portable
 This module contains datatypes for Records. A record is a "line" or "row"
 of a CSV document
 -}
-module Data.Sv.Record (
+module Data.Sv.Syntax.Record (
   Record (Record, _fields)
   -- Optics
   , HasRecord (record, spacedFields)
@@ -36,7 +36,7 @@ import Data.Semigroup     (Semigroup)
 import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Field      (Field (Unquoted), HasFields (fields))
+import Data.Sv.Syntax.Field      (Field (Unquoted), HasFields (fields))
 import Text.Newline       (Newline)
 import Text.Space         (Spaced, spacedValue)
 

@@ -58,13 +58,13 @@ library
                        , Data.Sv.Encode
                        , Data.Sv.Encode.Options
                        , Data.Sv.Encode.Type
-                       , Data.Sv.Field
                        , Data.Sv.Parse
                        , Data.Sv.Parse.Internal
                        , Data.Sv.Parse.Options
                        , Data.Sv.Print
-                       , Data.Sv.Record
-                       , Data.Sv.Sv
+                       , Data.Sv.Syntax.Field
+                       , Data.Sv.Syntax.Record
+                       , Data.Sv.Syntax.Sv
                        , Text.Babel
                        , Text.Escape
                        , Text.Newline

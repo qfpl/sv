@@ -8,10 +8,11 @@ Portability : non-portable
 -}
 
 module Data.Sv (
-  module Data.Sv.Sv
-, module Data.Sv.Field
-, module Data.Sv.Record
+  module Data.Sv.Syntax.Sv
+, module Data.Sv.Syntax.Field
+, module Data.Sv.Syntax.Record
 , module Data.Sv.Parse
+, module Data.Sv.Print
 , module Data.Sv.Decode
 , module Data.Sv.Decode.Type
 , module Data.Sv.Decode.Field
@@ -24,7 +25,8 @@ import Data.Sv.Decode.Field
 import Data.Sv.Decode.Type
 import Data.Sv.Encode.Options
 import Data.Sv.Encode.Type
-import Data.Sv.Field
 import Data.Sv.Parse
-import Data.Sv.Record
-import Data.Sv.Sv
+import Data.Sv.Print
+import Data.Sv.Syntax.Field
+import Data.Sv.Syntax.Record
+import Data.Sv.Syntax.Sv

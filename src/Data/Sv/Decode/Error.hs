@@ -30,7 +30,7 @@ import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
 import Text.Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
-import Data.Sv.Field
+import Data.Sv.Syntax.Field
 import Text.Babel (Textual, showT)
 
 -- | Build a failing 'DecodeValidation'

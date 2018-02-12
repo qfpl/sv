@@ -130,9 +130,9 @@ import qualified Data.Text.Encoding as T
 
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions)
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
-import Data.Sv.Field (Field (Unquoted), SpacedField, unescapedField)
-import Data.Sv.Record (Record (Record), Records (Records), emptyRecord)
-import Data.Sv.Sv (Sv (Sv), Header (Header))
+import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
+import Data.Sv.Syntax.Record (Record (Record), Records (Records), emptyRecord)
+import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
 import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (newlineText)

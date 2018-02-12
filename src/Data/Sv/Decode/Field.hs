@@ -27,11 +27,11 @@ import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Validation (_AccValidation, bindValidation)
 
-import Data.Sv.Field (Field, SpacedField, fieldContents)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.State (runDecodeState)
 import Data.Sv.Decode.Type
-import Data.Sv.Record (Record, _fields)
+import Data.Sv.Syntax.Field (Field, SpacedField, fieldContents)
+import Data.Sv.Syntax.Record (Record, _fields)
 import Text.Babel (Textual (retext))
 import Text.Space (Spaced (_value))
 

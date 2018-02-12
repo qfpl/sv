@@ -26,9 +26,9 @@ import Data.Semigroup.Foldable (intercalate1)
 import Data.Separated (Pesarated1)
 import System.IO (BufferMode (BlockBuffering), hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
-import Data.Sv.Field
-import Data.Sv.Record (Record (Record), Records, theRecords)
-import Data.Sv.Sv (Sv (Sv), Header (Header), Separator)
+import Data.Sv.Syntax.Field (Field (Quoted, Unquoted))
+import Data.Sv.Syntax.Record (Record (Record), Records, theRecords)
+import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header), Separator)
 import Text.Babel (Textual (toByteString, toByteStringBuilder), singleton)
 import Text.Escape (getRawEscaped, Escapable (escape_))
 import Text.Newline

@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 {-|
-Module      : Data.Sv.Field
+Module      : Data.Sv.Syntax.Field
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -12,7 +12,7 @@ Stability   : experimental
 Portability : non-portable
 -}
 
-module Data.Sv.Field (
+module Data.Sv.Syntax.Field (
     Field (Unquoted, Quoted)
   , SpacedField
   , Spaced (Spaced)

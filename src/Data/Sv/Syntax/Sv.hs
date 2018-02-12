@@ -6,7 +6,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 
 {-|
-Module      : Data.Sv.Sv
+Module      : Data.Sv.Syntax.Sv
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -21,7 +21,7 @@ In the usual workflow, this type is only an intermediate stage between
 parsing and decoding.
 -}
 
-module Data.Sv.Sv (
+module Data.Sv.Syntax.Sv (
   Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)
   , HasSv (sv, maybeHeader, traverseHeader, finalNewlines)
   , HasRecords (records, theRecords)
@@ -49,9 +49,9 @@ import Data.Monoid        ((<>))
 import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Field      (HasFields (fields))
 import Data.Sv.Parse.Options (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
-import Data.Sv.Record     (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
+import Data.Sv.Syntax.Field  (HasFields (fields))
+import Data.Sv.Syntax.Record (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
 import Text.Newline       (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.

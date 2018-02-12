@@ -28,9 +28,9 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import Data.Sv.Sv          (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
-import Data.Sv.Field       (Field (Quoted, Unquoted))
-import Data.Sv.Record      (Record (Record), Records (Records))
+import Data.Sv.Syntax.Sv     (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
+import Data.Sv.Syntax.Field  (Field (Quoted, Unquoted))
+import Data.Sv.Syntax.Record (Record (Record), Records (Records))
 import Text.Babel          (fromByteString, toByteString)
 import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
