@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Sv.Parser.Options
+Module      : Data.Sv.Parse.Options
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -9,7 +9,7 @@ Portability : non-portable
 Configuration to tell the parser what your file looks like.
 -}
 
-module Data.Sv.Parser.Options (
+module Data.Sv.Parse.Options (
   ParseOptions (ParseOptions, _headedness, _separator, _parsingLib)
 , HasParseOptions (parseOptions, endOnBlankLine)
 , defaultParseOptions

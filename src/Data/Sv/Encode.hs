@@ -132,7 +132,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import Data.Void (absurd)
 
-import Data.Sv.Parser.Options (Separator, comma)
+import Data.Sv.Parse.Options (Separator, comma)
 import Data.Sv.Sv (Sv (Sv), Header (Header))
 import Data.Sv.Field (Field (Unquoted), SpacedField, unescapedField)
 import Data.Sv.Record (Record (Record), Records (Records), emptyRecord)

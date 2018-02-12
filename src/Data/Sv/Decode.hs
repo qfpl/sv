@@ -99,14 +99,14 @@ import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
 import qualified Text.Trifecta as T (Parser)
 
-import Data.Sv.Parser.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
-import Data.Sv.Sv (Sv, recordList)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
 import Data.Sv.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
-import Data.Sv.Parser (separatedValues)
+import Data.Sv.Parse (separatedValues)
+import Data.Sv.Parse.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
+import Data.Sv.Sv (Sv, recordList)
 import Text.Babel (Textual, retext, showT, toByteString, toLazyByteString, toString, toText)
 import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
 

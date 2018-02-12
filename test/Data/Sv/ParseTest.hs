@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Sv.ParserTest (test_Parser) where
+module Data.Sv.ParseTest (test_Parse) where
 
 import           Control.Lens         ((&), (.~))
 import           Data.ByteString      (ByteString)
@@ -21,8 +21,8 @@ import           Text.Trifecta        (Result (Success, Failure), parseByteStrin
 import           Data.Sv.Sv          (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Field       (Field (Quoted, Unquoted), SpacedField)
 import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parser      (defaultParseOptions, separator, headedness)
-import           Data.Sv.Parser.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
+import           Data.Sv.Parse       (defaultParseOptions, separator, headedness)
+import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Record      (Record (Record))
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
@@ -30,9 +30,9 @@ import           Text.Escape         (Unescaped (Unescaped))
 import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
 import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
 
-test_Parser :: TestTree
-test_Parser =
-  testGroup "Parser" [
+test_Parse :: TestTree
+test_Parse =
+  testGroup "Parse" [
     singleQuotedFieldTest
   , doubleQuotedFieldTest
   , fieldTest

@@ -57,9 +57,9 @@ library
                        , Data.Sv.Decode.Type
                        , Data.Sv.Encode
                        , Data.Sv.Field
-                       , Data.Sv.Parser
-                       , Data.Sv.Parser.Internal
-                       , Data.Sv.Parser.Options
+                       , Data.Sv.Parse
+                       , Data.Sv.Parse.Internal
+                       , Data.Sv.Parse.Options
                        , Data.Sv.Print
                        , Data.Sv.Record
                        , Data.Sv.Sv
@@ -105,7 +105,7 @@ test-suite             tasty
   other-modules:
                        Data.Sv.DecodeTest
                        , Data.Sv.EncodeTest
-                       , Data.Sv.ParserTest
+                       , Data.Sv.ParseTest
                        , Data.Sv.PrintTest
                        , Data.Sv.Generators
   default-language:

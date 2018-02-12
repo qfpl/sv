@@ -9,7 +9,7 @@ import Test.Tasty (defaultMain)
 import Test.Tasty.Golden (goldenVsFile)
 
 import Data.Sv
-import Data.Sv.Parser (separatedValues)
+import Data.Sv.Parse (separatedValues)
 import Data.Sv.Print (writeSvToFile)
 import Text.Escape (Unescaped (Unescaped))
 import Text.Quote (Quote (DoubleQuote))

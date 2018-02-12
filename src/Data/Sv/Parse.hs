@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Sv.Parser
+Module      : Data.Sv.Parse
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -7,11 +7,11 @@ Stability   : experimental
 Portability : non-portable
 -}
 
-module Data.Sv.Parser (
+module Data.Sv.Parse (
   separatedValues
 , separatedValuesEof
-, module Data.Sv.Parser.Options
+, module Data.Sv.Parse.Options
 ) where
 
-import Data.Sv.Parser.Internal (separatedValues, separatedValuesEof)
-import Data.Sv.Parser.Options
+import Data.Sv.Parse.Internal (separatedValues, separatedValuesEof)
+import Data.Sv.Parse.Options

@@ -2,7 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 
 {-|
-Module      : Data.Sv.Parser.Internal
+Module      : Data.Sv.Parse.Internal
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -14,7 +14,7 @@ As the Internal name suggests, this file is exempt from the PVP. Depend
 on this module at your own risk!
 -}
 
-module Data.Sv.Parser.Internal (
+module Data.Sv.Parse.Internal (
   separatedValues
   , separatedValuesEof
   , header
@@ -43,7 +43,7 @@ import           Text.Parser.Combinators (between, choice, eof, many, notFollowe
 
 import           Data.Sv.Field           (Field (Unquoted, Quoted))
 import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
-import           Data.Sv.Parser.Options  (ParseOptions, headedness, separator, endOnBlankLine)
+import           Data.Sv.Parse.Options   (ParseOptions, headedness, separator, endOnBlankLine)
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
 import           Text.Escape             (Unescaped (Unescaped))
