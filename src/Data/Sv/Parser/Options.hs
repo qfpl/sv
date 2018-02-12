@@ -11,7 +11,7 @@ Configuration to tell the parser what your file looks like.
 
 module Data.Sv.Parser.Options (
   ParseOptions (ParseOptions, _headedness, _separator, _parsingLib)
-, HasParseOptions (parseOptions)
+, HasParseOptions (parseOptions, endOnBlankLine)
 , defaultParseOptions
 , orDefault
 , Separator
@@ -33,25 +33,34 @@ import Data.Maybe (fromMaybe)
 
 -- | An 'ParseOptions' informs the parser how to parse your file.
 --
--- This includes the separator, whether or not a header row is present, and
--- allows the user to choose which parsing library to use, between Trifecta
--- and Attoparsec.
---
 -- A default is provided as 'defaultParseOptions', seen below.
 data ParseOptions =
   ParseOptions {
+  -- | Which separator does the file use? Usually this is 'comma', but it can
+  -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
     _separator :: Separator
+
+  -- | Whether there is a header row with column names or not.
   , _headedness :: Headedness
+
+  -- | If a blank line is encountered, should the parse finish, or treat it as
+  -- an empty row and continue?
+  , _endOnBlankLine :: Bool
+
+  -- | Which parsing library should be used? 'Trifecta' or 'Attoparsec'?
   , _parsingLib :: ParsingLib
   }
 
 -- | Classy lenses for 'ParseOptions'
 class (HasSeparator c, HasHeadedness c, HasParsingLib c) => HasParseOptions c where
   parseOptions :: Lens' c ParseOptions
+  endOnBlankLine :: Lens' c Bool
 
 instance HasParseOptions ParseOptions where
   parseOptions = id
   {-# INLINE parseOptions #-}
+  endOnBlankLine =
+    lens _endOnBlankLine (\c b -> c { _endOnBlankLine = b })
 
 instance HasSeparator ParseOptions where
   separator =
@@ -68,7 +77,7 @@ instance HasParsingLib ParseOptions where
 -- | 'defaultParseOptions' is used to parse a CSV file featuring a header row, using
 -- Trifecta as the parsing library.
 defaultParseOptions :: ParseOptions
-defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness defaultParsingLib
+defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness False defaultParsingLib
 
 -- | Use the 'defaultParseOptions' in the case of 'Nothing'
 orDefault :: Maybe ParseOptions -> ParseOptions

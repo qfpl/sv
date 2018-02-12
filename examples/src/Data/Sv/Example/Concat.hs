@@ -1,5 +1,6 @@
 module Data.Sv.Example.Concat where
 
+import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
 import Data.Text (Text)
 import Text.Trifecta (TokenParsing, CharParsing, integer, parseFromFile, string)
@@ -10,6 +11,9 @@ import Text.Babel (Textual)
 
 file :: FilePath
 file = "csv/concat.csv"
+
+opts :: ParseOptions
+opts = defaultParseOptions & endOnBlankLine .~ True
 
 type Name = Text
 type Age = Int
@@ -29,13 +33,13 @@ cost = string "$" *> fmap Cost integer
 item :: FieldDecode' ByteString Item
 item = Item <$> utf8 <*> int <*> trifecta cost
 
-sv2 :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s, Sv s)
-sv2 sep h = (,) <$> separatedValues sep h <*> separatedValues sep h
+sv2 :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s, Sv s)
+sv2 o = (,) <$> separatedValues o <*> separatedValues o
 
 data PeopleAndItems = PeopleAndItems [Person] [Item] deriving Show
 
 parser :: CharParsing m => m (Sv ByteString, Sv ByteString)
-parser = sv2 comma Headed
+parser = sv2 opts
 
 main :: IO ()
 main = do

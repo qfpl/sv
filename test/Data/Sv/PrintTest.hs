@@ -3,6 +3,7 @@
 
 module Data.Sv.PrintTest (test_Print) where
 
+import Control.Lens         ((&), (.~))
 import Data.ByteString      (ByteString)
 import Data.Text            (Text)
 import Hedgehog             ((===), Property, Gen, forAll, property)
@@ -17,6 +18,7 @@ import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc
 import Data.Sv.Sv          (Sv (Sv), Headedness, noHeader, comma)
 import Data.Sv.Field       (Field (Quoted), SpacedField)
 import Data.Sv.Generators  (genSvWithHeadedness)
+import Data.Sv.Parser      (defaultParseOptions, headedness)
 import Data.Sv.Parser.Internal (spacedField, separatedValues)
 import Data.Sv.Print       (displaySv, printSpaced)
 import Data.Sv.Record      (emptyRecords, singleField, singleRecord)
@@ -86,8 +88,9 @@ prop_csvRoundTrip =
       genText :: Gen Text
       genText  = Gen.text (Range.linear 1 100) Gen.alphaNum
       gen = genSvWithHeadedness (pure comma) genSpaces genText
+      mkOpts h = defaultParseOptions & headedness .~ h
       parseCsv :: CharParsing m => Headedness -> m (Sv Text)
-      parseCsv = separatedValues comma
+      parseCsv = separatedValues . mkOpts
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen

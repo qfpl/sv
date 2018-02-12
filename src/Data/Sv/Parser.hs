@@ -9,12 +9,9 @@ Portability : non-portable
 
 module Data.Sv.Parser (
   separatedValues
-, separatedValuesWithOpts
-, csv
-, psv
-, tsv
+, separatedValuesEof
 , module Data.Sv.Parser.Options
 ) where
 
-import Data.Sv.Parser.Internal (separatedValues, separatedValuesWithOpts, csv, psv, tsv)
+import Data.Sv.Parser.Internal (separatedValues, separatedValuesEof)
 import Data.Sv.Parser.Options

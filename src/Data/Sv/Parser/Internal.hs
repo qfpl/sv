@@ -16,11 +16,7 @@ on this module at your own risk!
 
 module Data.Sv.Parser.Internal (
   separatedValues
-  , separatedValuesWithOpts
   , separatedValuesEof
-  , csv
-  , psv
-  , tsv
   , header
   , field
   , singleQuotedField
@@ -46,8 +42,8 @@ import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet,
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
 import           Data.Sv.Field           (Field (Unquoted, Quoted))
-import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator, comma, pipe, tab)
-import           Data.Sv.Parser.Options  (ParseOptions, headedness, separator)
+import           Data.Sv.Sv              (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
+import           Data.Sv.Parser.Options  (ParseOptions, headedness, separator, endOnBlankLine)
 import           Data.Sv.Record          (Record (Record), Records (Records))
 import           Text.Babel              (Textual)
 import           Text.Escape             (Unescaped (Unescaped))
@@ -141,29 +137,33 @@ record sep =
   Record <$> (spacedField sep `sepEndByNonEmpty` char sep)
 
 -- | Parse many records, or "rows"
-records :: (CharParsing m, Textual s) => Separator -> m (Records s)
-records sep =
+records :: (CharParsing m, Textual s) => ParseOptions -> m (Records s)
+records opts =
   Records <$> optional (
     Pesarated1 <$> (
-      Separated1 <$> firstRecord sep <*> separated (subsequentRecord sep)
+      Separated1 <$> firstRecord opts <*> separated (subsequentRecord opts)
     )
   )
 
-firstRecord :: (CharParsing m, Textual s) => Separator -> m (Record s)
-firstRecord sep = notFollowedBy (try ending) *> record sep
+firstRecord :: (CharParsing m, Textual s) => ParseOptions -> m (Record s)
+firstRecord opts = notFollowedBy (try (ending opts)) *> record (view separator opts)
 
-subsequentRecord :: (CharParsing m, Textual s) => Separator -> m (Newline, Record s)
-subsequentRecord sep = (,) <$> try (newline <* notFollowedBy (void newline <|> eof)) <*> record sep
+subsequentRecord :: (CharParsing m, Textual s) => ParseOptions -> m (Newline, Record s)
+subsequentRecord opts =
+  (,)
+    <$> (notFollowedBy (try (ending opts)) *> newline) -- ((if view endOnBlankLine opts then (void newline) else empty) <|> eof))
+    <*> record (view separator opts)
 
 separated :: CharParsing m => m (a,b) -> m (Separated a b)
 separated ab = Separated <$> many ab
 
 -- | Parse zero or many newlines
-ending :: CharParsing m => m [Newline]
-ending =
-  [] <$ eof
-  <|> try (pure <$> newline <* eof)
-  <|> (:) <$> newline <*> ((:) <$> newline <*> many newline)
+ending :: CharParsing m => ParseOptions -> m [Newline]
+ending opts =
+  let end = if view endOnBlankLine opts then pure [] else many newline
+  in  [] <$ eof
+    <|> try (pure <$> newline <* eof)
+    <|> (:) <$> newline <*> ((:) <$> newline <*> end)
 
 -- | Maybe parse the header row of a CSV file, depending on the given 'Headedness'
 header :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Maybe (Header s))
@@ -172,30 +172,13 @@ header c h = case h of
   Headed -> mkHeader <$> record c <*> newline
 
 -- | Parse an Sv
-separatedValues :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
-separatedValues sep h =
-  Sv sep <$> header sep h <*> records sep <*> ending
-
--- | Convenience function to parse an Sv given parser options
-separatedValuesWithOpts :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s)
-separatedValuesWithOpts c =
-  let s = view separator c
-      h = view headedness c
-  in  separatedValues s h
+separatedValues :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s)
+separatedValues opts =
+  let sep = view separator opts
+      h   = view headedness opts
+  in  Sv sep <$> header sep h <*> records opts <*> ending opts
 
 -- | Parse an Sv and ensure the end of the file follows.
-separatedValuesEof :: (CharParsing m, Textual s) => Separator -> Headedness -> m (Sv s)
-separatedValuesEof sep h =
-  separatedValues sep h <* eof
-
--- | Parse comma-separated values
-csv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
-csv = separatedValues comma
-
--- | Parse pipe-separated values
-psv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
-psv = separatedValues pipe
-
--- | Parse tab-separated values
-tsv :: (CharParsing m, Textual s) => Headedness -> m (Sv s)
-tsv = separatedValues tab
+separatedValuesEof :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s)
+separatedValuesEof opts =
+  separatedValues opts <* eof

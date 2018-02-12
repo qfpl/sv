@@ -9,7 +9,7 @@ import Test.Tasty (defaultMain)
 import Test.Tasty.Golden (goldenVsFile)
 
 import Data.Sv
-import Data.Sv.Parser (separatedValuesWithOpts)
+import Data.Sv.Parser (separatedValues)
 import Data.Sv.Print (writeSvToFile)
 import Text.Escape (Unescaped (Unescaped))
 import Text.Quote (Quote (DoubleQuote))
@@ -30,12 +30,12 @@ main = defaultMain $
 -- Manipulates the syntax directly with optics without decoding to data types
 -- Rewrites a file with inconsistent quoting to consistently use double quotes
 
-config :: ParseOptions
-config = defaultParseOptions
+opts :: ParseOptions
+opts = defaultParseOptions
 
 requote :: IO ()
 requote = do
-  svMay <- parseFromFile (separatedValuesWithOpts config) original
+  svMay <- parseFromFile (separatedValues opts) original
   case svMay of
     Nothing -> exitFailure
     Just s ->

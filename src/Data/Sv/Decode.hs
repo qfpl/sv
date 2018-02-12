@@ -99,7 +99,7 @@ import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
 import qualified Text.Trifecta as T (Parser)
 
-import Data.Sv.Parser.Options (ParseOptions, HasHeadedness (headedness), HasSeparator (separator), ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
+import Data.Sv.Parser.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)
 import Data.Sv.Sv (Sv, recordList)
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
@@ -124,11 +124,9 @@ parseDecode ::
   -> DecodeValidation e [a]
 parseDecode d maybeOptions s =
   let opts = fromMaybe defaultParseOptions maybeOptions
-      sep = view separator opts
-      h = view headedness opts
       lib = view parsingLib opts
       p :: CharParsing f => f (Sv s)
-      p = separatedValues sep h
+      p = separatedValues opts
       parse = case lib of
         Trifecta -> validateTrifectaResult BadParse . parseByteString p mempty . toByteString
         Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p . toByteString
@@ -142,11 +140,9 @@ decodeFromFile ::
   -> m (DecodeValidation e [a])
 decodeFromFile d maybeOptions fp =
   let opts = fromMaybe defaultParseOptions maybeOptions
-      sep = view separator opts
-      h = view headedness opts
       lib = view parsingLib opts
       p :: (CharParsing f, Textual s) => f (Sv s)
-      p = separatedValues sep h
+      p = separatedValues opts
       parseIO = case lib of
         Trifecta -> validateTrifectaResult BadParse <$> parseFromFileEx p fp
         Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)

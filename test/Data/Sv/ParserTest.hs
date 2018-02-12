@@ -3,6 +3,7 @@
 
 module Data.Sv.ParserTest (test_Parser) where
 
+import           Control.Lens         ((&), (.~))
 import           Data.ByteString      (ByteString)
 import           Data.List.NonEmpty   (NonEmpty ((:|)))
 import           Data.Either          (isLeft)
@@ -20,7 +21,8 @@ import           Text.Trifecta        (Result (Success, Failure), parseByteStrin
 import           Data.Sv.Sv          (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Field       (Field (Quoted, Unquoted), SpacedField)
 import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parser.Internal (csv, doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
+import           Data.Sv.Parser      (defaultParseOptions, separator, headedness)
+import           Data.Sv.Parser.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Record      (Record (Record))
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
@@ -147,8 +149,9 @@ recordTest =
 
 separatedValuesTest :: Separator -> Newline -> Int -> TestTree
 separatedValuesTest sep nl newlines =
-  let p :: ByteString -> Either String (Sv Text)
-      p = r2e . parseByteString (separatedValues sep Unheaded) mempty
+  let opts = defaultParseOptions & separator .~ sep & headedness .~ Unheaded
+      p :: ByteString -> Either String (Sv Text)
+      p = r2e . parseByteString (separatedValues opts) mempty
       ps = p . fold
       mkSv'' :: [Record s] -> [Newline] -> Sv s
       mkSv'' rs e = mkSv' sep Nothing e $ skrinpleMay nl rs
@@ -199,8 +202,9 @@ bssvTest = svTest "backspace separated values" '\BS'
 prop_randomCsvTest :: Property
 prop_randomCsvTest = property $ do
   str <- forAll genCsvString
-  let x :: Either String (Sv String)
-      x = r2e (parseByteString (csv Unheaded) mempty str)
+  let opts = separatedValues (defaultParseOptions & headedness .~ Unheaded)
+      x :: Either String (Sv String)
+      x = r2e (parseByteString opts mempty str)
   case x of
     Left _ -> failure
     Right _ -> success
