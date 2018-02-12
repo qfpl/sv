@@ -48,12 +48,70 @@ which can be read "if 'a' is either 'b' or 'c', and I can handle 'b',
 and I can handle 'c', then I can handle 'a'".
 -}
 
-module Data.Sv.Encode where
+module Data.Sv.Encode (
+  Encode (Encode, getEncode)
 
-import Prelude 
-import qualified Prelude as S (Show(..))
+-- * Convenience constructors
+, mkEncodeWithOpts
+, mkEncodeBS
+, unsafeBuilder
 
-import Control.Applicative ((<**>))
+-- * Options
+, EncodeOptions (EncodeOptions, _separator, _spacingBefore, _spacingAfter, _quote, _newline, _terminalNewline)
+, HasEncodeOptions (encodeOptions, separator, spacingBefore, spacingAfter, quote, newline, terminalNewline)
+
+-- * Running an Encode
+, defaultEncodeOptions
+, encode
+, encode'
+, encodeRow
+, encodeRow'
+, encodeSv
+
+-- * Primitive encodes
+, const
+, showEncode
+, nop
+, empty
+, orEmpty
+, char
+, int
+, integer
+, float
+, double
+, boolTrueFalse
+, booltruefalse
+, boolyesno
+, boolYesNo
+, boolYN
+, bool10
+, string
+, text
+, byteString
+, lazyByteString
+, unsafeString
+, unsafeText
+, unsafeByteString
+, unsafeLazyByteString
+, unsafeByteStringBuilder
+
+-- * Combinators
+, divide
+, conquer
+, choose
+, lose
+, (?>)
+, (<?)
+, (?>>)
+, (<<?)
+, fromFold
+, fromFoldMay
+) where
+
+import qualified Prelude as P
+import Prelude hiding (const)
+
+import Control.Applicative ((<$>), (<**>))
 import Control.Lens (Getting, Lens', preview, review)
 import Control.Monad (join)
 import Data.Bifoldable (bifoldMap)
@@ -61,11 +119,11 @@ import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Foldable (fold, toList)
+import Data.Foldable (fold, foldMap, toList)
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
-import Data.Monoid (First, (<>))
+import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
 import Data.Semigroup (Semigroup)
 import Data.Separated (skrinple)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
@@ -97,7 +155,7 @@ instance Divisible Encode where
     Encode $ \e a -> bifoldMap (x e) (y e) (f a)
 
 instance Decidable Encode where
-  lose f = Encode (const (absurd . f))
+  lose f = Encode (P.const (absurd . f))
   choose f (Encode x) (Encode y) =
     Encode $ \e a -> either (x e) (y e) (f a)
 
@@ -159,10 +217,10 @@ encodeSv opts e headerStrings as =
       b2r = maybe emptyRecord Record . nonEmpty . toList . fmap b2f
   in  Sv sep header rs terminal
 
-constE :: Strict.ByteString -> Encode a
-constE = Encode . pure . pure . pure . BS.byteString
+const :: Strict.ByteString -> Encode a
+const = Encode . pure . pure . pure . BS.byteString
 
-showEncode :: S.Show a => Encode a
+showEncode :: Show a => Encode a
 showEncode = contramap show string
 
 nop :: Encode a
@@ -183,7 +241,7 @@ orEmpty = choose (maybe (Left ()) Right) empty
 {-# INLINE (<?) #-}
 
 (?>>) :: Encode a -> Strict.ByteString -> Encode (Maybe a)
-(?>>) a s = a ?> constE s
+(?>>) a s = a ?> const s
 {-# INLINE (?>>) #-}
 
 (<<?) :: Strict.ByteString -> Encode a -> Encode (Maybe a)
@@ -324,4 +382,4 @@ defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF
 intersperseSeq :: a -> Seq a -> Seq a
 intersperseSeq y xs = case viewl xs of
   EmptyL -> S.empty
-  p :< ps -> p <| (ps <**> (const y <| S.singleton id))
+  p :< ps -> p <| (ps <**> (P.const y <| S.singleton id))
