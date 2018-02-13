@@ -19,4 +19,4 @@ their dataset.
 * Dealing with non-rectangular data: [Ragged.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs)
 * Handling multiple logical documents in one file: [Concat.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Concat.hs)
 * Integrating with an existing attoparsec parser to read date stamps: [TableTennis.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/TableTennis.hs)
-* Fixing inconsistent formatting with lenses: [Requote.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Requote.hs Requote.hs)
+* Fixing inconsistent formatting with lenses: [Requote.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Requote.hs)
