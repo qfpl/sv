@@ -23,6 +23,10 @@ import Text.Newline (Newline (CRLF))
 import Text.Space (Spaces)
 import Text.Quote (Quote (DoubleQuote))
 
+-- | These are options to configure encoding. A default is provided as
+-- 'defaultEncodeOptions'. This will determine whether your output file is
+-- separated by commas or tabs, whether fields are quoted, and what kind of
+-- newline you like.
 data EncodeOptions =
   EncodeOptions {
     _encodeSeparator :: Separator
@@ -33,6 +37,13 @@ data EncodeOptions =
   , _terminalNewline :: Bool
   }
 
+-- | Classy lenses for 'EncodeOptions'
+--
+-- @
+-- import Control.Lens
+--
+-- defaultEncodeOptinons & quote .~ Just DoubleQuote & newline .~ LF
+-- @
 class HasSeparator c => HasEncodeOptions c where
   encodeOptions :: Lens' c EncodeOptions
   newline :: Lens' c Newline
@@ -74,5 +85,9 @@ instance HasEncodeOptions EncodeOptions where
   terminalNewline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 x2 x3 x4 x5 y) (f x6)
 
+-- | The default options for encoding.
+--
+-- The default is a CSV file with double-quotes, CRLF lines, no spacing around
+-- fields, and no terminating newline.
 defaultEncodeOptions :: EncodeOptions
 defaultEncodeOptions = EncodeOptions comma mempty mempty (Just DoubleQuote) CRLF False

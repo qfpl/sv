@@ -236,12 +236,12 @@ speciesDecoder = let s = D.byteString in
     D.orEmpty nca <*> D.orEmpty epbc <*> D.orEmpty significance <*> D.orEmpty endemicity
 \end{code}
 
-We call decodeFromFile to load, parse, and decode our file. Note that we're
+We call parseDecodeFromFile to load, parse, and decode our file. Note that we're
 passing our config in.
 
 \begin{code}
 species :: IO (DecodeValidation ByteString [Species])
-species = decodeFromFile speciesDecoder (Just config) file
+species = parseDecodeFromFile speciesDecoder (Just config) file
 \end{code}
 
 And that's it! We've defined a data type for our rows, built a FieldDecode for

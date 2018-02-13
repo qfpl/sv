@@ -42,7 +42,7 @@ module Data.Sv (
   -- * Decoding
   , decode
   , parseDecode
-  , decodeFromFile
+  , parseDecodeFromFile
   , decodeMay
   , decodeEither
   , decodeEither'

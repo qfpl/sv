@@ -25,6 +25,10 @@ import Data.Void (absurd)
 
 import Data.Sv.Encode.Options
 
+-- | 'Encode' turns an @a@ into a record.
+--
+-- It is 'Contravariant', 'Divisible', and 'Decidable', allowing for
+-- composition of these values to build bigger Encodes from smaller ones.
 newtype Encode a =
   Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
   deriving (Semigroup, Monoid)

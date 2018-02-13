@@ -49,7 +49,7 @@ difference = D.attoparsec (
 
 main :: IO ()
 main = do
-  result <- decodeFromFile handicap (Just config) file
+  result <- parseDecodeFromFile handicap (Just config) file
   case result of
     AccFailure e -> print e >> exitFailure
     AccSuccess h -> unless (length h == 5) exitFailure
