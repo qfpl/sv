@@ -13,7 +13,6 @@ module Data.Sv (
 , module Data.Sv.Syntax.Record
 , module Data.Sv.Parse
 , module Data.Sv.Print
-, module Data.Sv.Decode
 , module Data.Sv.Decode.Type
 , module Data.Sv.Decode.Field
 , module Data.Sv.Encode.Type
