@@ -12,7 +12,7 @@ module Data.Sv (
   Sv (..)
   , mkSv
   , mkSv'
-  , empty
+  , emptySv
   , Header (Header, _headerRecord)
   , noHeader
   , mkHeader
@@ -79,9 +79,15 @@ module Data.Sv (
   , printSvLazy
   , writeSvToFile
 
-  -- TODO
-  , module Data.Sv.Encode.Type
-  , module Data.Sv.Encode.Options
+  -- * Encoding
+  , Encode (..)
+  , EncodeOptions (..)
+  , HasEncodeOptions (..)
+  , defaultEncodeOptions
+  , encode
+  , encodeBuilder
+  , encodeRow
+  , encodeSv
 
   -- * Lenses
   , HasSv (..)
@@ -97,8 +103,7 @@ module Data.Sv (
 ) where
 
 import Data.Sv.Decode
-import Data.Sv.Encode.Options
-import Data.Sv.Encode.Type
+import Data.Sv.Encode
 import Data.Sv.Parse
 import Data.Sv.Print
 import Data.Sv.Syntax

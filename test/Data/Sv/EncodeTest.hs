@@ -11,7 +11,8 @@ import Data.Semigroup ((<>))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
-import Data.Sv.Encode
+import Data.Sv
+import qualified Data.Sv.Encode as E
 
 data IntOrString =
   I Int | S String
@@ -22,7 +23,7 @@ makeClassyPrisms ''IntOrString
 data IntAndString = IAS { getInt :: Int, getString :: String }
 
 intAndString :: Encode IntAndString
-intAndString = contramap getInt int <> contramap getString string
+intAndString = contramap getInt E.int <> contramap getString E.string
 
 test_Encode :: TestTree
 test_Encode =
@@ -37,7 +38,7 @@ opts :: EncodeOptions
 opts = defaultEncodeOptions
 
 intOrString :: Encode IntOrString
-intOrString = fromFold _I int <> fromFold _S string
+intOrString = E.encodeOf _I E.int <> E.encodeOf _S E.string
 
 i :: IntOrString
 i = I 5
@@ -55,7 +56,7 @@ decidableTests =
   ]
 
 intEmptyAndString :: Encode IntAndString
-intEmptyAndString = contramap getInt int <> empty <> contramap getString string
+intEmptyAndString = contramap getInt E.int <> E.empty <> contramap getString E.string
 
 ias :: IntAndString
 ias = IAS 10 "goodbye"
@@ -79,11 +80,11 @@ escapeTests :: TestTree
 escapeTests =
   testGroup "escape" [
     testCase "string" $
-      encodeRow opts string "hello \"test\" case" @?= "\"hello \"\"test\"\" case\""
+      encodeRow opts E.string "hello \"test\" case" @?= "\"hello \"\"test\"\" case\""
   , testCase "text" $
-      encodeRow opts text "this is also\"a test\"" @?= "\"this is also\"\"a test\"\"\""
+      encodeRow opts E.text "this is also\"a test\"" @?= "\"this is also\"\"a test\"\"\""
   , testCase "bytestring - strict" $
-      encodeRow opts byteString "\"test\"ing\" " @?= "\"\"\"test\"\"ing\"\" \""
+      encodeRow opts E.byteString "\"test\"ing\" " @?= "\"\"\"test\"\"ing\"\" \""
   , testCase "bytestring - lazy" $
-      encodeRow opts lazyByteString "\"" @?= "\"\"\"\""
+      encodeRow opts E.lazyByteString "\"" @?= "\"\"\"\""
   ]

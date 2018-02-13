@@ -27,7 +27,7 @@ module Data.Sv.Syntax.Sv (
   , HasRecords (records, theRecords)
   , mkSv
   , mkSv'
-  , empty
+  , emptySv
   , recordList
   , Header (Header, _headerRecord)
   , HasHeader (header, headerRecord, headerNewline)
@@ -108,8 +108,8 @@ mkSv' :: Separator -> Maybe (Header s) -> [Newline] -> Maybe (Pesarated1 Newline
 mkSv' c h ns = mkSv c h ns . Records
 
 -- | An empty Sv
-empty :: Separator -> Sv s
-empty c = Sv c Nothing emptyRecords []
+emptySv :: Separator -> Sv s
+emptySv c = Sv c Nothing emptyRecords []
 
 instance Functor Sv where
   fmap f (Sv s h rs e) = Sv s (fmap (fmap f) h) (fmap f rs) e
