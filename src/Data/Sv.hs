@@ -10,19 +10,15 @@ Portability : non-portable
 module Data.Sv (
   -- * Core data types
   Sv (..)
-  , HasSv (..)
   , mkSv
   , mkSv'
   , empty
   , Header (Header, _headerRecord)
-  , HasHeader (header, headerRecord, headerNewline)
   , noHeader
   , mkHeader
   , Headedness (Unheaded, Headed)
-  , HasHeadedness (headedness)
   , getHeadedness
   , Separator
-  , HasSeparator (separator)
   , comma
   , pipe
   , tab
@@ -30,19 +26,15 @@ module Data.Sv (
   , Field (Unquoted, Quoted)
   , SpacedField
   , Spaced (Spaced)
-  , HasFields (fields)
-  , AsField (_Field, _Unquoted, _Quoted)
   , unescapedField
   , foldField
   , fieldContents
 
   , Record (Record, _fields)
-  , HasRecord (record, spacedFields)
   , recordSpacedFieldsIso
   , emptyRecord
   , singleField
   , Records (Records, _theRecords)
-  , HasRecords (records, theRecords, traverseRecords)
   , emptyRecords
   , singleRecord
   , recordList
@@ -77,11 +69,9 @@ module Data.Sv (
   , separatedValues
   , separatedValuesEof
   , ParseOptions (..)
-  , HasParseOptions (..)
   , defaultParseOptions
   , orDefault
   , ParsingLib (..)
-  , HasParsingLib (..)
   , defaultParsingLib
 
   -- * Printing
@@ -89,8 +79,21 @@ module Data.Sv (
   , printSvLazy
   , writeSvToFile
 
+  -- TODO
   , module Data.Sv.Encode.Type
   , module Data.Sv.Encode.Options
+
+  -- * Lenses
+  , HasSv (..)
+  , HasHeader (..)
+  , HasHeadedness (..)
+  , HasSeparator (..)
+  , HasFields (..)
+  , AsField (..)
+  , HasRecord (..)
+  , HasRecords (..)
+  , HasParseOptions (..)
+  , HasParsingLib (..)
 ) where
 
 import Data.Sv.Decode
