@@ -18,7 +18,8 @@ import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc
 import Data.Sv.Generators  (genSvWithHeadedness)
 import Data.Sv.Parse       (defaultParseOptions, headedness)
 import Data.Sv.Parse.Internal (spacedField, separatedValues)
-import Data.Sv.Print       (displaySv, printSpaced)
+import Data.Sv.Print       (printSv)
+import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
 import Data.Sv.Syntax.Record (emptyRecords, singleField, singleRecord)
 import Data.Sv.Syntax.Sv   (Sv (Sv), Headedness, noHeader, comma)
@@ -69,11 +70,11 @@ csvPrint =
     testCase "empty" $
       let subject :: Sv ByteString
           subject = Sv comma noHeader emptyRecords []
-      in  displaySv subject @?= ""
+      in  printSv subject @?= ""
   , testCase "empty quotes" $
       let subject :: Sv ByteString
           subject = Sv comma noHeader (singleRecord (singleField (Quoted SingleQuote mempty))) []
-      in displaySv subject @?= ("''" :: ByteString)
+      in printSv subject @?= ("''" :: ByteString)
   ]
 
 csvRoundTrip :: TestTree
@@ -94,4 +95,4 @@ prop_csvRoundTrip =
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen
-    r2e (fmap displaySv (parse h (displaySv c))) === pure (displaySv c)
+    r2e (fmap printSv (parse h (printSv c))) === pure (printSv c)

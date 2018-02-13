@@ -9,78 +9,42 @@ Portability : non-portable
 
 module Data.Sv.Print (
   printSv
-, printField
-, printSpaced
+, printSvLazy
 , writeSvToFile
-, displaySv
-, displaySvLazy
 ) where
 
-import Control.Lens (view, review)
-import Data.Bifoldable (bifoldMap)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
-import Data.Semigroup.Foldable (intercalate1)
-import Data.Separated (Pesarated1)
 import System.IO (BufferMode (BlockBuffering), hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
-import Data.Sv.Syntax.Field (Field (Quoted, Unquoted))
-import Data.Sv.Syntax.Record (Record (Record), Records, theRecords)
-import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header), Separator)
-import Text.Babel (Textual (toByteString, toByteStringBuilder), singleton)
-import Text.Escape (getRawEscaped, Escapable (escape_))
-import Text.Newline
-import Text.Space (spaceToChar, Spaced (Spaced))
-import Text.Quote
+import Data.Sv.Print.Internal
+import Data.Sv.Syntax.Sv (Sv (Sv))
+import Text.Escape (Escapable)
 
-printNewline :: Newline -> Builder
-printNewline n = toByteStringBuilder (newlineText n :: LB.ByteString)
-
-printField :: Escapable s => Field s -> Builder
-printField f =
-  case f of
-    Unquoted s ->
-      toByteStringBuilder s
-    Quoted q s ->
-      let qc = quoteToString q
-          contents = toByteStringBuilder $ getRawEscaped $ escape_ (review quoteChar q) s
-      in  qc <> contents <> qc
-
-printSpaced :: Escapable s => Spaced (Field s) -> Builder
-printSpaced (Spaced b t a) =
-  let spc = foldMap (singleton . spaceToChar)
-  in  spc b <> printField a <> spc t
-
-printRecord :: Escapable s => Separator -> Record s -> Builder
-printRecord sep (Record fs) =
-  intercalate1 (singleton sep) (fmap printSpaced fs)
-
-printPesarated1 :: Escapable s => Separator -> Pesarated1 Newline (Record s) -> Builder
-printPesarated1 sep = bifoldMap printNewline (printRecord sep)
-
-printRecords :: Escapable s => Separator -> Records s -> Builder
-printRecords sep = foldMap (printPesarated1 sep) . view theRecords
-
-printHeader :: Escapable s => Separator -> Header s -> Builder
-printHeader sep (Header r n) = printRecord sep r <> printNewline n
-
-printSv :: Escapable s => Sv s -> Builder
-printSv (Sv sep h rs e) =
+-- | Converts an 'Sv' to a ByteString 'Builder'. Useful if you want to concatenate other
+-- text before or after.
+svToBuilder :: Escapable s => Sv s -> Builder
+svToBuilder (Sv sep h rs e) =
   foldMap (printHeader sep) h <> printRecords sep rs <> foldMap printNewline e
 
+-- | Writes an sv to a file. This goes directly from a 'Builder', so it is
+-- more efficient than calling 'printSv' or 'printSvLazy' and writing the
+-- result to a file.
 writeSvToFile :: Escapable s => FilePath -> Sv s -> IO ()
 writeSvToFile fp sv = do
-  let b = printSv sv
+  let b = svToBuilder sv
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
   hPutBuilder h b
   hClose h
 
-displaySv :: Escapable s => Sv s -> ByteString
-displaySv = toByteString . printSv
+-- | Converts the given 'Sv' into a strict 'Data.ByteString.ByteString'
+printSv :: Escapable s => Sv s -> ByteString
+printSv = LBS.toStrict . printSvLazy
 
-displaySvLazy :: Escapable s => Sv s -> LB.ByteString
-displaySvLazy = toLazyByteString . printSv
+-- | Converts the given 'Sv' into a lazy 'Data.ByteString.Lazy.ByteString'
+printSvLazy :: Escapable s => Sv s -> LBS.ByteString
+printSvLazy = toLazyByteString . svToBuilder
