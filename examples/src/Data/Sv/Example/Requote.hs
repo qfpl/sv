@@ -1,12 +1,10 @@
 module Data.Sv.Example.Requote where
 
 import Control.Lens
+import Control.Monad (unless)
 import Data.Text (Text)
 import System.Exit (exitFailure)
 import Text.Trifecta (parseFromFile)
-
-import Test.Tasty (defaultMain)
-import Test.Tasty.Golden (goldenVsFile)
 
 import Data.Sv
 import Data.Sv.Parse (separatedValues)
@@ -24,8 +22,12 @@ golden :: FilePath
 golden = "csv/requote.golden.csv"
 
 main :: IO ()
-main = defaultMain $
-  goldenVsFile "requote" golden fixed requote
+main = do
+  requote
+  expected <- readFile golden
+  actual <- readFile fixed
+  unless (expected == actual)
+    exitFailure
 
 -- Manipulates the syntax directly with optics without decoding to data types
 -- Rewrites a file with inconsistent quoting to consistently use double quotes
