@@ -14,19 +14,25 @@ module Data.Sv.Decode.Type (
   FieldDecode (..)
 , FieldDecode'
 , DecodeState (..)
+, runDecodeState
+, Ind (Ind)
 , AccValidation (AccSuccess, AccFailure)
 , DecodeValidation
 , DecodeError (..)
 , DecodeErrors (..)
 ) where
 
-import Control.Monad.State (MonadState, State, runState, state)
+import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
+import Control.Monad.State (State, runState, state, MonadState)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
+import Data.Functor.Bind (Bind ((>>-)))
 import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty
 import Data.Semigroup
+import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
+import Data.Vector (Vector)
 
 import Data.Sv.Syntax.Field (SpacedField)
 
@@ -51,21 +57,45 @@ type FieldDecode' s = FieldDecode s s
 
 instance Alt (FieldDecode e s) where
   FieldDecode (Compose as) <!> FieldDecode (Compose bs) =
-    FieldDecode . Compose . DecodeState . state $ \fs ->
-      case runState (getDecodeState as) fs of
-        (a, gs) -> case runState (getDecodeState bs) fs of
-          (b, hs) ->
-            let a' = fmap (,gs) a
-                b' = fmap (,hs) b
+    FieldDecode . Compose . DecodeState . ReaderT $ \v -> state $ \i ->
+      case runDecodeState as v i of
+        (a, j) -> case runDecodeState bs v i of
+          (b, k) ->
+            let a' = fmap (,j) a
+                b' = fmap (,k) b
             in  case a' <!> b' of
-                  AccFailure e -> (AccFailure e, hs)
-                  AccSuccess (z,js) -> (AccSuccess z, js)
+                  AccFailure e -> (AccFailure e, k)
+                  AccSuccess (z, m) -> (AccSuccess z, m)
+
+instance Profunctor (FieldDecode e) where
+  lmap f (FieldDecode (Compose dec)) = FieldDecode (Compose (lmap f dec))
+  rmap = fmap
+
+newtype Ind = Ind Int
+
+instance Semigroup Ind where
+  Ind x <> Ind y = Ind (x + y)
+
+instance Monoid Ind where
+  mappend = (<>)
+  mempty = Ind 0
 
 -- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
 -- keeps track of our remaining 'Data.Sv.Syntax.Field's.
 newtype DecodeState s a =
-  DecodeState { getDecodeState :: State [SpacedField s] a }
-  deriving (Functor, Apply, Applicative, Monad, MonadState [SpacedField s])
+  DecodeState { getDecodeState :: ReaderT (Vector (SpacedField s)) (State Ind) a }
+  deriving (Functor, Apply, Applicative, Monad, MonadReader (Vector (SpacedField s)), MonadState Ind)
+
+instance Bind (DecodeState s) where
+  (>>-) = (>>=)
+
+instance Profunctor DecodeState where
+  lmap f (DecodeState s) = DecodeState (withReaderT (fmap (fmap (fmap f))) s)
+  rmap = fmap
+
+-- | Convenient function to run a DecodeState
+runDecodeState :: DecodeState s a -> Vector (SpacedField s) -> Ind -> (a, Ind)
+runDecodeState = fmap runState . runReaderT . getDecodeState
 
 -- TODO eventually give DecodeError a much better show
 
@@ -73,7 +103,7 @@ newtype DecodeState s a =
 -- Its parameter type will usually be some sort of string.
 data DecodeError e =
   UnexpectedEndOfRow
-  | ExpectedEndOfRow [SpacedField e]
+  | ExpectedEndOfRow (Vector (SpacedField e))
   | UnknownCanonicalValue e [(e, [e])]
   | BadParse e
   | BadDecode e

@@ -27,6 +27,7 @@ module Data.Sv.Decode.Error (
 ) where
 
 import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
+import Data.Vector (Vector)
 import Text.Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
@@ -42,7 +43,7 @@ unexpectedEndOfRow :: DecodeValidation e a
 unexpectedEndOfRow = decodeError UnexpectedEndOfRow
 
 -- | Given the rest of the row, fail with 'ExpectedEndOfRow'
-expectedEndOfRow :: [SpacedField e] -> DecodeValidation e a
+expectedEndOfRow :: Vector (SpacedField e) -> DecodeValidation e a
 expectedEndOfRow = decodeError . ExpectedEndOfRow
 
 -- | Given the unknown value and the list of good canonical values,

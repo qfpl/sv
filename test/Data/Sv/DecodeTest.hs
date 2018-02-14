@@ -5,20 +5,24 @@
 
 module Data.Sv.DecodeTest (test_Decode) where
 
+import Control.Applicative (liftA2)
 import Control.Lens ((&), (.~))
 import Data.ByteString
 import Data.Functor.Alt
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup
+import qualified Data.Vector as V
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
-import Data.Sv (ParseOptions, defaultParseOptions, Headedness (Unheaded), headedness)
-import Data.Sv.Decode
+import Data.Sv
+import qualified Data.Sv.Decode as D
 
 test_Decode :: TestTree
 test_Decode =
   testGroup "Decode" [
     intOrStringTest
+  , varyingLengthTest
   ]
 
 data IntOrString =
@@ -26,7 +30,7 @@ data IntOrString =
   deriving (Eq, Ord, Show)
 
 intOrString :: FieldDecode ByteString ByteString IntOrString
-intOrString = I <$> int <!> S <$> string
+intOrString = I <$> D.int <!> S <$> D.string
 
 data V3 a =
   V3 a a a
@@ -59,3 +63,25 @@ intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
       parseDecode v3ios (Just opts) csv1 @?= pure csv1'
+
+varyingLength :: ByteString
+varyingLength = intercalate "\r\n" [
+    "one"
+  , "one,two"
+  , "one,two,three"
+  , "one,two,three,four"
+  , "one,two,three,four,five"
+  ]
+
+str2 :: FieldDecode' ByteString (ByteString, ByteString)
+str2 = liftA2 (,) D.contents D.contents
+
+varyingLengthTest :: TestTree
+varyingLengthTest =
+  testCase "varyingLength has all the right errors" $
+    parseDecode str2 (Just opts) varyingLength @?=
+      AccFailure (DecodeErrors (D.UnexpectedEndOfRow :| [
+        D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three"])
+      , D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three", Unquoted "four"])
+      , D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three", Unquoted "four", Unquoted "five"])
+      ]))
