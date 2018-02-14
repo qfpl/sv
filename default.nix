@@ -19,16 +19,25 @@ let
     validation = pkgs.fetchFromGitHub {
       owner = "qfpl";
       repo = "validation";
-      rev = "0.6.2";
-      sha256 = "02fabbgsbn47gh794alnfkrfs1nh9rpwc7dqig6bq9sx7v26j2qf";
+      rev = "aa8d2fa835b66b191ff1b150c58c56117e1c7e7c";
+      sha256 = "15n3wc7l1wjfs5ibhxz41r19asdb9ga6scpfalds7kp2ypp96shb";
     };
+
+    hedgehog = pkgs.fetchFromGitHub {
+      owner  = "hedgehogqa";
+      repo   = "haskell-hedgehog";
+      rev    = "7858d626b198621bc674fbc235c7980fb4002f78";
+      sha256 = "0mmypd6f3imh7bk6br9m9aj97k2yibz2bqcw3a5svp962zsjbkyp";
+    };
+
   };
 
   modifiedHaskellPackages = haskellPackages.override {
     overrides = self: super: {
       parsers = pkgs.haskell.lib.dontCheck super.parsers;
-      separated = import sources.separated { inherit nixpkgs compiler; };
+      separated = pkgs.haskell.lib.dontCheck (import sources.separated { inherit nixpkgs compiler; });
       validation= import sources.validation { inherit nixpkgs compiler; };
+      hedgehog = super.callCabal2nix "hedgehog" "${sources.hedgehog}/hedgehog" {};
     };
   };
 
