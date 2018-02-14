@@ -79,7 +79,6 @@ module Data.Sv.Decode (
 -- TODO
 , module Data.Sv.Decode.Error
 , module Data.Sv.Decode.Field
-, module Data.Sv.Decode.State
 , module Data.Sv.Decode.Type
 , ParsingLib (Trifecta, Attoparsec)
 , HasParsingLib (parsingLib)
@@ -116,7 +115,6 @@ import qualified Text.Trifecta as T (Parser)
 
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
-import Data.Sv.Decode.State
 import Data.Sv.Decode.Type
 import Data.Sv.Parse (separatedValues)
 import Data.Sv.Parse.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), defaultParseOptions)

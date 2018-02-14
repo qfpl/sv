@@ -22,13 +22,15 @@ module Data.Sv.Decode.Field (
 
 
 import Control.Lens (view)
+import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
 import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Validation (_AccValidation, bindValidation)
+import Data.Vector (Vector, (!))
+import qualified Data.Vector as V
 
 import Data.Sv.Decode.Error
-import Data.Sv.Decode.State (runDecodeState)
 import Data.Sv.Decode.Type
 import Data.Sv.Syntax.Field (Field, SpacedField, fieldContents)
 import Data.Sv.Syntax.Record (Record, _fields)
@@ -36,7 +38,7 @@ import Text.Babel (Textual (retext))
 import Text.Space (Spaced (_value))
 
 -- | Convenience to get the underlying function out of a FieldDecode in a useful form
-runFieldDecode :: FieldDecode e s a -> [SpacedField s] -> (DecodeValidation e a, [SpacedField s])
+runFieldDecode :: FieldDecode e s a -> Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)
 runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
 
 -- | This can be used to build a 'FieldDecode' whose value depends on the
@@ -74,14 +76,19 @@ fieldDecodeWithQuotes f = fieldDecodeWithSpaces (f . _value)
 -- information about spacing both before and after the field, and about quotes
 -- if they were used.
 fieldDecodeWithSpaces :: (SpacedField s -> DecodeValidation e a) -> FieldDecode e s a
-fieldDecodeWithSpaces f = FieldDecode . Compose . state $ \l ->
-  case l of
-    [] -> (unexpectedEndOfRow, [])
-    (x:xs) -> (f x, xs)
+fieldDecodeWithSpaces f =
+  FieldDecode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
+    if i >= length v
+    then (unexpectedEndOfRow, Ind i)
+    else (f (v ! i), Ind (i+1))
 
 -- | promotes a FieldDecode to work on a whole 'Record' at once
 promote :: (Textual e, Textual s) => FieldDecode e s a -> Record s -> DecodeValidation e a
-promote a rs =
-  case runFieldDecode a . toList . _fields $ rs of
-    (v, []) -> v
-    (v, xs@(_:_)) -> v *> expectedEndOfRow (fmap (fmap (fmap retext)) xs)
+promote dec rs =
+  let vec = V.fromList . toList . _fields $ rs
+      len = length vec
+  in  case runFieldDecode dec vec (Ind 0) of
+    (d, Ind i) ->
+      if i >= len
+      then d
+      else d *> expectedEndOfRow (fmap (fmap (fmap retext)) (V.force (V.drop i vec)))
