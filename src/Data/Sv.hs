@@ -100,6 +100,10 @@ module Data.Sv (
   , HasRecords (..)
   , HasParseOptions (..)
   , HasParsingLib (..)
+
+  -- * Operators
+  , Alt ((<!>))
+  , Applicative (pure, (<*>))
 ) where
 
 import Data.Sv.Decode
