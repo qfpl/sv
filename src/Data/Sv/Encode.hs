@@ -188,7 +188,7 @@ encodeRowBuilder opts e =
 
 -- | Build an 'Sv' rather than going straight to 'ByteString'. This allows you
 -- to query the Sv or run sanity checks.
-encodeSv :: forall s a . Escapable s => EncodeOptions -> Encode a -> Maybe (NonEmpty s) -> [a] -> Sv Strict.ByteString
+encodeSv :: EncodeOptions -> Encode a -> Maybe (NonEmpty Strict.ByteString) -> [a] -> Sv Strict.ByteString
 encodeSv opts e headerStrings as =
   let encoded :: [Seq BS.Builder]
       encoded = getEncode e opts <$> as

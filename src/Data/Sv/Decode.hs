@@ -54,6 +54,8 @@ module Data.Sv.Decode (
 , boolean
 
 -- * Combinators
+, Alt ((<!>))
+, Applicative (pure, (<*>))
 , choice
 , element
 , optionalField
