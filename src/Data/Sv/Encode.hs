@@ -125,7 +125,6 @@ import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose), divided, chosen)
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
-import Data.Separated (skrinple)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
@@ -134,7 +133,7 @@ import qualified Data.Text.Encoding as T
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions)
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
 import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
-import Data.Sv.Syntax.Record (Record (Record), Records (Records), emptyRecord)
+import Data.Sv.Syntax.Record (Record (Record), Records (EmptyRecords), emptyRecord, mkRecords, recordNel)
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
 import qualified Data.Vector.NonEmpty as V
 import Text.Babel (toByteString)
@@ -199,12 +198,12 @@ encodeSv opts e headerStrings as =
       mkField = maybe Unquoted unescapedField (_quote opts)
       mkHeader r = Header r nl
       mkRecord :: NonEmpty z -> Record z
-      mkRecord = Record . V.fromNel . fmap (mkSpaced . mkField)
+      mkRecord = recordNel . fmap (mkSpaced . mkField)
       header :: Maybe (Header Strict.ByteString)
       header = mkHeader . mkRecord . fmap toByteString <$> headerStrings
       rs :: Records Strict.ByteString
       rs = l2rs (b2r <$> encoded)
-      l2rs = Records . fmap (skrinple nl) . nonEmpty
+      l2rs = maybe EmptyRecords (mkRecords nl) . nonEmpty -- Records . fmap (skrinple nl) . nonEmpty
       terminal = if _terminalNewline opts then [nl] else []
       b2f :: BS.Builder -> SpacedField Strict.ByteString
       b2f = mkSpaced . mkField . LBS.toStrict . BS.toLazyByteString

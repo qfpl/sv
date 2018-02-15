@@ -12,8 +12,6 @@ module Data.Sv.Generators (
   , genSpacedField
   , genRecord
   , genRecords
-  , genPesarated1
-  , genSeparated
   , genHeader
   , genCsvString
 ) where
@@ -23,14 +21,14 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
-import Data.Separated      (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
+import qualified Data.Vector as V
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import Data.Sv.Syntax.Sv     (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Syntax.Field  (Field (Quoted, Unquoted))
-import Data.Sv.Syntax.Record (Record, Records (Records), recordNel)
+import Data.Sv.Syntax.Record (Record, Records (EmptyRecords, Records), recordNel)
 import Text.Babel          (fromByteString, toByteString)
 import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
@@ -91,17 +89,16 @@ genHeader spc s n =
 
 genRecords :: Gen Spaces -> Gen s -> Gen (Records s)
 genRecords spc s =
-  Records <$> Gen.maybe (genPesarated1 genNewline (genRecord spc s))
+  let rec = genRecord spc s
+      nlr = liftA2 (,) genNewline rec
+  in  maybe EmptyRecords (uncurry Records) <$>
+    Gen.maybe (
+      liftA2 (,)
+        rec
+        (V.fromList <$> Gen.list (Range.linear 0 1000) nlr)
+      )
 
-genPesarated1 :: Gen a -> Gen b -> Gen (Pesarated1 a b)
-genPesarated1 a b = Pesarated1 <$> genSeparated1 b a
-
-genSeparated :: Gen a -> Gen b -> Gen (Separated a b)
-genSeparated a b =
-  Separated <$> Gen.list (Range.linear 0 1000) (liftA2 (,) a b)
-
-genSeparated1 :: Gen a -> Gen b -> Gen (Separated1 a b)
-genSeparated1 a b = Separated1 <$> a <*> genSeparated b a
+--(Gen.list (Range.linear 0 1000) _)
 
 genCsvString :: Gen ByteString
 genCsvString =

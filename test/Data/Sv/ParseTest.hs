@@ -5,7 +5,7 @@ module Data.Sv.ParseTest (test_Parse) where
 
 import           Control.Lens         ((&), (.~))
 import           Data.ByteString      (ByteString)
-import           Data.List.NonEmpty   (NonEmpty ((:|)))
+import           Data.List.NonEmpty   (NonEmpty ((:|)), nonEmpty)
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
 import           Data.Semigroup       (Semigroup ((<>)))
@@ -21,10 +21,9 @@ import           Text.Trifecta        (Result (Success, Failure), parseByteStrin
 import           Data.Sv.Generators  (genCsvString)
 import           Data.Sv.Parse       (defaultParseOptions, separator, headedness)
 import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
-import           Data.Sv.Syntax.Sv   (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
+import           Data.Sv.Syntax.Sv   (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
-import           Data.Sv.Syntax.Record (Record (Record), recordNel)
-import           Data.Separated      (skrinpleMay)
+import           Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
 import           Text.Babel          (singleton)
 import           Text.Escape         (Unescaped (Unescaped))
 import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
@@ -153,26 +152,26 @@ separatedValuesTest sep nl newlines =
       p :: ByteString -> Either String (Sv Text)
       p = r2e . parseByteString (separatedValues opts) mempty
       ps = p . fold
-      mkSv'' :: [Record s] -> [Newline] -> Sv s
-      mkSv'' rs e = mkSv' sep Nothing e $ skrinpleMay nl rs
+      mkSv' :: [Record s] -> [Newline] -> Sv s
+      mkSv' rs e = mkSv sep Nothing e $ maybe EmptyRecords (mkRecords nl) $ nonEmpty rs
       s = singleton sep
       nls = newlineText nl
       terminator = replicate newlines nl
       termStr = foldMap newlineText terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
-      ps ["", termStr] @?=/ mkSv'' [] terminator
+      ps ["", termStr] @?=/ mkSv' [] terminator
   , testCase "single empty quotes field" $ 
-      ps ["''", termStr] @?=/ mkSv'' [qsr ""] terminator
+      ps ["''", termStr] @?=/ mkSv' [qsr ""] terminator
   , testCase "single field, single record" $
-      ps ["one", termStr] @?=/ mkSv'' [uqa (pure "one")] terminator
+      ps ["one", termStr] @?=/ mkSv' [uqa (pure "one")] terminator
   , testCase "single field, multiple records" $
-      ps ["one",nls,"un",termStr] @?=/ mkSv'' [uqa (pure "one"), uqa (pure "un")] terminator
+      ps ["one",nls,"un",termStr] @?=/ mkSv' [uqa (pure "one"), uqa (pure "un")] terminator
   , testCase "multiple fields, single record" $
-      ps ["one", s, "two",termStr] @?=/ mkSv'' (uqaa (pure ("one":|["two"]))) terminator
+      ps ["one", s, "two",termStr] @?=/ mkSv' (uqaa (pure ("one":|["two"]))) terminator
   , testCase "multiple fields, multiple records" $
       ps ["one", s, "two", s, "three", nls, "un", s, "deux", s, "trois",termStr]
-        @?=/ mkSv'' (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
+        @?=/ mkSv' (uqaa ["one":|["two", "three"] , "un":|["deux", "trois"]]) terminator
   ]
 
 svTest :: String -> Separator -> TestTree

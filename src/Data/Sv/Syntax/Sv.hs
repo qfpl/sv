@@ -24,9 +24,8 @@ parsing and decoding.
 module Data.Sv.Syntax.Sv (
   Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)
   , HasSv (sv, maybeHeader, traverseHeader, finalNewlines)
-  , HasRecords (records, theRecords)
+  , HasRecords (records, traverseNewlines, traverseRecords)
   , mkSv
-  , mkSv'
   , emptySv
   , recordList
   , Header (Header, _headerRecord)
@@ -46,12 +45,11 @@ import Control.Lens       (Lens', Traversal')
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
 import Data.Monoid        ((<>))
-import Data.Separated     (Pesarated1)
 import Data.Traversable   (Traversable (traverse))
 
 import Data.Sv.Parse.Options (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
 import Data.Sv.Syntax.Field  (HasFields (fields))
-import Data.Sv.Syntax.Record (Record, Records (Records), HasRecord (record), HasRecords (records, theRecords), emptyRecords, recordList)
+import Data.Sv.Syntax.Record (Record, Records (EmptyRecords), HasRecord (record), HasRecords (records, traverseNewlines, traverseRecords), recordList)
 import Text.Newline       (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.
@@ -103,13 +101,9 @@ instance HasSv (Sv s) s where
 mkSv :: Separator -> Maybe (Header s) -> [Newline] -> Records s -> Sv s
 mkSv c h ns rs = Sv c h rs ns
 
--- | Convenience constructor for Sv
-mkSv' :: Separator -> Maybe (Header s) -> [Newline] -> Maybe (Pesarated1 Newline (Record s)) -> Sv s
-mkSv' c h ns = mkSv c h ns . Records
-
 -- | An empty Sv
 emptySv :: Separator -> Sv s
-emptySv c = Sv c Nothing emptyRecords []
+emptySv c = Sv c Nothing EmptyRecords []
 
 instance Functor Sv where
   fmap f (Sv s h rs e) = Sv s (fmap (fmap f) h) (fmap f rs) e

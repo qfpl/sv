@@ -2,6 +2,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 Module      : Data.Sv.Syntax.Record
@@ -22,23 +23,26 @@ module Data.Sv.Syntax.Record (
   , emptyRecord
   , singleField
   , recordNel
-  , Records (Records, _theRecords)
-  , HasRecords (records, theRecords, traverseRecords)
-  , emptyRecords
+  , Records (EmptyRecords, Records)
+  , HasRecords (records, traverseRecords, traverseNewlines)
+  , _EmptyRecords
+  , _NonEmptyRecords
+  , mkRecords
   , singleRecord
   , recordList
 ) where
 
-import Control.Lens       (Lens', Iso, Traversal', iso, view)
-import Data.Foldable      (Foldable (foldMap), toList)
+import Control.Lens       (Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
+import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup     (Semigroup)
-import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
 import Data.Sv.Syntax.Field (SpacedField, Field (Unquoted), HasFields (fields))
 import Data.Vector.NonEmpty (NonEmptyVector)
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import qualified Data.Vector.NonEmpty as V
 import Text.Newline       (Newline)
 import Text.Space         (Spaced, spacedValue)
@@ -100,42 +104,62 @@ recordNel :: NonEmpty (SpacedField s) -> Record s
 recordNel = Record . V.fromNel
 
 -- | A collection of records, separated by newlines.
-newtype Records s =
-  Records { _theRecords :: Maybe (Pesarated1 Newline (Record s)) }
+data Records s =
+  EmptyRecords
+  | Records (Record s) (Vector (Newline, Record s))
   deriving (Eq, Ord, Show)
+
+_EmptyRecords :: Prism' (Records s) ()
+_EmptyRecords =
+  prism' (const EmptyRecords) $ \r ->
+    case r of
+      EmptyRecords -> Just ()
+      Records _ _  -> Nothing
+
+_NonEmptyRecords :: Prism (Records s) (Records t) (Record s, Vector (Newline, Record s)) (Record t, Vector (Newline, Record t))
+_NonEmptyRecords =
+  prism (uncurry Records) $ \r ->
+    case r of
+      EmptyRecords -> Left EmptyRecords
+      Records a as -> Right (a,as)
 
 -- | Classy lenses for 'Records'
 class HasRecords c s | c -> s where
   records :: Lens' c (Records s)
-  theRecords :: Lens' c (Maybe (Pesarated1 Newline (Record s)))
-  {-# INLINE theRecords #-}
-  theRecords = records . theRecords
   traverseRecords :: Traversal' c (Record s)
-  traverseRecords = theRecords . traverse . traverse
+  traverseRecords = records . _NonEmptyRecords . beside id (traverse . _2)
   {-# INLINE traverseRecords #-}
+  traverseNewlines :: Traversal' c Newline
+  traverseNewlines = records . _NonEmptyRecords . _2 . traverse . _1
 
 instance HasRecords (Records s) s where
-  {-# INLINE theRecords #-}
   records = id
-  theRecords = iso _theRecords Records
 
 instance Functor Records where
-  fmap f = Records . fmap (fmap (fmap f)) . view theRecords
+  fmap f rs = case rs of
+    EmptyRecords -> EmptyRecords
+    Records a as -> Records (fmap f a) (fmap (fmap (fmap f)) as)
 
 instance Foldable Records where
-  foldMap f = foldMap (foldMap (foldMap f)) . view theRecords
+  foldMap f rs = case rs of
+    EmptyRecords -> mempty
+    Records a as -> foldMap f a `mappend` foldMap (foldMap (foldMap f)) as
 
 instance Traversable Records where
-  traverse f = fmap Records . traverse (traverse (traverse f)) . view theRecords
+  traverse f rs = case rs of
+    EmptyRecords -> pure EmptyRecords
+    Records a as -> Records <$> traverse f a <*> traverse (traverse (traverse f)) as
 
--- | A collection of records containing no records.
-emptyRecords :: Records s
-emptyRecords = Records Nothing
+-- | Convenience constructor for 'Records'.
+--
+-- This puts the same newline between all the records.
+mkRecords :: Newline -> NonEmpty (Record s) -> Records s
+mkRecords n (r:|rs) = Records r (V.fromList (fmap (n,) rs))
 
 -- | A record collection conaining one record
 singleRecord :: Record s -> Records s
-singleRecord s = Records (Just (Pesarated1 (Separated1 s mempty)))
+singleRecord s = Records s V.empty
 
 -- | Collect the list of 'Record's from anything that 'HasRecords'
 recordList :: HasRecords c s => c -> [Record s]
-recordList = foldMap toList . view theRecords
+recordList = toListOf traverseRecords

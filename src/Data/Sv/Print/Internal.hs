@@ -13,16 +13,15 @@ These functions exist to be called by 'Data.Sv.Print'
 
 module Data.Sv.Print.Internal where
 
-import Control.Lens (view, review)
+import Control.Lens (review)
 import Data.Bifoldable (bifoldMap)
 import qualified Data.ByteString.Lazy as LB
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
 import Data.Semigroup.Foldable (intercalate1)
-import Data.Separated (Pesarated1)
 
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
-import Data.Sv.Syntax.Record (Record (Record), Records, theRecords)
+import Data.Sv.Syntax.Record (Record (Record), Records (Records, EmptyRecords))
 import Data.Sv.Syntax.Sv (Header (Header), Separator)
 import Text.Babel (Textual (toByteStringBuilder), singleton)
 import Text.Escape (getRawEscaped, Escapable (escape_))
@@ -56,15 +55,12 @@ printRecord :: Escapable s => Separator -> Record s -> Builder
 printRecord sep (Record fs) =
   intercalate1 (singleton sep) (fmap printSpaced fs)
 
--- | Convert a 'Pesarated1' to a ByteString 'Builder'.
---
--- This is used to print 'Records', which have a 'Pesarated1' underneath.
-printPesarated1 :: Escapable s => Separator -> Pesarated1 Newline (Record s) -> Builder
-printPesarated1 sep = bifoldMap printNewline (printRecord sep)
-
 -- | Convert 'Records' to a ByteString 'Builder'.
 printRecords :: Escapable s => Separator -> Records s -> Builder
-printRecords sep = foldMap (printPesarated1 sep) . view theRecords
+printRecords sep rs = case rs of
+  EmptyRecords -> mempty
+  Records a as ->
+    printRecord sep a <> foldMap (bifoldMap printNewline (printRecord sep)) as
 
 -- | Convert 'Header' to a ByteString 'Builder'.
 printHeader :: Escapable s => Separator -> Header s -> Builder

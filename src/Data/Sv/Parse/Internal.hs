@@ -34,14 +34,15 @@ import           Data.CharSet            (CharSet, (\\))
 import qualified Data.CharSet as CharSet (fromList, insert, singleton)
 import           Data.Functor            (($>), (<$>), void)
 import           Data.List.NonEmpty      (NonEmpty ((:|)))
+import           Data.Maybe              (fromMaybe)
 import           Data.Semigroup          ((<>))
-import           Data.Separated          (Pesarated1 (Pesarated1), Separated (Separated), Separated1 (Separated1))
 import           Data.String             (IsString (fromString))
+import qualified Data.Vector as V
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
 import           Data.Sv.Syntax.Field    (Field (Unquoted, Quoted))
-import           Data.Sv.Syntax.Record   (Record (Record), Records (Records))
+import           Data.Sv.Syntax.Record   (Record (Record), Records (Records, EmptyRecords))
 import           Data.Sv.Syntax.Sv       (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
 import           Data.Sv.Parse.Options   (ParseOptions, headedness, separator, endOnBlankLine)
 import           Data.Vector.NonEmpty as V
@@ -139,11 +140,9 @@ record sep =
 -- | Parse many records, or "rows"
 records :: (CharParsing m, Textual s) => ParseOptions -> m (Records s)
 records opts =
-  Records <$> optional (
-    Pesarated1 <$> (
-      Separated1 <$> firstRecord opts <*> separated (subsequentRecord opts)
-    )
-  )
+  let manyV = fmap V.fromList . many
+  in  fmap (fromMaybe EmptyRecords) $
+    optional (Records <$> firstRecord opts <*> manyV (subsequentRecord opts))
 
 firstRecord :: (CharParsing m, Textual s) => ParseOptions -> m (Record s)
 firstRecord opts = notFollowedBy (try (ending opts)) *> record (view separator opts)
@@ -153,9 +152,6 @@ subsequentRecord opts =
   (,)
     <$> (notFollowedBy (try (ending opts)) *> newline) -- ((if view endOnBlankLine opts then (void newline) else empty) <|> eof))
     <*> record (view separator opts)
-
-separated :: CharParsing m => m (a,b) -> m (Separated a b)
-separated ab = Separated <$> many ab
 
 -- | Parse zero or many newlines
 ending :: CharParsing m => ParseOptions -> m [Newline]

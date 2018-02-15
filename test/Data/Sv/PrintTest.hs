@@ -21,7 +21,7 @@ import Data.Sv.Parse.Internal (spacedField, separatedValues)
 import Data.Sv.Print       (printSv)
 import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
-import Data.Sv.Syntax.Record (emptyRecords, singleField, singleRecord)
+import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
 import Data.Sv.Syntax.Sv   (Sv (Sv), Headedness, noHeader, comma)
 import Text.Babel          (toByteString)
 import Text.Space          (HorizontalSpace (Space, Tab))
@@ -69,7 +69,7 @@ csvPrint =
   testGroup "csvPrint" [
     testCase "empty" $
       let subject :: Sv ByteString
-          subject = Sv comma noHeader emptyRecords []
+          subject = Sv comma noHeader EmptyRecords []
       in  printSv subject @?= ""
   , testCase "empty quotes" $
       let subject :: Sv ByteString
