@@ -23,7 +23,7 @@ import           Data.Sv.Parse       (defaultParseOptions, separator, headedness
 import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Syntax.Sv   (Sv, mkSv', comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
-import           Data.Sv.Syntax.Record (Record (Record))
+import           Data.Sv.Syntax.Record (Record (Record), recordNel)
 import           Data.Separated      (skrinpleMay)
 import           Text.Babel          (singleton)
 import           Text.Escape         (Unescaped (Unescaped))
@@ -66,7 +66,7 @@ qsr = Record . pure . nospc . qs
 uq :: s -> SpacedField s
 uq = noSpaces . Unquoted
 uqa :: NonEmpty s -> Record s
-uqa = Record . fmap uq
+uqa = recordNel . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
 nospc :: Field s -> SpacedField s

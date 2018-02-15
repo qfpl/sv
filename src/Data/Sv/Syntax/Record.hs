@@ -21,6 +21,7 @@ module Data.Sv.Syntax.Record (
   , recordSpacedFieldsIso
   , emptyRecord
   , singleField
+  , recordNel
   , Records (Records, _theRecords)
   , HasRecords (records, theRecords, traverseRecords)
   , emptyRecords
@@ -36,28 +37,29 @@ import Data.Semigroup     (Semigroup)
 import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
 import Data.Traversable   (Traversable (traverse))
 
-import Data.Sv.Syntax.Field      (Field (Unquoted), HasFields (fields))
+import Data.Sv.Syntax.Field (SpacedField, Field (Unquoted), HasFields (fields))
+import Data.Vector.NonEmpty (NonEmptyVector)
+import qualified Data.Vector.NonEmpty as V
 import Text.Newline       (Newline)
 import Text.Space         (Spaced, spacedValue)
-
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
 -- by a separator (often a comma).
 newtype Record s =
   Record {
-    _fields :: NonEmpty (Spaced (Field s))
+    _fields :: NonEmptyVector (Spaced (Field s))
   }
   deriving (Eq, Ord, Show, Semigroup)
 
 -- | A 'Record' is isomorphic to a 'NonEmpty' list of 'SpacedField's
-recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmpty (Spaced (Field s))) (NonEmpty (Spaced (Field a)))
+recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmptyVector (Spaced (Field s))) (NonEmptyVector (Spaced (Field a)))
 recordSpacedFieldsIso = iso _fields Record
 {-# INLINE recordSpacedFieldsIso #-}
 
 -- | Classy lenses for 'Record'
 class HasRecord s t | s -> t where
   record :: Lens' s (Record t)
-  spacedFields :: Lens' s (NonEmpty (Spaced (Field t)))
+  spacedFields :: Lens' s (NonEmptyVector (Spaced (Field t)))
   {-# INLINE spacedFields #-}
   spacedFields = record . spacedFields
 
@@ -93,6 +95,9 @@ emptyRecord = singleField (Unquoted mempty)
 -- | Build a 'Record' with just one 'Field'
 singleField :: Field s -> Record s
 singleField = Record . pure . pure
+
+recordNel :: NonEmpty (SpacedField s) -> Record s
+recordNel = Record . V.fromNel
 
 -- | A collection of records, separated by newlines.
 newtype Records s =

@@ -44,6 +44,7 @@ import           Data.Sv.Syntax.Field    (Field (Unquoted, Quoted))
 import           Data.Sv.Syntax.Record   (Record (Record), Records (Records))
 import           Data.Sv.Syntax.Sv       (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
 import           Data.Sv.Parse.Options   (ParseOptions, headedness, separator, endOnBlankLine)
+import           Data.Vector.NonEmpty as V
 import           Text.Babel              (Textual)
 import           Text.Escape             (Unescaped (Unescaped))
 import           Text.Newline            (Newline (CR, CRLF, LF))
@@ -133,7 +134,7 @@ spaced sep p = betwixt <$> spaces sep <*> p <*> spaces sep
 -- | Parse an entire record, or "row"
 record :: (CharParsing m, Textual s) => Separator -> m (Record s)
 record sep =
-  Record <$> (spacedField sep `sepEndByNonEmpty` char sep)
+  Record . V.fromNel <$> (spacedField sep `sepEndByNonEmpty` char sep)
 
 -- | Parse many records, or "rows"
 records :: (CharParsing m, Textual s) => ParseOptions -> m (Records s)

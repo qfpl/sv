@@ -136,6 +136,7 @@ import Data.Sv.Encode.Type (Encode (Encode, getEncode))
 import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
 import Data.Sv.Syntax.Record (Record (Record), Records (Records), emptyRecord)
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
+import qualified Data.Vector.NonEmpty as V
 import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (newlineText)
@@ -198,7 +199,7 @@ encodeSv opts e headerStrings as =
       mkField = maybe Unquoted unescapedField (_quote opts)
       mkHeader r = Header r nl
       mkRecord :: NonEmpty z -> Record z
-      mkRecord = Record . fmap (mkSpaced . mkField)
+      mkRecord = Record . V.fromNel . fmap (mkSpaced . mkField)
       header :: Maybe (Header Strict.ByteString)
       header = mkHeader . mkRecord . fmap toByteString <$> headerStrings
       rs :: Records Strict.ByteString
@@ -208,7 +209,7 @@ encodeSv opts e headerStrings as =
       b2f :: BS.Builder -> SpacedField Strict.ByteString
       b2f = mkSpaced . mkField . LBS.toStrict . BS.toLazyByteString
       b2r :: Seq BS.Builder -> Record Strict.ByteString
-      b2r = maybe emptyRecord Record . nonEmpty . toList . fmap b2f
+      b2r = maybe emptyRecord (Record . V.fromNel) . nonEmpty . toList . fmap b2f
   in  Sv sep header rs terminal
 
 -- | Encode this 'ByteString' every time, ignoring the input.
