@@ -1,9 +1,9 @@
 { mkDerivation, ansi-wl-pprint, attoparsec, base, bifunctors
-, bytestring, charset, containers, contravariant, criterion
-, hedgehog, lens, mtl, parsec, parsers, profunctors, readable
-, semigroupoids, semigroups, separated, stdenv, tasty
-, tasty-hedgehog, tasty-hunit, text, transformers, trifecta
-, validation, void
+, bytestring, charset, containers, contravariant
+, contravariant-extras, criterion, hedgehog, lens, mtl, parsec
+, parsers, profunctors, readable, semigroupoids, semigroups
+, separated, stdenv, tasty, tasty-hedgehog, tasty-hunit, text
+, transformers, trifecta, validation, void
 }:
 mkDerivation {
   pname = "sv";
@@ -20,7 +20,10 @@ mkDerivation {
     semigroupoids semigroups separated tasty tasty-hedgehog tasty-hunit
     text trifecta validation
   ];
-  benchmarkHaskellDepends = [ criterion ];
+  benchmarkHaskellDepends = [
+    base bytestring contravariant contravariant-extras criterion
+    hedgehog text
+  ];
   homepage = "https://github.com/qfpl/sv";
   description = "Values which are separated, often by commas";
   license = stdenv.lib.licenses.bsd3;
