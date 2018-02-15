@@ -61,6 +61,7 @@ library
                        , Data.Sv.Syntax.Field
                        , Data.Sv.Syntax.Record
                        , Data.Sv.Syntax.Sv
+                       , Data.Vector.NonEmpty
                        , Text.Babel
                        , Text.Escape
                        , Text.Newline

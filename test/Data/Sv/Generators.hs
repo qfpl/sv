@@ -30,7 +30,7 @@ import qualified Hedgehog.Range as Range
 
 import Data.Sv.Syntax.Sv     (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Syntax.Field  (Field (Quoted, Unquoted))
-import Data.Sv.Syntax.Record (Record (Record), Records (Records))
+import Data.Sv.Syntax.Record (Record, Records (Records), recordNel)
 import Text.Babel          (fromByteString, toByteString)
 import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
@@ -83,7 +83,7 @@ genSpacedField spc s = genSpaced spc (genField s)
 
 genRecord :: Gen Spaces -> Gen s -> Gen (Record s)
 genRecord spc s =
-  Record <$> Gen.nonEmpty (Range.linear 1 10) (genSpacedField spc s)
+  recordNel <$> Gen.nonEmpty (Range.linear 1 10) (genSpacedField spc s)
 
 genHeader :: Gen Spaces -> Gen s -> Gen Newline -> Gen (Header s)
 genHeader spc s n =
