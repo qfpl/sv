@@ -11,31 +11,32 @@ module Data.Sv (
   -- * Core data types
   Sv (..)
   , mkSv
-  , mkSv'
   , emptySv
-  , Header (Header, _headerRecord)
+  , Header (..)
   , noHeader
   , mkHeader
-  , Headedness (Unheaded, Headed)
+  , Headedness (..)
   , getHeadedness
   , Separator
   , comma
   , pipe
   , tab
 
-  , Field (Unquoted, Quoted)
+  , Field (..)
   , SpacedField
   , Spaced (Spaced)
   , unescapedField
   , foldField
   , fieldContents
 
-  , Record (Record, _fields)
+  , Record (..)
   , recordSpacedFieldsIso
   , emptyRecord
   , singleField
-  , Records (Records, _theRecords)
-  , emptyRecords
+  , Records (..)
+  , _EmptyRecords
+  , _NonEmptyRecords
+  , mkRecords
   , singleRecord
   , recordList
 
@@ -50,7 +51,7 @@ module Data.Sv (
   , FieldDecode (..)
   , FieldDecode'
   , DecodeState (..)
-  , AccValidation (AccSuccess, AccFailure)
+  , AccValidation (..)
   , DecodeValidation
   , DecodeError (..)
   , DecodeErrors (..)
