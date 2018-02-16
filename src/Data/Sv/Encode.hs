@@ -62,6 +62,8 @@ module Data.Sv.Encode (
 -- * Running an Encode
 , defaultEncodeOptions
 , encode
+, encodeToHandle
+, encodeToFile
 , encodeBuilder
 , encodeRow
 , encodeRowBuilder
@@ -129,6 +131,7 @@ import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions)
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
@@ -159,6 +162,21 @@ mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 -- 'EncodeOptions'.
 encode :: EncodeOptions -> Encode a -> [a] -> LBS.ByteString
 encode opts enc = BS.toLazyByteString . encodeBuilder opts enc
+
+-- | Encode, writing the output to a file handle.
+encodeToHandle :: EncodeOptions -> Encode a -> [a] -> Handle -> IO ()
+encodeToHandle opts enc as h =
+  BS.hPutBuilder h (encodeBuilder opts enc as)
+
+-- | Encode, writing to a file. This is way is more efficient than encoding to
+-- a 'ByteString' and then writing to file.
+encodeToFile :: EncodeOptions -> Encode a -> [a] -> FilePath -> IO ()
+encodeToFile opts enc as fp = do
+  h <- openFile fp WriteMode
+  hSetBuffering h (BlockBuffering Nothing)
+  hSetBinaryMode h True
+  encodeToHandle opts enc as h
+  hClose h
 
 -- | Encode to a ByteString 'Builder', which is useful if you are going
 -- to combine the output with other 'ByteString's.

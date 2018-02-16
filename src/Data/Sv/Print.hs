@@ -11,13 +11,14 @@ module Data.Sv.Print (
   printSv
 , printSvLazy
 , writeSvToFile
+, writeSvToHandle
 ) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
-import System.IO (BufferMode (BlockBuffering), hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
+import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Print.Internal
 import Data.Sv.Syntax.Sv (Sv (Sv))
@@ -29,16 +30,21 @@ svToBuilder :: Escapable s => Sv s -> Builder
 svToBuilder (Sv sep h rs e) =
   foldMap (printHeader sep) h <> printRecords sep rs <> foldMap printNewline e
 
+-- | Writes an sv to a file handle. This goes directly from a 'Builder', so it is
+-- more efficient than calling 'printSv' or 'printSvLazy' and writing the
+-- result to the handle.
+writeSvToHandle :: Escapable s => Sv s -> Handle -> IO ()
+writeSvToHandle sv h = hPutBuilder h (svToBuilder sv)
+
 -- | Writes an sv to a file. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
 -- result to a file.
 writeSvToFile :: Escapable s => FilePath -> Sv s -> IO ()
 writeSvToFile fp sv = do
-  let b = svToBuilder sv
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  hPutBuilder h b
+  writeSvToHandle sv h
   hClose h
 
 -- | Converts the given 'Sv' into a strict 'Data.ByteString.ByteString'
