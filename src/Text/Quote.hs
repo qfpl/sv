@@ -20,6 +20,7 @@ module Text.Quote (
   , quoteToString
 ) where
 
+import Control.DeepSeq (NFData (rnf))
 import Control.Lens (Prism', prism, prism', review)
 import Data.String (IsString (fromString))
 
@@ -28,6 +29,9 @@ data Quote =
     SingleQuote
   | DoubleQuote
   deriving (Eq, Ord, Show)
+
+instance NFData Quote where
+  rnf x = seq x ()
 
 -- | Classy prisms for 'Quote'
 class AsQuote r where

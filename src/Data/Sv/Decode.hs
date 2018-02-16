@@ -27,6 +27,8 @@ module Data.Sv.Decode (
   decode
 , parseDecode
 , parseDecodeFromFile
+, parse
+, parseFromFile
 
 -- * Convenience constructors
 , decodeMay
@@ -131,6 +133,28 @@ import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
 decode :: (Textual s, Textual e) => FieldDecode e s a -> Sv s -> DecodeValidation e [a]
 decode f = traverse (promote f) . recordList
 
+-- | Parse text as an Sv
+parse :: forall e s. (Textual e, Textual s) => Maybe ParseOptions -> s -> DecodeValidation e (Sv s)
+parse maybeOptions s =
+  let opts = fromMaybe defaultParseOptions maybeOptions
+      lib = view parsingLib opts
+      p :: CharParsing f => f (Sv s)
+      p = separatedValues opts
+      parse' = case lib of
+        Trifecta -> validateTrifectaResult BadParse . parseByteString p mempty . toByteString
+        Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p . toByteString
+  in  parse' s
+
+parseFromFile :: (MonadIO m, Textual e, Textual s) => Maybe ParseOptions -> FilePath -> m (DecodeValidation e (Sv s))
+parseFromFile maybeOptions fp =
+  let opts = fromMaybe defaultParseOptions maybeOptions
+      lib = view parsingLib opts
+      p :: (CharParsing f, Textual s) => f (Sv s)
+      p = separatedValues opts
+  in  case lib of
+    Trifecta -> validateTrifectaResult BadParse <$> parseFromFileEx p fp
+    Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
+
 -- | Parse text as an Sv, and then decode it with the given decoder.
 parseDecode ::
   forall e s a.
@@ -140,14 +164,7 @@ parseDecode ::
   -> s
   -> DecodeValidation e [a]
 parseDecode d maybeOptions s =
-  let opts = fromMaybe defaultParseOptions maybeOptions
-      lib = view parsingLib opts
-      p :: CharParsing f => f (Sv s)
-      p = separatedValues opts
-      parse = case lib of
-        Trifecta -> validateTrifectaResult BadParse . parseByteString p mempty . toByteString
-        Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p . toByteString
-  in  parse s `bindValidation` decode d
+  parse maybeOptions s `bindValidation` decode d
 
 -- | Load a file, parse it, and decode it.
 parseDecodeFromFile ::
@@ -156,16 +173,9 @@ parseDecodeFromFile ::
   -> Maybe ParseOptions
   -> FilePath
   -> m (DecodeValidation e [a])
-parseDecodeFromFile d maybeOptions fp =
-  let opts = fromMaybe defaultParseOptions maybeOptions
-      lib = view parsingLib opts
-      p :: (CharParsing f, Textual s) => f (Sv s)
-      p = separatedValues opts
-      parseIO = case lib of
-        Trifecta -> validateTrifectaResult BadParse <$> parseFromFileEx p fp
-        Attoparsec -> validateEither' (BadParse . fromString) . parseOnly p <$> liftIO (BS.readFile fp)
-  in do sv <- parseIO
-        pure (sv `bindValidation` decode d)
+parseDecodeFromFile d maybeOptions fp = do
+  sv <- parseFromFile maybeOptions fp
+  pure (sv `bindValidation` decode d)
 
 -- | Build a 'Decode', given a function that returns 'Maybe'.
 --

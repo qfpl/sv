@@ -5,7 +5,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveTraversable#-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Module      : Text.Escape
@@ -31,6 +32,7 @@ module Text.Escape (
   , Escapable (escape, escape_)
 ) where
 
+import Control.DeepSeq    (NFData)
 import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), Unwrapped, Rewrapped)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
@@ -41,13 +43,16 @@ import Data.Semigroup     (Semigroup ((<>)))
 import Data.Text          (Text)
 import qualified Data.Text as Text
 import Data.Traversable   (Traversable)
+import GHC.Generics       (Generic)
 
 import Text.Babel (Textual)
 
 -- | Wrapper for text that is known to be in an unescaped form
 newtype Unescaped a =
   Unescaped { getUnescaped :: a }
-  deriving (Eq, Ord, Show, Semigroup, Monoid, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Semigroup, Monoid, Functor, Foldable, Traversable, Generic)
+
+instance NFData a => NFData (Unescaped a)
 
 instance Unescaped a1 ~ t => Rewrapped (Unescaped a2) t
 
