@@ -2,9 +2,8 @@
 
 module Data.Sv.Random where
 
-import Control.Lens (Traversal', makeLenses, makePrisms, traverseOf)
+import Control.Lens (makeLenses, makePrisms, traverseOf)
 import Control.Monad ((>=>), replicateM)
-import Data.Bitraversable
 import Data.Semigroup (Semigroup ((<>)))
 import Data.ByteString
 import Data.Functor.Contravariant
@@ -147,8 +146,6 @@ rowsSv' =
       randomNewline = const (Gen.sample (Gen.element [LF, CR, CRLF]))
       randomQuote :: IO (Maybe Quote)
       randomQuote = Gen.sample (Gen.element [Nothing, Just SingleQuote, Just DoubleQuote])
-      traverseNewlines :: Traversal' (Sv s) Newline
-      traverseNewlines = (theRecords . traverse . flip bitraverse pure)
       requote :: Field ByteString -> Maybe Quote -> Field ByteString
       requote g m = case g of
         Unquoted a -> case m of
