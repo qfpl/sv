@@ -18,6 +18,7 @@ module Text.Newline (
   , parseNewline
 ) where
 
+import Control.DeepSeq (NFData (rnf))
 import Control.Lens (Prism', prism, prism')
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -26,6 +27,9 @@ import Data.Text (Text)
 data Newline =
   CR | LF | CRLF
   deriving (Eq, Ord, Show)
+
+instance NFData Newline where
+  rnf x = seq x ()
 
 -- | 'AsNewline' is a classy prism for 'Newline'
 class AsNewline r where

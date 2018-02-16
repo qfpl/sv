@@ -2,6 +2,8 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 {-|
 Module      : Data.Sv.Syntax.Record
@@ -28,13 +30,15 @@ module Data.Sv.Syntax.Record (
   , recordList
 ) where
 
+import Control.DeepSeq    (NFData)
 import Control.Lens       (Lens', Iso, Traversal', iso, view)
 import Data.Foldable      (Foldable (foldMap), toList)
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Semigroup     (Semigroup)
-import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1))
+import Data.Separated     (Pesarated1 (Pesarated1), Separated1 (Separated1), Separated (Separated))
 import Data.Traversable   (Traversable (traverse))
+import GHC.Generics       (Generic)
 
 import Data.Sv.Syntax.Field      (Field (Unquoted), HasFields (fields))
 import Text.Newline       (Newline)
@@ -47,7 +51,9 @@ newtype Record s =
   Record {
     _fields :: NonEmpty (Spaced (Field s))
   }
-  deriving (Eq, Ord, Show, Semigroup)
+  deriving (Eq, Ord, Show, Semigroup, Generic)
+
+instance NFData s => NFData (Record s)
 
 -- | A 'Record' is isomorphic to a 'NonEmpty' list of 'SpacedField's
 recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmpty (Spaced (Field s))) (NonEmpty (Spaced (Field a)))
@@ -97,7 +103,17 @@ singleField = Record . pure . pure
 -- | A collection of records, separated by newlines.
 newtype Records s =
   Records { _theRecords :: Maybe (Pesarated1 Newline (Record s)) }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData s => NFData (Records s)
+
+deriving instance Generic (Separated1 a b)
+deriving instance Generic (Pesarated1 a b)
+deriving instance Generic (Separated  a b)
+
+instance (NFData a, NFData b) => NFData (Separated  a b)
+instance (NFData a, NFData b) => NFData (Separated1 a b)
+instance (NFData a, NFData b) => NFData (Pesarated1 a b)
 
 -- | Classy lenses for 'Records'
 class HasRecords c s | c -> s where
