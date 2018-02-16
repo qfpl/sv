@@ -1,5 +1,8 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Data.Vector.NonEmpty where
 
+import Control.DeepSeq (NFData)
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
@@ -7,10 +10,13 @@ import Data.Semigroup.Foldable (Foldable1 (foldMap1))
 import Data.Semigroup.Traversable (Traversable1 (traverse1))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import GHC.Generics (Generic)
 
 data NonEmptyVector a =
   NonEmptyVector a (Vector a)
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData a => NFData (NonEmptyVector a) where
 
 fromNel :: NonEmpty a -> NonEmptyVector a
 fromNel (a :| as) = NonEmptyVector a (V.fromList as)

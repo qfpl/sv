@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Module      : Text.Space
@@ -34,10 +35,12 @@ module Text.Space
   )
 where
 
+import Control.DeepSeq  (NFData (rnf))
 import Control.Lens     (Lens', Prism', prism, prism')
 import Data.Semigroup   (Semigroup ((<>)))
 import Data.Text        (Text)
 import qualified Data.Text as Text
+import GHC.Generics     (Generic)
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
 -- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
@@ -46,6 +49,9 @@ data HorizontalSpace =
   | Tab
   deriving (Eq, Ord, Show)
 -- TODO Others?
+
+instance NFData HorizontalSpace where
+  rnf x = seq x ()
 
 -- | Classy prisms for 'HorizontalSpace's
 class AsHorizontalSpace r where
@@ -125,7 +131,9 @@ data Spaced a =
   , _after :: Spaces
   , _value :: a
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData a => NFData (Spaced a)
 
 -- | Classy lenses for 'Spaced'
 class HasSpaced c s | c -> s where

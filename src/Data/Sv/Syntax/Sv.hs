@@ -4,6 +4,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Module      : Data.Sv.Syntax.Sv
@@ -41,11 +42,13 @@ module Data.Sv.Syntax.Sv (
   , tab
 ) where
 
+import Control.DeepSeq    (NFData)
 import Control.Lens       (Lens', Traversal')
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap), (<$>))
 import Data.Monoid        ((<>))
 import Data.Traversable   (Traversable (traverse))
+import GHC.Generics       (Generic)
 
 import Data.Sv.Parse.Options (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
 import Data.Sv.Syntax.Field  (HasFields (fields))
@@ -63,7 +66,9 @@ data Sv s =
   , _records :: Records s
   , _finalNewlines :: [Newline]
   }
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData s => NFData (Sv s)
 
 -- | Classy lenses for 'Sv'
 class (HasRecords c s, HasSeparator c) => HasSv c s | c -> s where
@@ -125,7 +130,9 @@ data Header s =
     _headerRecord :: Record s
   , _headerNewline :: Newline
   }
-  deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance NFData s => NFData (Header s)
 
 -- | Classy lenses for 'Header'
 class HasHeader c s | c -> s where
