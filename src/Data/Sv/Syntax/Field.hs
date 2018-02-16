@@ -2,6 +2,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Module      : Data.Sv.Syntax.Field
@@ -23,10 +24,12 @@ module Data.Sv.Syntax.Field (
   , fieldContents
 ) where
 
+import Control.DeepSeq     (NFData)
 import Control.Lens        (Lens, Prism', Traversal', lens, prism)
 import Data.Foldable       (Foldable (foldMap))
 import Data.Functor        (Functor (fmap))
 import Data.Traversable    (Traversable (traverse))
+import GHC.Generics        (Generic)
 
 import Text.Escape         (Unescaped (Unescaped, getUnescaped))
 import Text.Quote          (Quote)
@@ -39,7 +42,9 @@ import Text.Space          (Spaced (Spaced))
 data Field s =
     Unquoted s
   | Quoted Quote (Unescaped s)
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData s => NFData (Field s)
 
 instance Functor Field where
   fmap f fi = case fi of

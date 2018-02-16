@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 {-|
 Module      : Data.Sv.Syntax.Record
@@ -32,12 +33,14 @@ module Data.Sv.Syntax.Record (
   , recordList
 ) where
 
+import Control.DeepSeq    (NFData)
 import Control.Lens       (Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
 import Data.Foldable      (Foldable (foldMap))
 import Data.Functor       (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup     (Semigroup)
 import Data.Traversable   (Traversable (traverse))
+import GHC.Generics       (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField, Field (Unquoted), HasFields (fields))
 import Data.Vector.NonEmpty (NonEmptyVector)
@@ -53,7 +56,9 @@ newtype Record s =
   Record {
     _fields :: NonEmptyVector (Spaced (Field s))
   }
-  deriving (Eq, Ord, Show, Semigroup)
+  deriving (Eq, Ord, Show, Semigroup, Generic)
+
+instance NFData s => NFData (Record s)
 
 -- | A 'Record' is isomorphic to a 'NonEmpty' list of 'SpacedField's
 recordSpacedFieldsIso :: Iso (Record s) (Record a) (NonEmptyVector (Spaced (Field s))) (NonEmptyVector (Spaced (Field a)))
@@ -107,7 +112,10 @@ recordNel = Record . V.fromNel
 data Records s =
   EmptyRecords
   | Records (Record s) (Vector (Newline, Record s))
-  deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Generic)
+
+instance NFData s => NFData (Records s)
+
 
 _EmptyRecords :: Prism' (Records s) ()
 _EmptyRecords =
