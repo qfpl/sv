@@ -78,6 +78,7 @@ module Data.Sv (
   , printSv
   , printSvLazy
   , writeSvToFile
+  , writeSvToHandle
 
   -- * Encoding
   , Encode (..)
@@ -85,6 +86,8 @@ module Data.Sv (
   , HasEncodeOptions (..)
   , defaultEncodeOptions
   , encode
+  , encodeToFile
+  , encodeToHandle
   , encodeBuilder
   , encodeRow
   , encodeSv
