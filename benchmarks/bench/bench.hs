@@ -32,24 +32,8 @@ data BenchData a =
 
 instance NFData a => NFData (BenchData a) where
 
-data BDIx = F1 | F10 | F100 | F500 | F1000 | F5000 | F10000 | F50000 | F100000
-
-ix2n bdix = case bdix of
-  F1 -> 1
-  F10 -> 10
-  F100 -> 100
-  F500 -> 500
-  F1000 -> 1000
-  F5000 -> 5000
-  F10000 -> 10000
-  F50000 -> 50000
-  F100000 -> 100000
-
-ixs :: BenchData BDIx
-ixs = BenchData F1 F10 F100 F500 F1000 F5000 F10000 F50000 F100000
-
 inds :: BenchData Int
-inds = fmap ix2n ixs
+inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
 loadFile :: Int -> IO (ByteString)
 loadFile n = BS.readFile ("benchmarks/csv/" ++ show n ++ ".csv")
