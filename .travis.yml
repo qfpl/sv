@@ -29,13 +29,13 @@ before_cache:
 matrix:
   include:
     - compiler: "ghc-7.10.3"
-    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      env: BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-7.10.3], sources: [hvr-ghc]}}
     - compiler: "ghc-8.0.2"
-    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      env: BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.0.2], sources: [hvr-ghc]}}
     - compiler: "ghc-8.2.2"
-    # env: TEST=--disable-tests BENCH=--disable-benchmarks
+      env: BENCH=--disable-benchmarks
       addons: {apt: {packages: [ghc-ppa-tools,cabal-install-head,ghc-8.2.2], sources: [hvr-ghc]}}
     - compiler: "ghc-8.4.1"
       env: GHCHEAD=true
@@ -81,10 +81,13 @@ install:
       cabal new-update head.hackage -v
     fi
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \".\" \"./examples\"\\n' > cabal.project"
+  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\"\\n' > cabal.project"
   - cat cabal.project
   - if [ -f "./configure.ac" ]; then
       (cd "." && autoreconf -i);
+    fi
+  - if [ -f "./benchmarks/configure.ac" ]; then
+      (cd "./benchmarks" && autoreconf -i);
     fi
   - if [ -f "./examples/configure.ac" ]; then
       (cd "./examples" && autoreconf -i);
@@ -92,7 +95,7 @@ install:
   - rm -f cabal.project.freeze
   - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
-  - rm -rf "."/.ghc.environment.* "./examples"/.ghc.environment.* "."/dist "./examples"/dist
+  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -100,11 +103,12 @@ install:
 script:
   # test that source-distributions can be generated
   - (cd "." && cabal sdist)
+  - (cd "./benchmarks" && cabal sdist)
   - (cd "./examples" && cabal sdist)
-  - mv "."/dist/sv-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz ${DISTDIR}/
+  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: sv-*/*.cabal sv-examples-*/*.cabal\\n' > cabal.project"
+  - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal\\n' > cabal.project"
   - cat cabal.project
   # this builds all libraries and executables (without tests/benchmarks)
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks all
@@ -118,6 +122,7 @@ script:
 
   # cabal check
   - (cd sv-* && cabal check)
+  - (cd sv-benchmarks-* && cabal check)
   - (cd sv-examples-* && cabal check)
 
   # haddock
