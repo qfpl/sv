@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TupleSections #-}
 
 import Control.DeepSeq
 import Control.Lens
@@ -35,7 +34,7 @@ instance NFData a => NFData (BenchData a) where
 inds :: BenchData Int
 inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
-loadFile :: Int -> IO (ByteString)
+loadFile :: Int -> IO ByteString
 loadFile n = BS.readFile ("benchmarks/csv/" ++ show n ++ ".csv")
 
 bdFs :: IO (BenchData ByteString)
@@ -72,7 +71,7 @@ sanity bs = do
 
 
 main :: IO ()
-main = do
+main =
   defaultMain
       [ env bdFs $ \ bs -> bgroup "Parse" [
           bench "1" $ whnf parse (f1 bs)
