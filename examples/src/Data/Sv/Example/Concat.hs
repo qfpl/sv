@@ -8,12 +8,11 @@ import System.Exit (exitFailure)
 
 import Data.Sv
 import qualified Data.Sv.Decode as D
-import Text.Babel (Textual)
 
 file :: FilePath
 file = "csv/concat.csv"
 
-opts :: ParseOptions
+opts :: ParseOptions ByteString
 opts = defaultParseOptions & endOnBlankLine .~ True
 
 type Name = Text
@@ -34,7 +33,7 @@ cost = string "$" *> fmap Cost integer
 item :: FieldDecode' ByteString Item
 item = Item <$> D.utf8 <*> D.int <*> D.trifecta cost
 
-sv2 :: (CharParsing m, Textual s) => ParseOptions -> m (Sv s, Sv s)
+sv2 :: (CharParsing m) => ParseOptions s -> m (Sv s, Sv s)
 sv2 o = (,) <$> separatedValues o <*> separatedValues o
 
 data PeopleAndItems = PeopleAndItems [Person] [Item] deriving Show

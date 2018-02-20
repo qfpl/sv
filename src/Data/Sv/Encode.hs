@@ -139,7 +139,6 @@ import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
 import Data.Sv.Syntax.Record (Record (Record), Records (EmptyRecords), emptyRecord, mkRecords, recordNel)
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
 import qualified Data.Vector.NonEmpty as V
-import Text.Babel (toByteString)
 import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
 import Text.Newline (newlineText)
 import Text.Space (Spaced (Spaced), spacesString)
@@ -218,7 +217,7 @@ encodeSv opts e headerStrings as =
       mkRecord :: NonEmpty z -> Record z
       mkRecord = recordNel . fmap (mkSpaced . mkField)
       header :: Maybe (Header Strict.ByteString)
-      header = mkHeader . mkRecord . fmap toByteString <$> headerStrings
+      header = mkHeader . mkRecord <$> headerStrings
       rs :: Records Strict.ByteString
       rs = l2rs (b2r <$> encoded)
       l2rs = maybe EmptyRecords (mkRecords nl) . nonEmpty -- Records . fmap (skrinple nl) . nonEmpty

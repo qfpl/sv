@@ -34,7 +34,6 @@ import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
 import Data.Sv.Syntax.Field (Field, SpacedField, fieldContents)
 import Data.Sv.Syntax.Record (Record, _fields)
-import Text.Babel (Textual (retext))
 import Text.Space (Spaced (_value))
 
 -- | Convenience to get the underlying function out of a FieldDecode in a useful form
@@ -83,7 +82,7 @@ fieldDecodeWithSpaces f =
     else (f (v ! i), Ind (i+1))
 
 -- | promotes a FieldDecode to work on a whole 'Record' at once
-promote :: (Textual e, Textual s) => FieldDecode e s a -> Record s -> DecodeValidation e a
+promote :: FieldDecode' s a -> Record s -> DecodeValidation s a
 promote dec rs =
   let vec = V.fromList . toList . _fields $ rs
       len = length vec
@@ -91,4 +90,4 @@ promote dec rs =
     (d, Ind i) ->
       if i >= len
       then d
-      else d *> expectedEndOfRow (fmap (fmap (fmap retext)) (V.force (V.drop i vec)))
+      else d *> expectedEndOfRow (V.force (V.drop i vec))

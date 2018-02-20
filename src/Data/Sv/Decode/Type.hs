@@ -104,7 +104,7 @@ runDecodeState = fmap runState . runReaderT . getDecodeState
 data DecodeError e =
   UnexpectedEndOfRow
   | ExpectedEndOfRow (Vector (SpacedField e))
-  | UnknownCanonicalValue e [(e, [e])]
+  | UnknownCanonicalValue e [[e]]
   | BadParse e
   | BadDecode e
   deriving (Eq, Ord, Show)

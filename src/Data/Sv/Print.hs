@@ -10,14 +10,22 @@ Portability : non-portable
 module Data.Sv.Print (
   printSv
 , printSvLazy
+, printSv'
+, printSvLazy'
+, printSvText
+, printSvTextLazy
 , writeSvToFile
 , writeSvToHandle
+, writeSvToFile'
+, writeSvToHandle'
 ) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
+import Data.Text (Text)
+import Data.Text.Encoding (encodeUtf8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Print.Internal
@@ -26,31 +34,49 @@ import Text.Escape (Escapable)
 
 -- | Converts an 'Sv' to a ByteString 'Builder'. Useful if you want to concatenate other
 -- text before or after.
-svToBuilder :: Escapable s => Sv s -> Builder
-svToBuilder (Sv sep h rs e) =
-  foldMap (printHeader sep) h <> printRecords sep rs <> foldMap printNewline e
+svToBuilder :: Escapable s => (s -> Builder) -> Sv s -> Builder
+svToBuilder build (Sv sep h rs e) =
+  foldMap (printHeader sep build) h <> printRecords sep build rs <> foldMap printNewline e
+
+writeSvToHandle :: Handle -> Sv ByteString -> IO ()
+writeSvToHandle = writeSvToHandle' byteString
+
+writeSvToFile :: FilePath -> Sv ByteString -> IO ()
+writeSvToFile = writeSvToFile' byteString
 
 -- | Writes an sv to a file handle. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
 -- result to the handle.
-writeSvToHandle :: Escapable s => Sv s -> Handle -> IO ()
-writeSvToHandle sv h = hPutBuilder h (svToBuilder sv)
+writeSvToHandle' :: Escapable s => (s -> Builder) -> Handle -> Sv s -> IO ()
+writeSvToHandle' build h sv = hPutBuilder h (svToBuilder build sv)
 
 -- | Writes an sv to a file. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
 -- result to a file.
-writeSvToFile :: Escapable s => FilePath -> Sv s -> IO ()
-writeSvToFile fp sv = do
+writeSvToFile' :: Escapable s => (s -> Builder) -> FilePath -> Sv s -> IO ()
+writeSvToFile' build fp sv = do
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  writeSvToHandle sv h
+  writeSvToHandle' build h sv
   hClose h
 
+printSv :: Sv ByteString -> ByteString
+printSv = printSv' byteString
+
+printSvLazy :: Sv ByteString -> LBS.ByteString
+printSvLazy = printSvLazy' byteString
+
 -- | Converts the given 'Sv' into a strict 'Data.ByteString.ByteString'
-printSv :: Escapable s => Sv s -> ByteString
-printSv = LBS.toStrict . printSvLazy
+printSv' :: Escapable s => (s -> Builder) -> Sv s -> ByteString
+printSv' build = LBS.toStrict . printSvLazy' build
 
 -- | Converts the given 'Sv' into a lazy 'Data.ByteString.Lazy.ByteString'
-printSvLazy :: Escapable s => Sv s -> LBS.ByteString
-printSvLazy = toLazyByteString . svToBuilder
+printSvLazy' :: Escapable s => (s -> Builder) -> Sv s -> LBS.ByteString
+printSvLazy' build = toLazyByteString . svToBuilder build
+
+printSvText :: Sv Text -> ByteString
+printSvText = printSv' (byteString . encodeUtf8)
+
+printSvTextLazy :: Sv Text -> LBS.ByteString
+printSvTextLazy = printSvLazy' (byteString . encodeUtf8)

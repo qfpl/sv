@@ -5,11 +5,12 @@ module Data.Sv.ParseTest (test_Parse) where
 
 import           Control.Lens         ((&), (.~))
 import           Data.ByteString      (ByteString)
+import qualified Data.ByteString.UTF8 as UTF8
 import           Data.List.NonEmpty   (NonEmpty ((:|)), nonEmpty)
 import           Data.Either          (isLeft)
 import           Data.Foldable        (fold)
 import           Data.Semigroup       (Semigroup ((<>)))
-import           Data.Text            (Text)
+import           Data.Text            (Text, pack)
 import           Hedgehog
 import           Test.Tasty           (TestName, TestTree, testGroup)
 import           Test.Tasty.Hedgehog  (testProperty)
@@ -19,12 +20,11 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parse       (defaultParseOptions, separator, headedness)
+import           Data.Sv.Parse       (ParseOptions, defaultParseOptions, separator, headedness, encodeString)
 import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Syntax.Sv   (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import           Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
-import           Text.Babel          (singleton)
 import           Text.Escape         (Unescaped (Unescaped))
 import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
 import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
@@ -97,13 +97,13 @@ quotedFieldTest parser name quote =
   ]
 
 singleQuotedFieldTest, doubleQuotedFieldTest :: TestTree
-singleQuotedFieldTest = quotedFieldTest (spaced comma singleQuotedField) "singleQuotedField" SingleQuote
-doubleQuotedFieldTest = quotedFieldTest (spaced comma doubleQuotedField) "doubleQuotedField" DoubleQuote
+singleQuotedFieldTest = quotedFieldTest (spaced comma (singleQuotedField pack)) "singleQuotedField" SingleQuote
+doubleQuotedFieldTest = quotedFieldTest (spaced comma (doubleQuotedField pack)) "doubleQuotedField" DoubleQuote
 
 fieldTest :: TestTree
 fieldTest =
   let p :: ByteString -> Either String (SpacedField Text)
-      p = r2e . parseByteString (spacedField comma) mempty
+      p = r2e . parseByteString (spacedField comma pack) mempty
   in  testGroup "field" [
     testCase "doublequoted" $
       p "\"hello\"" @?=/ nospc (qd "hello")
@@ -129,8 +129,10 @@ fieldTest =
 
 recordTest :: TestTree
 recordTest =
-  let p :: ByteString -> Either String (Record Text)
-      p = r2e . parseByteString (record comma) mempty
+  let opts :: ParseOptions Text
+      opts = defaultParseOptions & encodeString .~ pack
+      p :: ByteString -> Either String (Record Text)
+      p = r2e . parseByteString (record opts) mempty
   in  testGroup "record" [
     testCase "single field" $
       p "Yes" @?=/ uqa (pure "Yes")
@@ -148,13 +150,13 @@ recordTest =
 
 separatedValuesTest :: Separator -> Newline -> Int -> TestTree
 separatedValuesTest sep nl newlines =
-  let opts = defaultParseOptions & separator .~ sep & headedness .~ Unheaded
+  let opts = defaultParseOptions & separator .~ sep & headedness .~ Unheaded & encodeString .~ pack
       p :: ByteString -> Either String (Sv Text)
       p = r2e . parseByteString (separatedValues opts) mempty
       ps = p . fold
       mkSv' :: [Record s] -> [Newline] -> Sv s
       mkSv' rs e = mkSv sep Nothing e $ maybe EmptyRecords (mkRecords nl) $ nonEmpty rs
-      s = singleton sep
+      s = UTF8.fromString [sep]
       nls = newlineText nl
       terminator = replicate newlines nl
       termStr = foldMap newlineText terminator
@@ -201,7 +203,7 @@ bssvTest = svTest "backspace separated values" '\BS'
 prop_randomCsvTest :: Property
 prop_randomCsvTest = property $ do
   str <- forAll genCsvString
-  let opts = separatedValues (defaultParseOptions & headedness .~ Unheaded)
+  let opts = separatedValues (defaultParseOptions & headedness .~ Unheaded & encodeString .~ id)
       x :: Either String (Sv String)
       x = r2e (parseByteString opts mempty str)
   case x of
