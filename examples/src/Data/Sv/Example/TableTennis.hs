@@ -21,8 +21,8 @@ import qualified Data.Sv.Decode as D
 file :: FilePath
 file = "csv/tt-handicap.csv"
 
-config :: ParseOptions
-config = defaultParseOptions & (headedness .~ Unheaded)
+opts :: ParseOptions ByteString
+opts = defaultParseOptions & headedness .~ Unheaded
 
 type Name = Text
 
@@ -49,7 +49,7 @@ difference = D.attoparsec (
 
 main :: IO ()
 main = do
-  result <- parseDecodeFromFile handicap (Just config) file
+  result <- parseDecodeFromFile handicap opts file
   case result of
     AccFailure e -> print e >> exitFailure
     AccSuccess h -> unless (length h == 5) exitFailure

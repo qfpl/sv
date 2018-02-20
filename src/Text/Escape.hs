@@ -45,8 +45,6 @@ import qualified Data.Text as Text
 import Data.Traversable   (Traversable)
 import GHC.Generics       (Generic)
 
-import Text.Babel (Textual)
-
 -- | Wrapper for text that is known to be in an unescaped form
 newtype Unescaped a =
   Unescaped { getUnescaped :: a }
@@ -149,7 +147,7 @@ escapeChar c b =
 
 -- | This class is for text in which a particular character can be escaped to
 -- produce an 'Escaped'
-class Textual a => Escapable a where
+class Escapable a where
   escape :: Char -> a -> Escaped a
   escape_ :: Char -> Unescaped a -> Escaped a
   escape_ c = escape c . getUnescaped

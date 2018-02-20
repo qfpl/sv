@@ -56,13 +56,13 @@ csv1' =
   , V3 (I 7) (S "unquoted text") (I 5)
   ]
 
-opts :: ParseOptions
+opts :: ParseOptions ByteString
 opts = defaultParseOptions & headedness .~ Unheaded
 
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      parseDecode v3ios (Just opts) csv1 @?= pure csv1'
+      parseDecode v3ios opts csv1 @?= pure csv1'
 
 varyingLength :: ByteString
 varyingLength = intercalate "\r\n" [
@@ -79,7 +79,7 @@ str2 = liftA2 (,) D.contents D.contents
 varyingLengthTest :: TestTree
 varyingLengthTest =
   testCase "varyingLength has all the right errors" $
-    parseDecode str2 (Just opts) varyingLength @?=
+    parseDecode str2 opts varyingLength @?=
       AccFailure (DecodeErrors (D.UnexpectedEndOfRow :| [
         D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three"])
       , D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three", Unquoted "four"])

@@ -41,7 +41,7 @@ file = "csv/species.csv"
 
 The parser needs some configuration to parse our file. For example, it
 needs to know which separator character we're using - in our case: comma.
-We set up our config by modifying the default config using lens, but you
+We set up our config by modifying the default options using lens, but you
 could just as easily modify it with record syntax, or build a config from
 scratch using the types and values defined in Data.Sv.Parse.Options
 
@@ -52,9 +52,13 @@ input and, as mentioned above, our input file is Windows-1252 encoded.
 Hence we're using Attoparsec, which has less helpful error messages but
 can handle this encoding.
 
+Benchmarking has shown that our parser is faster with attoparsec than with
+trifecta, so if this is a concern to you, you might like to choose attoparsec
+anyway.
+
 \begin{code}
-config :: ParseOptions
-config = defaultParseOptions & (parsingLib .~ Attoparsec)
+opts :: ParseOptions ByteString
+opts = defaultParseOptions & (parsingLib .~ Attoparsec)
 \end{code}
 
 This is the type we've made for our rows. It was designed by observing
@@ -237,11 +241,11 @@ speciesDecoder = let s = D.byteString in
 \end{code}
 
 We call parseDecodeFromFile to load, parse, and decode our file. Note that we're
-passing our config in.
+passing our parse options in.
 
 \begin{code}
 species :: IO (DecodeValidation ByteString [Species])
-species = parseDecodeFromFile speciesDecoder (Just config) file
+species = parseDecodeFromFile speciesDecoder opts file
 \end{code}
 
 And that's it! We've defined a data type for our rows, built a FieldDecode for

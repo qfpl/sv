@@ -78,8 +78,14 @@ module Data.Sv (
   -- * Printing
   , printSv
   , printSvLazy
+  , printSvText
+  , printSvTextLazy
+  , printSv'
+  , printSvLazy'
   , writeSvToFile
   , writeSvToHandle
+  , writeSvToFile'
+  , writeSvToHandle'
 
   -- * Encoding
   , Encode (..)
