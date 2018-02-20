@@ -1,6 +1,19 @@
 {-# LANGUAGE DeriveGeneric #-}
 
-module Data.Vector.NonEmpty where
+{-|
+Module      : Data.Vector.NonEmpty
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+-}
+
+module Data.Vector.NonEmpty (
+  NonEmptyVector (NonEmptyVector)
+, fromNel
+, toNel
+) where
 
 import Control.DeepSeq (NFData)
 import Data.Foldable (toList)
@@ -12,15 +25,18 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 
+-- | A non-empty value of 'Vector'
 data NonEmptyVector a =
   NonEmptyVector a (Vector a)
   deriving (Eq, Ord, Show, Generic)
 
 instance NFData a => NFData (NonEmptyVector a) where
 
+-- | Convert a 'NonEmpty' list to a 'NonEmptyVector'
 fromNel :: NonEmpty a -> NonEmptyVector a
 fromNel (a :| as) = NonEmptyVector a (V.fromList as)
 
+-- | Convert a 'NonEmptyVector' to a 'NonEmpty' list
 toNel :: NonEmptyVector a -> NonEmpty a
 toNel (NonEmptyVector a as) = a :| V.toList as
 

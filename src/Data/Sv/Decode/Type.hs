@@ -71,15 +71,6 @@ instance Profunctor (FieldDecode e) where
   lmap f (FieldDecode (Compose dec)) = FieldDecode (Compose (lmap f dec))
   rmap = fmap
 
-newtype Ind = Ind Int
-
-instance Semigroup Ind where
-  Ind x <> Ind y = Ind (x + y)
-
-instance Monoid Ind where
-  mappend = (<>)
-  mempty = Ind 0
-
 -- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
 -- keeps track of our remaining 'Data.Sv.Syntax.Field's.
 newtype DecodeState s a =
@@ -96,6 +87,9 @@ instance Profunctor DecodeState where
 -- | Convenient function to run a DecodeState
 runDecodeState :: DecodeState s a -> Vector (SpacedField s) -> Ind -> (a, Ind)
 runDecodeState = fmap runState . runReaderT . getDecodeState
+
+-- | Newtype for indices into the field vector
+newtype Ind = Ind Int
 
 -- TODO eventually give DecodeError a much better show
 
