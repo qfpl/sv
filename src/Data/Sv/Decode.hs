@@ -142,6 +142,10 @@ parse opts s =
         Attoparsec -> validateEither' (BadParse . enc) . parseOnly p
   in  parse' s
 
+
+-- TODO probably move this guy to .Parse
+
+-- | Load a file and parse it as an 'Sv'.
 parseFromFile :: forall m s . MonadIO m => ParseOptions s -> FilePath -> m (DecodeValidation s (Sv s))
 parseFromFile opts fp =
   let lib = view parsingLib opts
