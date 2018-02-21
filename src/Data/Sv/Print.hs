@@ -19,7 +19,6 @@ module Data.Sv.Print (
 , writeSvToFile'
 , writeSvToHandle'
 , PrintOptions
-, PrintOptions' (..)
 , HasPrintOptions (..)
 , defaultPrintOptions
 ) where
