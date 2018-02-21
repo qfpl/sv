@@ -22,7 +22,7 @@ import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc
 import Data.Sv.Generators  (genSvWithHeadedness)
 import Data.Sv.Parse       (defaultParseOptions, headedness, encodeString)
 import Data.Sv.Parse.Internal (spacedField, separatedValues)
-import Data.Sv.Print       (printSv, printSvText)
+import Data.Sv.Print       (defaultPrintOptions, printSv, printSvText)
 import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
 import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
@@ -56,7 +56,7 @@ fieldRoundTrip =
       test =
         printAfterParseRoundTrip
         (spacedField sep UTF8.fromString :: CharParsing m => m (SpacedField ByteString))
-        (BL.toStrict . Builder.toLazyByteString . printSpaced escapeUtf8 Builder.byteString)
+        (BL.toStrict . Builder.toLazyByteString . printSpaced defaultPrintOptions)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"

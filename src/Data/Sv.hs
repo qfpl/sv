@@ -86,18 +86,22 @@ module Data.Sv (
   , writeSvToHandle
   , writeSvToFile'
   , writeSvToHandle'
+  , PrintOptions
+  , PrintOptions' (..)
+  , HasPrintOptions (..)
+  , defaultPrintOptions
 
   -- * Encoding
-  , Encode (..)
-  , EncodeOptions (..)
-  , HasEncodeOptions (..)
-  , defaultEncodeOptions
   , encode
   , encodeToFile
   , encodeToHandle
   , encodeBuilder
   , encodeRow
   , encodeSv
+  , Encode (..)
+  , EncodeOptions (..)
+  , HasEncodeOptions (..)
+  , defaultEncodeOptions
 
   -- * Lenses
   , HasSv (..)
