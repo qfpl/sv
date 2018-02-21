@@ -34,8 +34,10 @@ module Text.Escape (
 
 import Control.DeepSeq    (NFData)
 import Control.Lens       (Lens', iso, Wrapped(_Wrapped'), Unwrapped, Rewrapped)
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy.Char8 as L
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.UTF8 as UTF8
+import qualified Data.ByteString.Lazy.UTF8 as UTF8L
 import Data.Foldable      (Foldable)
 import Data.Functor       (Functor)
 import Data.Monoid        (Monoid)
@@ -90,9 +92,7 @@ getRawEscaped (UnsafeEscaped a) = a
 -- "hello ''string''"
 --
 escapeString :: Char -> String -> Escaped String
-escapeString c s =
-  let doubleChar q z = if z == q then [q,q] else [z]
-  in  UnsafeEscaped (concatMap (doubleChar c) s)
+escapeString c s = UnsafeEscaped (concatMap (doubleChar c) s)
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given 'Text'
@@ -108,7 +108,7 @@ escapeText c s =
   in  UnsafeEscaped (Text.replace ct (ct <> ct) s)
 
 -- | Replaces all occurrences of the given character with two occurrences of that
--- character in the given ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
+-- character in the given ByteString, which is assumed to be UTF-8 compatible.
 --
 -- Assuming @{- LANGUAGE OverloadedStrings -}@:
 --
@@ -116,12 +116,11 @@ escapeText c s =
 -- "hello ''bytestring''"
 --
 escapeUtf8 :: Char -> B.ByteString -> Escaped B.ByteString
-escapeUtf8 c b =
-  let doubleB q z = if z == q then B.pack [q,q] else B.singleton z
-  in  UnsafeEscaped (B.concatMap (doubleB c) b)
+escapeUtf8 c =
+  UnsafeEscaped . UTF8.fromString . concatMap (doubleChar c) . UTF8.toString
 
 -- | Replaces all occurrences of the given character with two occurrences of that
--- character in the given lazy ByteString, which is assumed to be UTF-8 or 7-bit ASCII.
+-- character in the given lazy ByteString, which is assumed to be UTF-8 compatible.
 --
 -- Assuming @{- LANGUAGE OverloadedStrings -}@:
 --
@@ -129,9 +128,8 @@ escapeUtf8 c b =
 -- "hello ''lazy bytestring''"
 --
 escapeLazyUtf8 :: Char -> L.ByteString -> Escaped L.ByteString
-escapeLazyUtf8 c b =
-  let doubleL q z = if z == q then L.pack [q,q] else L.singleton z
-  in  UnsafeEscaped (L.concatMap (doubleL c) b)
+escapeLazyUtf8 c =
+  UnsafeEscaped . UTF8L.fromString . concatMap (doubleChar c) . UTF8L.toString
 
 -- | Escape a character, which must return a string.
 --
@@ -144,6 +142,9 @@ escapeLazyUtf8 c b =
 escapeChar :: Char -> Char -> Escaped String
 escapeChar c b =
   UnsafeEscaped $ if c == b then [b,b] else [b]
+
+doubleChar :: Char -> Char -> String
+doubleChar q z = if z == q then [q,q] else [z]
 
 -- | This class is for text in which a particular character can be escaped to
 -- produce an 'Escaped'
