@@ -18,6 +18,10 @@ module Data.Sv.Print (
 , writeSvToHandle
 , writeSvToFile'
 , writeSvToHandle'
+, PrintOptions
+, PrintOptions' (..)
+, HasPrintOptions (..)
+, defaultPrintOptions
 ) where
 
 import Data.ByteString (ByteString)
@@ -25,30 +29,29 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
 import Data.Text (Text)
-import Data.Text.Encoding (encodeUtf8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
+import Data.Sv.Print.Options
 import Data.Sv.Print.Internal
 import Data.Sv.Syntax.Sv (Sv (Sv))
-import Text.Escape (Escaper, escapeUtf8, escapeText)
 
 -- | Converts an 'Sv' to a ByteString 'Builder'. Useful if you want to concatenate other
 -- text before or after.
-svToBuilder :: Escaper s -> (s -> Builder) -> Sv s -> Builder
-svToBuilder escape build (Sv sep h rs e) =
-  foldMap (printHeader escape sep build) h <> printRecords escape sep build rs <> foldMap printNewline e
+svToBuilder :: PrintOptions s -> Sv s -> Builder
+svToBuilder opts (Sv sep h rs e) =
+  foldMap (printHeader opts sep) h <> printRecords opts sep rs <> foldMap printNewline e
 
 -- | Writes an sv to a file handle. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
 -- result to the handle.
 writeSvToHandle :: Handle -> Sv ByteString -> IO ()
-writeSvToHandle = writeSvToHandle' escapeUtf8 byteString
+writeSvToHandle = writeSvToHandle' defaultPrintOptions
 
 -- | Writes an sv to a file. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
 -- result to a file.
 writeSvToFile :: FilePath -> Sv ByteString -> IO ()
-writeSvToFile = writeSvToFile' escapeUtf8 byteString
+writeSvToFile = writeSvToFile' defaultPrintOptions
 
 -- | Writes an sv to a file handle. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
@@ -56,8 +59,8 @@ writeSvToFile = writeSvToFile' escapeUtf8 byteString
 --
 -- This version is polymorphic, but as a penalty you have to tell me how to
 -- get a Bytestring 'Builder'.
-writeSvToHandle' :: Escaper s -> (s -> Builder) -> Handle -> Sv s -> IO ()
-writeSvToHandle' escape build h sv = hPutBuilder h (svToBuilder escape build sv)
+writeSvToHandle' :: PrintOptions s -> Handle -> Sv s -> IO ()
+writeSvToHandle' opts h sv = hPutBuilder h (svToBuilder opts sv)
 
 -- | Writes an sv to a file. This goes directly from a 'Builder', so it is
 -- more efficient than calling 'printSv' or 'printSvLazy' and writing the
@@ -65,34 +68,34 @@ writeSvToHandle' escape build h sv = hPutBuilder h (svToBuilder escape build sv)
 --
 -- This version is polymorphic, but as a penalty you have to tell me how to
 -- get a Bytestring 'Builder'.
-writeSvToFile' :: Escaper s -> (s -> Builder) -> FilePath -> Sv s -> IO ()
-writeSvToFile' escape build fp sv = do
+writeSvToFile' :: PrintOptions s -> FilePath -> Sv s -> IO ()
+writeSvToFile' opts fp sv = do
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  writeSvToHandle' escape build h sv
+  writeSvToHandle' opts h sv
   hClose h
 
 -- | Print an Sv to a 'Data.ByteString.ByteString' value.
 printSv :: Sv ByteString -> ByteString
-printSv = printSv' escapeUtf8 byteString
+printSv = printSv' defaultPrintOptions
 
 -- | Print an Sv to a lazy 'Data.ByteString.Lazy.ByteString' value.
 printSvLazy :: Sv ByteString -> LBS.ByteString
-printSvLazy = printSvLazy' escapeUtf8 byteString
+printSvLazy = printSvLazy' defaultPrintOptions
 
 -- | Converts the given 'Sv' into a strict 'Data.ByteString.ByteString'
-printSv' :: Escaper s -> (s -> Builder) -> Sv s -> ByteString
-printSv' escape build = LBS.toStrict . printSvLazy' escape build
+printSv' :: PrintOptions s -> Sv s -> ByteString
+printSv' opts = LBS.toStrict . printSvLazy' opts
 
 -- | Converts the given 'Sv' into a lazy 'Data.ByteString.Lazy.ByteString'
-printSvLazy' :: Escaper s -> (s -> Builder) -> Sv s -> LBS.ByteString
-printSvLazy' escape build = toLazyByteString . svToBuilder escape build
+printSvLazy' :: PrintOptions s -> Sv s -> LBS.ByteString
+printSvLazy' opts = toLazyByteString . svToBuilder opts
 
 -- | Print an Sv containing 'Text' to a 'Data.ByteString.ByteString'
 printSvText :: Sv Text -> ByteString
-printSvText = printSv' escapeText (byteString . encodeUtf8)
+printSvText = printSv' textPrintOptions
 
 -- | Print an Sv containing 'Text' to a 'Data.ByteString.Lazy.ByteString'
 printSvTextLazy :: Sv Text -> LBS.ByteString
-printSvTextLazy = printSvLazy' escapeText (byteString . encodeUtf8)
+printSvTextLazy = printSvLazy' textPrintOptions
