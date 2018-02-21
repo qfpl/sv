@@ -14,7 +14,7 @@ import qualified Hedgehog.Range as Range
 import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
-import Text.Escape (Unescaped (Unescaped, getUnescaped))
+import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
 import Text.Newline (Newline (CR, LF, CRLF))
 import Text.Quote (Quote (SingleQuote, DoubleQuote))
 
@@ -152,7 +152,7 @@ rowsSv' =
           Nothing -> Unquoted a
           Just x  -> Quoted x (Unescaped a)
         Quoted _ v -> case m of
-          Nothing -> Unquoted (getUnescaped v)
+          Nothing -> Unquoted (getRawUnescaped v)
           Just x  -> Quoted x v
       randomField :: Field ByteString -> IO (Field ByteString)
       randomField z = fmap (requote z) randomQuote

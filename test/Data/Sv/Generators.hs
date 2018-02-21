@@ -5,7 +5,6 @@ module Data.Sv.Generators (
   , genSvWithHeadedness
   , genNewline
   , genSep
-  , genEscaped
   , genQuote
   , genSpaced
   , genField
@@ -31,7 +30,7 @@ import qualified Hedgehog.Range as Range
 import Data.Sv.Syntax.Sv     (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Syntax.Field  (Field (Quoted, Unquoted))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords, Records), recordNel)
-import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
+import Text.Escape         (Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced (Spaced))
 import Text.Quote          (Quote (SingleQuote, DoubleQuote))
@@ -62,10 +61,6 @@ genSpaced spc str =
 genQuote :: Gen Quote
 genQuote =
   Gen.element [SingleQuote, DoubleQuote]
-
-genEscaped :: Escapable a => Separator -> Gen a -> Gen (Escaped a)
-genEscaped c a =
-  escape c <$> a
 
 genUnescaped :: Gen a -> Gen (Unescaped a)
 genUnescaped = fmap Unescaped

@@ -139,7 +139,7 @@ import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
 import Data.Sv.Syntax.Record (Record (Record), Records (EmptyRecords), emptyRecord, mkRecords, recordNel)
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
 import qualified Data.Vector.NonEmpty as V
-import Text.Escape (Escaped, getRawEscaped, Escapable (escape), escapeChar)
+import Text.Escape (Escaper, Escaper', Unescaped (Unescaped), escapeChar, escapeString, escapeText, escapeUtf8, escapeUtf8Lazy)
 import Text.Newline (newlineText)
 import Text.Space (Spaced (Spaced), spacesString)
 import Text.Quote (quoteChar)
@@ -273,7 +273,7 @@ orEmpty = choose (maybe (Left ()) Right) empty
 
 -- | Encode a single 'Char'
 char :: Encode Char
-char = escaped' escapeChar BS.stringUtf8 BS.charUtf8
+char = escaped' escapeChar BS.charUtf8 BS.stringUtf8
 
 -- | Encode an 'Int'
 int :: Encode Int
@@ -293,28 +293,28 @@ double = unsafeBuilder BS.doubleDec
 
 -- | Encode a 'String'
 string :: Encode String
-string = escaped BS.stringUtf8
+string = escaped escapeString BS.stringUtf8
 
 -- | Encode a 'Data.Text.Text'
 text :: Encode T.Text
-text = escaped (BS.byteString . T.encodeUtf8)
+text = escaped escapeText (BS.byteString . T.encodeUtf8)
 
 -- | Encode a strict 'Data.ByteString.ByteString'
 byteString :: Encode Strict.ByteString
-byteString = escaped BS.byteString
+byteString = escaped escapeUtf8 BS.byteString
 
 -- | Encode a lazy 'Data.ByteString.Lazy.ByteString'
 lazyByteString :: Encode LBS.ByteString
-lazyByteString = escaped BS.lazyByteString
+lazyByteString = escaped escapeUtf8Lazy BS.lazyByteString
 
-escaped :: Escapable s => (s -> BS.Builder) -> Encode s
-escaped = join (escaped' escape)
+escaped :: Escaper s -> (s -> BS.Builder) -> Encode s
+escaped escaper = join (escaped' escaper)
 
-escaped' :: (Char -> s -> Escaped t) -> (t -> BS.Builder) -> (s -> BS.Builder) -> Encode s
-escaped' esc tb sb = mkEncodeWithOpts $ \opts s ->
+escaped' :: Escaper' s t -> (s -> BS.Builder) -> (t -> BS.Builder) -> Encode s
+escaped' esc sb tb = mkEncodeWithOpts $ \opts s ->
   case _quote opts of
     Nothing -> sb s
-    Just q -> tb $ getRawEscaped (esc (review quoteChar q) s)
+    Just q -> tb $ esc (review quoteChar q) (Unescaped s)
 
 -- | Encode a 'Bool' as False or True
 boolTrueFalse :: Encode Bool
