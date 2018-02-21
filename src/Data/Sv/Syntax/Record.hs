@@ -105,6 +105,7 @@ emptyRecord = singleField (Unquoted mempty)
 singleField :: Field s -> Record s
 singleField = Record . pure . pure
 
+-- | Build a 'Record' given a 'NonEmpty' list of its fields
 recordNel :: NonEmpty (SpacedField s) -> Record s
 recordNel = Record . V.fromNel
 
@@ -116,7 +117,7 @@ data Records s =
 
 instance NFData s => NFData (Records s)
 
-
+-- | Prism for an empty 'Records'
 _EmptyRecords :: Prism' (Records s) ()
 _EmptyRecords =
   prism' (const EmptyRecords) $ \r ->
@@ -124,6 +125,7 @@ _EmptyRecords =
       EmptyRecords -> Just ()
       Records _ _  -> Nothing
 
+-- | Prism for a non-empty 'Records'
 _NonEmptyRecords :: Prism (Records s) (Records t) (Record s, Vector (Newline, Record s)) (Record t, Vector (Newline, Record t))
 _NonEmptyRecords =
   prism (uncurry Records) $ \r ->

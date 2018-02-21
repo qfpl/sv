@@ -2,7 +2,7 @@ module Data.Sv.Example.Requote where
 
 import Control.Lens
 import Control.Monad (unless)
-import Data.Text (Text)
+import Data.ByteString (ByteString)
 import System.Exit (exitFailure)
 import Text.Trifecta (parseFromFile)
 
@@ -32,7 +32,7 @@ main = do
 -- Manipulates the syntax directly with optics without decoding to data types
 -- Rewrites a file with inconsistent quoting to consistently use double quotes
 
-opts :: ParseOptions
+opts :: ParseOptions ByteString
 opts = defaultParseOptions
 
 requote :: IO ()
@@ -41,7 +41,7 @@ requote = do
   case svMay of
     Nothing -> exitFailure
     Just s ->
-      let s' :: Sv Text
+      let s' :: Sv ByteString
           s' = fixQuotes s
       in  writeSvToFile fixed s'
 

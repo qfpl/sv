@@ -13,55 +13,53 @@ These functions exist to be called by 'Data.Sv.Print'
 
 module Data.Sv.Print.Internal where
 
-import Control.Lens (review)
+import Control.Lens (review, view)
 import Data.Bifoldable (bifoldMap)
-import qualified Data.ByteString.Lazy as LB
 import Data.ByteString.Builder as Builder
 import Data.Semigroup ((<>))
 import Data.Semigroup.Foldable (intercalate1)
 
+import Data.Sv.Print.Options
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import Data.Sv.Syntax.Record (Record (Record), Records (Records, EmptyRecords))
 import Data.Sv.Syntax.Sv (Header (Header), Separator)
-import Text.Babel (Textual (toByteStringBuilder), singleton)
-import Text.Escape (getRawEscaped, Escapable (escape_))
 import Text.Newline
 import Text.Space (spaceToChar, Spaced (Spaced))
 import Text.Quote
 
 -- | Convert a 'Newline' to a ByteString 'Builder'
 printNewline :: Newline -> Builder
-printNewline n = toByteStringBuilder (newlineText n :: LB.ByteString)
+printNewline = Builder.lazyByteString . newlineText
 
 -- | Convert a 'Field' to a ByteString 'Builder'
-printField :: Escapable s => Field s -> Builder
-printField f =
+printField :: PrintOptions s -> Field s -> Builder
+printField opts f =
   case f of
     Unquoted s ->
-      toByteStringBuilder s
+      view build opts s
     Quoted q s ->
       let qc = quoteToString q
-          contents = toByteStringBuilder $ getRawEscaped $ escape_ (review quoteChar q) s
+          contents = view build opts $ view escape opts (review quoteChar q) s
       in  qc <> contents <> qc
 
 -- | Convert a 'SpacedField' to a ByteString 'Builder'
-printSpaced :: Escapable s => SpacedField s -> Builder
-printSpaced (Spaced b t a) =
-  let spc = foldMap (singleton . spaceToChar)
-  in  spc b <> printField a <> spc t
+printSpaced :: PrintOptions s -> SpacedField s -> Builder
+printSpaced opts (Spaced b t a) =
+  let spc = foldMap (Builder.charUtf8 . spaceToChar)
+  in  spc b <> printField opts a <> spc t
 
 -- | Convert a 'Record' to a ByteString 'Builder'
-printRecord :: Escapable s => Separator -> Record s -> Builder
-printRecord sep (Record fs) =
-  intercalate1 (singleton sep) (fmap printSpaced fs)
+printRecord :: PrintOptions s -> Separator -> Record s -> Builder
+printRecord opts sep (Record fs) =
+  intercalate1 (Builder.charUtf8 sep) (fmap (printSpaced opts) fs)
 
 -- | Convert 'Records' to a ByteString 'Builder'.
-printRecords :: Escapable s => Separator -> Records s -> Builder
-printRecords sep rs = case rs of
+printRecords :: PrintOptions s -> Separator -> Records s -> Builder
+printRecords opts sep rs = case rs of
   EmptyRecords -> mempty
   Records a as ->
-    printRecord sep a <> foldMap (bifoldMap printNewline (printRecord sep)) as
+    printRecord opts sep a <> foldMap (bifoldMap printNewline (printRecord opts sep)) as
 
 -- | Convert 'Header' to a ByteString 'Builder'.
-printHeader :: Escapable s => Separator -> Header s -> Builder
-printHeader sep (Header r n) = printRecord sep r <> printNewline n
+printHeader :: PrintOptions s -> Separator -> Header s -> Builder
+printHeader opts sep (Header r n) = printRecord opts sep r <> printNewline n

@@ -1,3 +1,8 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
+
 {-|
 Module      : Data.Sv.Parse.Options
 Copyright   : (C) CSIRO 2017-2018
@@ -10,8 +15,8 @@ Configuration to tell the parser what your file looks like.
 -}
 
 module Data.Sv.Parse.Options (
-  ParseOptions (ParseOptions, _headedness, _parseSeparator, _parsingLib)
-, HasParseOptions (parseOptions, endOnBlankLine)
+  ParseOptions (ParseOptions, _headedness, _endOnBlankLine, _parseSeparator, _parsingLib, _encodeString)
+, HasParseOptions (parseOptions, endOnBlankLine, encodeString)
 , defaultParseOptions
 , orDefault
 , Separator
@@ -28,13 +33,14 @@ module Data.Sv.Parse.Options (
 , defaultParsingLib
 ) where
 
-import Control.Lens (Lens', lens)
+import Control.Lens (Lens, Lens', lens)
+import Data.ByteString.UTF8 (ByteString, fromString)
 import Data.Maybe (fromMaybe)
 
 -- | An 'ParseOptions' informs the parser how to parse your file.
 --
 -- A default is provided as 'defaultParseOptions', seen below.
-data ParseOptions =
+data ParseOptions s =
   ParseOptions {
   -- | Which separator does the file use? Usually this is 'comma', but it can
   -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
@@ -49,38 +55,41 @@ data ParseOptions =
 
   -- | Which parsing library should be used? 'Trifecta' or 'Attoparsec'?
   , _parsingLib :: ParsingLib
+
+  , _encodeString :: String -> s
   }
 
 -- | Classy lenses for 'ParseOptions'
-class (HasSeparator c, HasHeadedness c, HasParsingLib c) => HasParseOptions c where
-  parseOptions :: Lens' c ParseOptions
-  endOnBlankLine :: Lens' c Bool
+class (HasSeparator c, HasHeadedness c, HasParsingLib c) => HasParseOptions c d s t | c -> s, d -> t, c t -> d, d s -> c where
+  parseOptions :: Lens c d (ParseOptions s) (ParseOptions t)
+  encodeString :: Lens c d (String -> s) (String -> t)
+  endOnBlankLine :: c ~ d => Lens c d Bool Bool
 
-instance HasParseOptions ParseOptions where
+instance HasParseOptions (ParseOptions s) (ParseOptions t) s t where
   parseOptions = id
   {-# INLINE parseOptions #-}
-  endOnBlankLine =
-    lens _endOnBlankLine (\c b -> c { _endOnBlankLine = b })
+  encodeString = lens _encodeString (\c s -> c { _encodeString = s })
+  endOnBlankLine = lens _endOnBlankLine (\c b -> c { _endOnBlankLine = b })
 
-instance HasSeparator ParseOptions where
+instance HasSeparator (ParseOptions s) where
   separator =
     lens _parseSeparator (\c s -> c { _parseSeparator = s })
 
-instance HasHeadedness ParseOptions where
+instance HasHeadedness (ParseOptions s) where
   headedness =
     lens _headedness (\c h -> c { _headedness = h })
 
-instance HasParsingLib ParseOptions where
+instance HasParsingLib (ParseOptions s) where
   parsingLib =
     lens _parsingLib (\c p -> c { _parsingLib = p })
 
 -- | 'defaultParseOptions' is used to parse a CSV file featuring a header row, using
--- Trifecta as the parsing library.
-defaultParseOptions :: ParseOptions
-defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness False defaultParsingLib
+-- Trifecta as the parsing library. It uses UTF-8 'ByteString's
+defaultParseOptions :: ParseOptions ByteString
+defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness False defaultParsingLib fromString
 
 -- | Use the 'defaultParseOptions' in the case of 'Nothing'
-orDefault :: Maybe ParseOptions -> ParseOptions
+orDefault :: Maybe (ParseOptions ByteString) -> ParseOptions ByteString
 orDefault = fromMaybe defaultParseOptions
 
 -- | Does the 'Sv' have a 'Header' or not? A header is a row at the beginning

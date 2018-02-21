@@ -32,7 +32,6 @@ import Text.Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
 import Data.Sv.Syntax.Field
-import Text.Babel (Textual, showT)
 
 -- | Build a failing 'DecodeValidation'
 decodeError :: DecodeError e -> DecodeValidation e a
@@ -48,7 +47,7 @@ expectedEndOfRow = decodeError . ExpectedEndOfRow
 
 -- | Given the unknown value and the list of good canonical values,
 -- fail with 'UnknownCanonicalValue'
-unknownCanonicalValue :: e -> [(e, [e])] -> DecodeValidation e a
+unknownCanonicalValue :: e -> [[e]] -> DecodeValidation e a
 unknownCanonicalValue unknown valids =
   decodeError (UnknownCanonicalValue unknown valids)
 
@@ -77,7 +76,7 @@ validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 validateMay' ab e a = validateMay e (ab a)
 
 -- | Convert a Trifecta 'Result' to a DecodeValidation
-validateTrifectaResult :: Textual e => (e -> DecodeError e) -> Result a -> DecodeValidation e a
+validateTrifectaResult :: (String -> DecodeError e) -> Result a -> DecodeValidation e a
 validateTrifectaResult f result = case result of
   Success a -> pure a
-  Failure e -> decodeError . f . showT . _errDoc $ e
+  Failure e -> decodeError . f . show . _errDoc $ e

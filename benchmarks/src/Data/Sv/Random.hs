@@ -14,7 +14,7 @@ import qualified Hedgehog.Range as Range
 import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
-import Text.Escape (Unescaped (Unescaped, getUnescaped))
+import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
 import Text.Newline (Newline (CR, LF, CRLF))
 import Text.Quote (Quote (SingleQuote, DoubleQuote))
 
@@ -116,19 +116,19 @@ longRowEnc = mconcat [
   , E.encodeOf lrC coproductEnc
   ]
 
-rowDec :: FieldDecode ByteString ByteString Row
+rowDec :: FieldDecode' ByteString Row
 rowDec = D.either longRowDec shortRowDec
 
-shortRowDec :: FieldDecode ByteString ByteString ShortRow
+shortRowDec :: FieldDecode' ByteString ShortRow
 shortRowDec = ShortRow <$> D.byteString <*> D.byteString <*> D.byteString
 
-productDec :: FieldDecode ByteString ByteString Product
+productDec :: FieldDecode' ByteString Product
 productDec = Product <$> D.int <*> D.float <*> D.double
 
-coproductDec :: FieldDecode ByteString ByteString Coproduct
+coproductDec :: FieldDecode' ByteString Coproduct
 coproductDec = I <$> D.int <!> B <$> D.byteString <!> D <$> D.double
 
-longRowDec :: FieldDecode ByteString ByteString LongRow
+longRowDec :: FieldDecode' ByteString LongRow
 longRowDec = LongRow <$> D.byteString <*> D.string <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
 
 samples :: Gen a -> Int -> IO [a]
@@ -152,7 +152,7 @@ rowsSv' =
           Nothing -> Unquoted a
           Just x  -> Quoted x (Unescaped a)
         Quoted _ v -> case m of
-          Nothing -> Unquoted (getUnescaped v)
+          Nothing -> Unquoted (getRawUnescaped v)
           Just x  -> Quoted x v
       randomField :: Field ByteString -> IO (Field ByteString)
       randomField z = fmap (requote z) randomQuote

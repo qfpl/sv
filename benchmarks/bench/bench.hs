@@ -43,17 +43,17 @@ bdFs = traverse loadFile inds
 bdFs' :: IO (BenchData (Sv ByteString))
 bdFs' = traverse sanity =<< bdFs
 
-opts :: ParseOptions
+opts :: ParseOptions ByteString
 opts = defaultParseOptions & headedness .~ Unheaded & parsingLib .~ Attoparsec
 
 parse :: ByteString -> DecodeValidation ByteString (Sv ByteString)
-parse = D.parse (Just opts)
+parse = D.parse opts
 
 dec :: Sv ByteString -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
 
 parseDec :: ByteString -> DecodeValidation ByteString [Row]
-parseDec = D.parseDecode rowDec (Just opts)
+parseDec = D.parseDecode rowDec opts
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
