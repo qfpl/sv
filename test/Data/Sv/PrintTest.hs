@@ -27,7 +27,6 @@ import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
 import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
 import Data.Sv.Syntax.Sv   (Sv (Sv), Headedness, noHeader, comma)
-import Text.Escape         (escapeUtf8)
 import Text.Space          (HorizontalSpace (Space, Tab))
 import Text.Quote          (Quote (SingleQuote))
 

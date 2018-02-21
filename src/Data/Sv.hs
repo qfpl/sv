@@ -87,7 +87,6 @@ module Data.Sv (
   , writeSvToFile'
   , writeSvToHandle'
   , PrintOptions
-  , PrintOptions' (..)
   , HasPrintOptions (..)
   , defaultPrintOptions
 

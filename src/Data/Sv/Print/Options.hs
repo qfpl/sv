@@ -2,9 +2,17 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+{-|
+Module      : Data.Sv.Print.Options
+Copyright   : (C) CSIRO 2017-2018
+License     : BSD3
+Maintainer  : George Wilson <george.wilson@data61.csiro.au>
+Stability   : experimental
+Portability : non-portable
+-}
+
 module Data.Sv.Print.Options (
-  PrintOptions' (..)
-  , PrintOptions
+  PrintOptions (..)
   , HasPrintOptions (..)
   , defaultPrintOptions
   , utf8PrintOptions
@@ -21,43 +29,48 @@ import qualified Data.ByteString.Builder as Builder
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
-import Text.Escape (Escaper', escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
+import Text.Escape (Escaper, escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
 
-data PrintOptions' s t =
+-- | Options to configure the printing process
+data PrintOptions a =
   PrintOptions {
-    _build :: t -> Builder
-  , _escape :: Escaper' s t
+    _build :: a -> Builder
+  , _escape :: Escaper a
   }
 
-class HasPrintOptions c s t | c -> s t where
-  printOptions :: Lens' c (PrintOptions' s t)
-  build :: Lens' c (t -> Builder)
+-- | Classy optics for 'PrintOptions'
+class HasPrintOptions c a | c -> a where
+  printOptions :: Lens' c (PrintOptions a)
+  build :: Lens' c (a -> Builder)
   {-# INLINE build #-}
-  escape :: Lens' c (Escaper' s t)
+  escape :: Lens' c (Escaper a)
   {-# INLINE escape #-}
   build = printOptions . build
   escape = printOptions . escape
 
-instance HasPrintOptions (PrintOptions' s t) s t where
+instance HasPrintOptions (PrintOptions a) a where
   printOptions = id
   build f (PrintOptions x1 x2) = fmap (\ y -> PrintOptions y x2) (f x1)
   {-# INLINE build #-}
   escape f (PrintOptions x1 x2) = fmap (PrintOptions x1) (f x2)
   {-# INLINE escape #-}
 
-type PrintOptions a = PrintOptions' a a
-
+-- | Print options for 'Sv's containing UTF8 bytestrings
 defaultPrintOptions :: PrintOptions BS.ByteString
 defaultPrintOptions = utf8PrintOptions
 
+-- | Print options for 'Sv's containing UTF8 bytestrings
 utf8PrintOptions :: PrintOptions BS.ByteString
 utf8PrintOptions = PrintOptions Builder.byteString escapeUtf8
 
+-- | Print options for 'Sv's containing UTF8 lazy bytestrings
 utf8LazyPrintOptions :: PrintOptions BL.ByteString
 utf8LazyPrintOptions = PrintOptions Builder.lazyByteString escapeUtf8Lazy
 
+-- | Print options for 'Sv's containing 'Text'
 textPrintOptions :: PrintOptions Text
 textPrintOptions = PrintOptions (Builder.byteString . Text.encodeUtf8) escapeText
 
+-- | Print options for 'Sv's containing 'String's
 stringPrintOptions :: PrintOptions String
 stringPrintOptions = PrintOptions Builder.stringUtf8 escapeString
