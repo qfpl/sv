@@ -5,7 +5,11 @@ module Data.Sv.PrintTest (test_Print) where
 
 import Control.Lens         ((&), (.~))
 import Data.ByteString      (ByteString)
+import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.UTF8 as UTF8
 import Data.Text            (Text)
+import qualified Data.Text as Text
 import Hedgehog             ((===), Property, Gen, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -16,14 +20,13 @@ import Text.Parser.Char     (CharParsing)
 import Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import Data.Sv.Generators  (genSvWithHeadedness)
-import Data.Sv.Parse       (defaultParseOptions, headedness)
+import Data.Sv.Parse       (defaultParseOptions, headedness, encodeString)
 import Data.Sv.Parse.Internal (spacedField, separatedValues)
-import Data.Sv.Print       (printSv)
+import Data.Sv.Print       (defaultPrintOptions, printSv, printSvText)
 import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
 import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
 import Data.Sv.Syntax.Sv   (Sv (Sv), Headedness, noHeader, comma)
-import Text.Babel          (toByteString)
 import Text.Space          (HorizontalSpace (Space, Tab))
 import Text.Quote          (Quote (SingleQuote))
 
@@ -41,7 +44,7 @@ r2e r = case r of
   Success a -> Right a
   Failure e -> Left (show (_errDoc e))
 
-printAfterParseRoundTrip :: (forall m. CharParsing m  => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
+printAfterParseRoundTrip :: (forall m. CharParsing m => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
 printAfterParseRoundTrip parser display name s =
   testCase name $
     fmap display (r2e $ parseByteString parser mempty s) @?= Right s
@@ -49,7 +52,10 @@ printAfterParseRoundTrip parser display name s =
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
   let sep = comma
-      test = printAfterParseRoundTrip (spacedField sep :: CharParsing m => m (SpacedField ByteString)) (toByteString . printSpaced)
+      test =
+        printAfterParseRoundTrip
+        (spacedField sep UTF8.fromString :: CharParsing m => m (SpacedField ByteString))
+        (BL.toStrict . Builder.toLazyByteString . printSpaced defaultPrintOptions)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"
@@ -89,10 +95,10 @@ prop_csvRoundTrip =
       genText :: Gen Text
       genText  = Gen.text (Range.linear 1 100) Gen.alphaNum
       gen = genSvWithHeadedness (pure comma) genSpaces genText
-      mkOpts h = defaultParseOptions & headedness .~ h
+      mkOpts h = defaultParseOptions & headedness .~ h & encodeString .~ Text.pack
       parseCsv :: CharParsing m => Headedness -> m (Sv Text)
       parseCsv = separatedValues . mkOpts
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen
-    r2e (fmap printSv (parse h (printSv c))) === pure (printSv c)
+    r2e (fmap printSvText (parse h (printSvText c))) === pure (printSvText c)

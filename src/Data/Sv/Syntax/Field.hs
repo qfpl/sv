@@ -31,7 +31,7 @@ import Data.Functor        (Functor (fmap))
 import Data.Traversable    (Traversable (traverse))
 import GHC.Generics        (Generic)
 
-import Text.Escape         (Unescaped (Unescaped, getUnescaped))
+import Text.Escape         (Unescaped (Unescaped, getRawUnescaped))
 import Text.Quote          (Quote)
 import Text.Space          (Spaced (Spaced))
 
@@ -105,6 +105,6 @@ foldField u q fi = case fi of
 -- | Lens into the contents of a Field, regardless of whether it's quoted or unquoted
 fieldContents :: Lens (Field s) (Field t) s t
 fieldContents =
-  lens (foldField id (getUnescaped.snd)) $ \f b -> case f of
+  lens (foldField id (getRawUnescaped.snd)) $ \f b -> case f of
     Unquoted _ -> Unquoted b
     Quoted q _ -> Quoted q (Unescaped b)

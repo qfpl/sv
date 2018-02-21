@@ -5,7 +5,6 @@ module Data.Sv.Generators (
   , genSvWithHeadedness
   , genNewline
   , genSep
-  , genEscaped
   , genQuote
   , genSpaced
   , genField
@@ -18,7 +17,9 @@ module Data.Sv.Generators (
 
 import Control.Applicative ((<$>), liftA2, liftA3)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder (Builder)
+import qualified Data.ByteString.Builder as Builder
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
@@ -29,8 +30,7 @@ import qualified Hedgehog.Range as Range
 import Data.Sv.Syntax.Sv     (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Syntax.Field  (Field (Quoted, Unquoted))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords, Records), recordNel)
-import Text.Babel          (fromByteString, toByteString)
-import Text.Escape         (Escaped, Escapable (escape), Unescaped (Unescaped))
+import Text.Escape         (Unescaped (Unescaped))
 import Text.Newline        (Newline (CRLF, LF))
 import Text.Space          (Spaces, Spaced (Spaced))
 import Text.Quote          (Quote (SingleQuote, DoubleQuote))
@@ -61,10 +61,6 @@ genSpaced spc str =
 genQuote :: Gen Quote
 genQuote =
   Gen.element [SingleQuote, DoubleQuote]
-
-genEscaped :: Escapable a => Separator -> Gen a -> Gen (Escaped a)
-genEscaped c a =
-  escape c <$> a
 
 genUnescaped :: Gen a -> Gen (Unescaped a)
 genUnescaped = fmap Unescaped
@@ -106,11 +102,11 @@ genCsvString =
       intercalate' _ (x:|[]) = x
       intercalate' m (x:|y:zs) = x <> m <> intercalate' m (y:|zs)
       genNewlineString :: Gen Builder
-      genNewlineString = Gen.element (fmap fromByteString ["\n", "\r", "\r\n"])
+      genNewlineString = Gen.element (fmap Builder.string7 ["\n", "\r", "\r\n"])
       genCsvRowString = intercalate' "," <$> Gen.nonEmpty (Range.linear 1 100) genCsvField
       enquote c s = fmap (\z -> c <> z <> c) s
       genCsvFieldString :: Gen Builder
-      genCsvFieldString = fromByteString <$>
+      genCsvFieldString = Builder.byteString <$>
         Gen.utf8 (Range.linear 1 50) (Gen.filter (`notElem` [',','"','\'','\n','\r']) Gen.unicode)
       genCsvField =
         Gen.choice [
@@ -118,4 +114,4 @@ genCsvString =
         , enquote "'" genCsvFieldString
         , genCsvFieldString
         ]
-  in  fmap toByteString $ intercalate' <$> genNewlineString <*> Gen.nonEmpty (Range.linear 0 100) genCsvRowString
+  in  fmap (LBS.toStrict . Builder.toLazyByteString) $ intercalate' <$> genNewlineString <*> Gen.nonEmpty (Range.linear 0 100) genCsvRowString
