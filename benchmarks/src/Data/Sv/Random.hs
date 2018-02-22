@@ -1,12 +1,19 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Sv.Random where
 
+import Control.Applicative ((<$>), (<*>), (<|>), empty)
+import Control.DeepSeq (NFData)
 import Control.Lens (makeLenses, makePrisms, traverseOf)
 import Control.Monad ((>=>), replicateM)
+import Data.Csv (FromRecord (..), FromField (..), (.!))
 import Data.Semigroup (Semigroup ((<>)))
-import Data.ByteString
+import Data.ByteString (ByteString)
 import Data.Functor.Contravariant
+import qualified Data.Vector as V
+import GHC.Generics
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -15,20 +22,32 @@ import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
 import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
-import Text.Newline (Newline (CR, LF, CRLF))
+import Text.Newline (Newline (LF, CRLF))
 import Text.Quote (Quote (SingleQuote, DoubleQuote))
+
+deriving instance (Generic a, Generic b) => Generic (AccValidation a b)
+instance (Generic a, NFData a, Generic b, NFData b) => NFData (AccValidation a b)
 
 data Product =
   Product { i :: Int, f :: Float, d :: Double }
-  deriving Show
+  deriving (Show, Generic)
+
+instance NFData Product
 
 data Coproduct
   = I Int
   | B ByteString
   | D Double
-  deriving Show
+  deriving (Show, Generic)
 
-type Row = Either LongRow ShortRow
+instance NFData Coproduct
+
+instance FromField Coproduct where
+  parseField a = I <$> parseField a <|> B <$> parseField a <|> D <$> parseField a
+
+data Row = Long LongRow | Short ShortRow deriving (Show, Generic)
+
+instance NFData Row
 
 data LongRow = LongRow {
     _lrB :: ByteString
@@ -39,11 +58,28 @@ data LongRow = LongRow {
   , _lrD :: Double
   , _lrP :: Product
   , _lrC :: Coproduct 
-  } deriving Show
+  } deriving (Show, Generic)
+
+instance NFData LongRow
+
+instance FromRecord LongRow where
+  parseRecord v = case V.length v of
+    10 -> LongRow <$> v.!0 <*> v.!1 <*> v.!2 <*> v.!3 <*> v.!4 <*> v.!5 <*> (Product <$> v.!6 <*> v.!7 <*> v.!8) <*> v.!9
+    _  -> empty
 
 data ShortRow =
   ShortRow { _1 :: ByteString, _2 ::ByteString, _3 :: ByteString }
-  deriving Show
+  deriving (Show, Generic)
+
+instance NFData ShortRow
+
+instance FromRecord ShortRow where
+  parseRecord v = case V.length v of
+    3  -> ShortRow <$> v.!0 <*> v.!1 <*> v.!2
+    _  -> empty
+
+instance FromRecord Row where
+  parseRecord v = Long <$> parseRecord v <|> Short <$> parseRecord v 
 
 makePrisms ''Coproduct
 
@@ -85,12 +121,12 @@ shortRowGen =
 rowGen :: Gen Row
 rowGen =
   Gen.frequency [
-    (9, Left <$> longRowGen)
-  , (1, Right <$> shortRowGen)
+    (9, Long <$> longRowGen)
+  , (1, Short <$> shortRowGen)
   ]
 
 rowEnc :: Encode Row
-rowEnc = E.chosen longRowEnc shortRowEnc
+rowEnc = E.choose (\x -> case x of {Long r -> Left r ; Short r -> Right r}) longRowEnc shortRowEnc
 
 shortRowEnc :: Encode ShortRow
 shortRowEnc =
@@ -117,7 +153,7 @@ longRowEnc = mconcat [
   ]
 
 rowDec :: FieldDecode' ByteString Row
-rowDec = D.either longRowDec shortRowDec
+rowDec =  Long <$> longRowDec <!> Short <$> shortRowDec
 
 shortRowDec :: FieldDecode' ByteString ShortRow
 shortRowDec = ShortRow <$> D.byteString <*> D.byteString <*> D.byteString
@@ -143,7 +179,7 @@ rowsSv = fmap (E.encodeSv defaultEncodeOptions rowEnc Nothing) . rows
 rowsSv' :: Int -> IO (Sv ByteString)
 rowsSv' =
   let randomNewline :: Newline -> IO Newline
-      randomNewline = const (Gen.sample (Gen.element [LF, CR, CRLF]))
+      randomNewline = const (Gen.sample (Gen.element [LF, CRLF]))
       randomQuote :: IO (Maybe Quote)
       randomQuote = Gen.sample (Gen.element [Nothing, Just SingleQuote, Just DoubleQuote])
       requote :: Field ByteString -> Maybe Quote -> Field ByteString
