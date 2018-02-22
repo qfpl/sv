@@ -30,10 +30,11 @@ module Data.Sv.Decode (
 , parse
 , parseFromFile
 
--- * Convenience constructors
+-- * Convenience constructors and functions
 , decodeMay
 , decodeEither
 , decodeEither'
+, mapErrors
 
 -- * Primitives
 , contents
@@ -93,13 +94,14 @@ import Control.Lens (alaf, review, view)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
-import Data.Bifunctor (second)
+import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
+import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
@@ -365,6 +367,12 @@ named name =
       space = " "
   in  decodeReadWithMsg $ \bs ->
         mconcat ["Couldn't parse \"", bs, "\" as a", n'', space, name]
+
+-- | Map over the errors of a 'FieldDecode'
+--
+-- To map over the other two paramters, use the 'Profunctor' instance.
+mapErrors :: (e -> x) -> FieldDecode e s a -> FieldDecode x s a
+mapErrors f (FieldDecode (Compose r)) = FieldDecode (Compose (fmap (first (fmap f)) r))
 
 ---- Promoting parsers to 'FieldDecode's
 
