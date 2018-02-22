@@ -106,6 +106,14 @@ data DecodeError e =
   | BadDecode e
   deriving (Eq, Ord, Show, Generic)
 
+instance Functor DecodeError where
+  fmap f d = case d of
+    UnexpectedEndOfRow -> UnexpectedEndOfRow
+    ExpectedEndOfRow v -> ExpectedEndOfRow (fmap (fmap (fmap f)) v)
+    UnknownCanonicalValue e ess -> UnknownCanonicalValue (f e) (fmap (fmap f) ess)
+    BadParse e -> BadParse (f e)
+    BadDecode e -> BadDecode (f e)
+
 instance NFData e => NFData (DecodeError e)
 
 -- TODO give this a field accessor?
@@ -115,6 +123,9 @@ instance NFData e => NFData (DecodeError e)
 newtype DecodeErrors e =
   DecodeErrors (NonEmpty (DecodeError e))
   deriving (Eq, Ord, Show, Semigroup, Generic)
+
+instance Functor DecodeErrors where
+  fmap f (DecodeErrors nel) = DecodeErrors (fmap (fmap f) nel)
 
 instance NFData e => NFData (DecodeErrors e)
 
