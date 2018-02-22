@@ -95,9 +95,8 @@ import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (second)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.UTF8 as UTF8 (fromString)
+import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
@@ -234,7 +233,7 @@ lazyByteString = LBS.fromStrict <$> contents
 
 -- | Get the contents of a field as a 'String'
 string :: FieldDecode' ByteString String
-string = C.unpack <$> contents
+string = UTF8.toString <$> contents
 
 -- | Throw away the contents of a field. This is useful for skipping unneeded fields.
 ignore :: FieldDecode e s ()
@@ -361,7 +360,7 @@ named name =
   let vs' = ['a','e','i','o','u']
       vs  = fmap toUpper vs' ++ vs'
       n c = if c `elem` vs then "n" else ""
-      n' = foldMap (n . fst) . C.uncons
+      n' = foldMap (n . fst) . UTF8.uncons
       n'' = n' name
       space = " "
   in  decodeReadWithMsg $ \bs ->
@@ -390,7 +389,7 @@ parsec =
   -- since it won't correspond obviously to a position in their source file.
   let dropPos = drop 1 . dropWhile (/= ':')
   in  mkParserFunction
-    (validateEither' (BadDecode . C.pack . dropPos . show))
+    (validateEither' (BadDecode . UTF8.fromString . dropPos . show))
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::
