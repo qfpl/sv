@@ -3,11 +3,18 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE DeriveGeneric #-}
 
+import Control.Applicative ((*>))
 import Control.DeepSeq
 import Control.Lens
 import Criterion.Main
+import qualified Data.Attoparsec.ByteString as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
+import Data.Foldable (traverse_)
+import Data.Csv as C
+import Data.Csv.Parser as C
+import Data.Vector (Vector)
 import GHC.Generics
 import System.Exit (exitFailure)
 
@@ -34,23 +41,22 @@ instance NFData a => NFData (BenchData a) where
 inds :: BenchData Int
 inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
-loadFile :: Int -> IO ByteString
-loadFile n = BS.readFile ("benchmarks/csv/" ++ show n ++ ".csv")
+loadFile :: String -> Int -> IO ByteString
+loadFile subdir n = BS.readFile ("benchmarks/csv/" ++ subdir ++ "/" ++ show n ++ ".csv")
 
-bdFs :: IO (BenchData ByteString)
-bdFs = traverse loadFile inds
+-- subdirs
+easy, hard :: String
+easy = "easy"
+hard = "hard"
 
-bdFs' :: IO (BenchData (Sv ByteString))
-bdFs' = traverse sanity =<< bdFs
+bdFs :: String -> IO (BenchData ByteString)
+bdFs subdir = traverse (loadFile subdir) inds
+
+bdFs' :: String -> IO (BenchData (Sv ByteString))
+bdFs' subdir = traverse sanitySv =<< bdFs subdir
 
 opts :: ParseOptions ByteString
 opts = defaultParseOptions & headedness .~ Unheaded & parsingLib .~ Attoparsec
-
-parse :: ByteString -> DecodeValidation ByteString (Sv ByteString)
-parse = D.parse opts
-
-dec :: Sv ByteString -> DecodeValidation ByteString [Row]
-dec = D.decode rowDec
 
 parseDec :: ByteString -> DecodeValidation ByteString [Row]
 parseDec = D.parseDecode rowDec opts
@@ -63,49 +69,64 @@ failOnError v = case v of
       exitFailure
   AccSuccess s -> pure s
 
-sanity :: ByteString -> IO (Sv ByteString)
-sanity bs = do
+failOnLeft :: Either String b -> IO b
+failOnLeft = either (\s -> putStrLn s *> exitFailure) pure
+
+sanitySv :: ByteString -> IO (Sv ByteString)
+sanitySv bs = do
   s <- failOnError (parse bs)
   _ <- failOnError (dec s)
   s `seq` pure s
 
+sanityCassava :: ByteString -> IO ()
+sanityCassava bs = do
+  _ <- failOnLeft (parseCassava bs)
+  _ <- failOnLeft (parseDecCassava bs)
+  pure ()
+
+parse :: ByteString -> DecodeValidation ByteString (Sv ByteString)
+parse = D.parse opts
+
+dec :: Sv ByteString -> DecodeValidation ByteString [Row]
+dec = D.decode rowDec
+
+parseCassava :: ByteString -> Either String C.Csv
+parseCassava = A.parseOnly (C.csv C.defaultDecodeOptions)
+
+parseDecCassava :: ByteString -> Either String (Vector Row)
+parseDecCassava = C.decode C.NoHeader . BL.fromStrict
+
+mkBench :: NFData b => String -> (a -> b) -> BenchData a -> Benchmark
+mkBench nm func bs = bgroup nm [
+      bench "1" $ nf func (f1 bs)
+    , bench "10" $ nf func (f10 bs)
+    , bench "100" $ nf func (f100 bs)
+    , bench "500" $ nf func (f500 bs)
+    , bench "1000" $ nf func (f1000 bs)
+    , bench "5000" $ nf func (f5000 bs)
+    , bench "10000" $ nf func (f10000 bs)
+    , bench "50000" $ nf func (f50000 bs)
+    , bench "100000" $ nf func (f100000 bs)
+    ]
 
 main :: IO ()
-main =
+main = do
+  easies <- bdFs easy
+  hards <- bdFs hard
+  traverse_ sanitySv easies
+  traverse_ sanitySv hards
+  traverse_ sanityCassava easies
   defaultMain
-      [ env bdFs $ \ bs -> bgroup "Parse" [
-          bench "1" $ whnf parse (f1 bs)
-        , bench "10" $ whnf parse (f10 bs)
-        , bench "100" $ whnf parse (f100 bs)
-        , bench "500" $ whnf parse (f500 bs)
-        , bench "1000" $ whnf parse (f1000 bs)
-        , bench "5000" $ whnf parse (f5000 bs)
-        , bench "10000" $ whnf parse (f10000 bs)
-        , bench "50000" $ whnf parse (f50000 bs)
-        , bench "100000" $ whnf parse (f100000 bs)
-        ]
+      [ env (bdFs  easy) $ mkBench "Parse" parse
+      , env (bdFs  easy) $ mkBench "Parse Cassava" parseCassava
+      , env (bdFs' easy) $ mkBench "Decode" dec
+      -- cassava does not seem to have a "decode only" option against which to compare
+      , env (bdFs  easy) $ mkBench "Parse and decode" parseDec
+      , env (bdFs  easy) $ mkBench "Parse and decode Cassava" parseDecCassava
 
-      , env bdFs' $ \ bs -> bgroup "Decode" [
-          bench "1" $ whnf dec (f1 bs)
-        , bench "10" $ whnf dec (f10 bs)
-        , bench "100" $ whnf dec (f100 bs)
-        , bench "500" $ whnf dec (f500 bs)
-        , bench "1000" $ whnf dec (f1000 bs)
-        , bench "5000" $ whnf dec (f5000 bs)
-        , bench "10000" $ whnf dec (f10000 bs)
-        , bench "50000" $ whnf dec (f50000 bs)
-        , bench "100000" $ whnf dec (f100000 bs)
-        ]
-
-      , env bdFs $ \ bs -> bgroup "Parse and decode" [
-          bench "1" $ whnf parseDec (f1 bs)
-        , bench "10" $ whnf parseDec (f10 bs)
-        , bench "100" $ whnf parseDec (f100 bs)
-        , bench "500" $ whnf parseDec (f500 bs)
-        , bench "1000" $ whnf parseDec (f1000 bs)
-        , bench "5000" $ whnf parseDec (f5000 bs)
-        , bench "10000" $ whnf parseDec (f10000 bs)
-        , bench "50000" $ whnf parseDec (f50000 bs)
-        , bench "100000" $ whnf parseDec (f100000 bs)
-        ]
+      -- These "hard" benchmarks are the RFC 1480 non-compliant versions.
+      -- They cannot be compared to cassava as it can't parse them.
+      , env (bdFs  hard) $ mkBench "Parse (hard mode)" parse
+      , env (bdFs' hard) $ mkBench "Decode (hard mode)" dec
+      , env (bdFs  hard) $ mkBench "Parse and decode (hard mode)" parseDec
       ]

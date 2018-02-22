@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -22,6 +23,7 @@ module Data.Sv.Decode.Type (
 , DecodeErrors (..)
 ) where
 
+import Control.DeepSeq (NFData)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
 import Control.Monad.State (State, runState, state, MonadState)
 import Data.Functor.Alt (Alt ((<!>)))
@@ -33,6 +35,7 @@ import Data.Semigroup
 import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (AccValidation (AccSuccess, AccFailure))
 import Data.Vector (Vector)
+import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField)
 
@@ -101,7 +104,9 @@ data DecodeError e =
   | UnknownCanonicalValue e [[e]]
   | BadParse e
   | BadDecode e
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
+
+instance NFData e => NFData (DecodeError e)
 
 -- TODO give this a field accessor?
 -- TODO use something faster than a NEL?
@@ -109,7 +114,9 @@ data DecodeError e =
 -- | 'DecodeErrors' are many 'DecodeError's
 newtype DecodeErrors e =
   DecodeErrors (NonEmpty (DecodeError e))
-  deriving (Eq, Ord, Show, Semigroup)
+  deriving (Eq, Ord, Show, Semigroup, Generic)
+
+instance NFData e => NFData (DecodeErrors e)
 
 -- | 'DecodeValidation' is the error-accumulating 'Applicative' underlying
 -- 'FieldDecode'
