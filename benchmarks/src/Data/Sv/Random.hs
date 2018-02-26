@@ -1,6 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Data.Sv.Random where
 
@@ -13,7 +12,7 @@ import Data.Semigroup (Semigroup ((<>)))
 import Data.ByteString (ByteString)
 import Data.Functor.Contravariant
 import qualified Data.Vector as V
-import GHC.Generics
+import GHC.Generics (Generic)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -24,9 +23,6 @@ import qualified Data.Sv.Encode as E
 import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
 import Text.Newline (Newline (LF, CRLF))
 import Text.Quote (Quote (SingleQuote, DoubleQuote))
-
-deriving instance (Generic a, Generic b) => Generic (AccValidation a b)
-instance (Generic a, NFData a, Generic b, NFData b) => NFData (AccValidation a b)
 
 data Product =
   Product { i :: Int, f :: Float, d :: Double }
