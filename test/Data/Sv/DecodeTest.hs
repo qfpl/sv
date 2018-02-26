@@ -80,7 +80,7 @@ varyingLengthTest :: TestTree
 varyingLengthTest =
   testCase "varyingLength has all the right errors" $
     parseDecode str2 opts varyingLength @?=
-      AccFailure (DecodeErrors (D.UnexpectedEndOfRow :| [
+      Failure (DecodeErrors (D.UnexpectedEndOfRow :| [
         D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three"])
       , D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three", Unquoted "four"])
       , D.ExpectedEndOfRow (V.fromList $ fmap pure [Unquoted "three", Unquoted "four", Unquoted "five"])

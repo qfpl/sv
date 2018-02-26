@@ -63,11 +63,11 @@ parseDec = D.parseDecode rowDec opts
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
-  AccFailure e -> do
+  Failure e -> do
       putStr "Sanity check failed: "
       print e
       exitFailure
-  AccSuccess s -> pure s
+  Success s -> pure s
 
 failOnLeft :: Either String b -> IO b
 failOnLeft = either (\s -> putStrLn s *> exitFailure) pure

@@ -26,7 +26,7 @@ import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
 import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
-import Data.Validation (_AccValidation, bindValidation)
+import Data.Validation (_Validation, bindValidation)
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 
@@ -50,7 +50,7 @@ infixl 1 >>==
 -- | flipped '(>>==)''
 (==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
 (==<<) f (FieldDecode c) =
-  FieldDecode (rmapC (`bindValidation` (view _AccValidation . f)) c)
+  FieldDecode (rmapC (`bindValidation` (view _Validation . f)) c)
     where
       rmapC g (Compose fga) = Compose (fmap g fga)
 infixr 1 ==<<

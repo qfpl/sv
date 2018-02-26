@@ -51,7 +51,7 @@ module Data.Sv (
   , FieldDecode (..)
   , FieldDecode'
   , DecodeState (..)
-  , AccValidation (..)
+  , Validation (..)
   , DecodeValidation
   , DecodeError (..)
   , DecodeErrors (..)

@@ -19,8 +19,8 @@ let
     validation = pkgs.fetchFromGitHub {
       owner = "qfpl";
       repo = "validation";
-      rev = "aa8d2fa835b66b191ff1b150c58c56117e1c7e7c";
-      sha256 = "15n3wc7l1wjfs5ibhxz41r19asdb9ga6scpfalds7kp2ypp96shb";
+      rev = "1";
+      sha256 = "0bh3i6dkkxc6sxzbdwk9hkyyqm9cvx7261vl7zrxk0myrj2klfbr";
     };
 
     hedgehog = pkgs.fetchFromGitHub {
