@@ -49,7 +49,7 @@ main = do
     Just (s1,s2) -> do
       let result = PeopleAndItems <$> decode person s1 <*> decode item s2
       case result of
-        AccFailure e -> do
+        Failure e -> do
           print e
           exitFailure
-        AccSuccess a -> print a
+        Success a -> print a

@@ -11,7 +11,7 @@ module Data.Sv.Decode.Error (
   DecodeError (..)
 , DecodeErrors (..)
 , DecodeValidation
-, AccValidation (AccFailure, AccSuccess)
+, Validation (Failure, Success)
 , bindValidation
 , decodeError
 , unexpectedEndOfRow
@@ -26,16 +26,16 @@ module Data.Sv.Decode.Error (
 , validateTrifectaResult
 ) where
 
-import Data.Validation (AccValidation (AccSuccess, AccFailure), bindValidation)
+import Data.Validation (Validation (Success, Failure), bindValidation)
 import Data.Vector (Vector)
-import Text.Trifecta (Result (Success, Failure), _errDoc)
+import qualified Text.Trifecta as Trifecta (Result (Success, Failure), _errDoc)
 
 import Data.Sv.Decode.Type
 import Data.Sv.Syntax.Field
 
 -- | Build a failing 'DecodeValidation'
 decodeError :: DecodeError e -> DecodeValidation e a
-decodeError = AccFailure . DecodeErrors . pure
+decodeError = Failure . DecodeErrors . pure
 
 -- | Fail with 'UnexpectedEndOfRow'
 unexpectedEndOfRow :: DecodeValidation e a
@@ -76,7 +76,7 @@ validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 validateMay' ab e a = validateMay e (ab a)
 
 -- | Convert a Trifecta 'Result' to a DecodeValidation
-validateTrifectaResult :: (String -> DecodeError e) -> Result a -> DecodeValidation e a
+validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
 validateTrifectaResult f result = case result of
-  Success a -> pure a
-  Failure e -> decodeError . f . show . _errDoc $ e
+  Trifecta.Success a -> pure a
+  Trifecta.Failure e -> decodeError . f . show . Trifecta._errDoc $ e

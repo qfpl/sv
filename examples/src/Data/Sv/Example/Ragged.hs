@@ -29,9 +29,9 @@ main :: IO ()
 main = do
   v <- parseDecodeFromFile personDecoder defaultParseOptions file
   case v of
-    AccFailure e -> do
+    Failure e -> do
       putStrLn "Failed to parse and decode ragged.csv:"
       print e
       exitFailure
-    AccSuccess a ->
+    Success a ->
       print a

@@ -51,5 +51,5 @@ main :: IO ()
 main = do
   result <- parseDecodeFromFile handicap opts file
   case result of
-    AccFailure e -> print e >> exitFailure
-    AccSuccess h -> unless (length h == 5) exitFailure
+    Failure e -> print e >> exitFailure
+    Success h -> unless (length h == 5) exitFailure

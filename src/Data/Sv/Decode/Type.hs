@@ -17,7 +17,7 @@ module Data.Sv.Decode.Type (
 , DecodeState (..)
 , runDecodeState
 , Ind (Ind)
-, AccValidation (AccSuccess, AccFailure)
+, Validation (Success, Failure)
 , DecodeValidation
 , DecodeError (..)
 , DecodeErrors (..)
@@ -33,7 +33,7 @@ import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Profunctor (Profunctor (lmap, rmap))
-import Data.Validation (AccValidation (AccSuccess, AccFailure))
+import Data.Validation (Validation (Success, Failure))
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
 
@@ -67,8 +67,8 @@ instance Alt (FieldDecode e s) where
             let a' = fmap (,j) a
                 b' = fmap (,k) b
             in  case a' <!> b' of
-                  AccFailure e -> (AccFailure e, k)
-                  AccSuccess (z, m) -> (AccSuccess z, m)
+                  Failure e -> (Failure e, k)
+                  Success (z, m) -> (Success z, m)
 
 instance Profunctor (FieldDecode e) where
   lmap f (FieldDecode (Compose dec)) = FieldDecode (Compose (lmap f dec))
@@ -131,4 +131,4 @@ instance NFData e => NFData (DecodeErrors e)
 
 -- | 'DecodeValidation' is the error-accumulating 'Applicative' underlying
 -- 'FieldDecode'
-type DecodeValidation e = AccValidation (DecodeErrors e)
+type DecodeValidation e = Validation (DecodeErrors e)
