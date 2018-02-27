@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.UTF8 as UTF8
 import Data.Text            (Text)
 import qualified Data.Text as Text
+import qualified Data.Vector as V
 import Hedgehog             ((===), Property, Gen, forAll, property)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -27,7 +28,7 @@ import Data.Sv.Print.Internal (printSpaced)
 import Data.Sv.Syntax.Field (Field (Quoted), SpacedField)
 import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
 import Data.Sv.Syntax.Sv   (Sv (Sv), Headedness, noHeader, comma)
-import Text.Space          (HorizontalSpace (Space, Tab))
+import Text.Space          (HorizontalSpace (Space, Tab), Spaces)
 import Text.Quote          (Quote (SingleQuote))
 
 test_Print :: TestTree
@@ -90,8 +91,8 @@ prop_csvRoundTrip :: Property
 prop_csvRoundTrip =
   let genSpace :: Gen HorizontalSpace
       genSpace = Gen.element [Space, Tab]
-      genSpaces :: Gen [HorizontalSpace]
-      genSpaces = Gen.list (Range.linear 0 10) genSpace
+      genSpaces :: Gen Spaces
+      genSpaces = V.fromList <$> Gen.list (Range.linear 0 10) genSpace
       genText :: Gen Text
       genText  = Gen.text (Range.linear 1 100) Gen.alphaNum
       gen = genSvWithHeadedness (pure comma) genSpaces genText
