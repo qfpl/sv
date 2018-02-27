@@ -12,7 +12,6 @@
 -- we recommend that instead you view the source to follow along.
 module Data.Sv.Example.Species where
 
-import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
 import System.Exit (exitFailure)
 
@@ -41,14 +40,16 @@ file = "csv/species.csv"
 
 The parser needs some configuration to parse our file. For example, it
 needs to know which separator character we're using - in our case: comma.
-We set up our config by modifying the default options using lens, but you
-could just as easily modify it with record syntax, or build a config from
+It's useful to start from the default options and modify them using lens, but
+you could just as easily modify them with record syntax, or build a config from
 scratch using the types and values defined in Data.Sv.Parse.Options
 
-The only setting we're changing is the choice of parsing library. The
-default parsing library used is Trifecta because of its very helpful
-clang-style error messages. However Trifecta requires UTF-8 compatible
-input and, as mentioned above, our input file is Windows-1252 encoded.
+Next we're choosing which parsing library should be used to parse the file.
+Most users can use the default by calling parseDecode rather than parseDecode'
+as we will. The default parsing library used is Trifecta because of its very
+helpful clang-style error messages.
+However Trifecta requires UTF-8 compatible input and, as mentioned above, our
+file is encoded as Windows-1252.
 Hence we're using Attoparsec, which has less helpful error messages but
 can handle this encoding.
 
@@ -58,7 +59,10 @@ anyway.
 
 \begin{code}
 opts :: ParseOptions ByteString
-opts = defaultParseOptions & (parsingLib .~ Attoparsec)
+opts = defaultParseOptions
+
+parser :: SvParser ByteString
+parser = attoparsecByteString
 \end{code}
 
 This is the type we've made for our rows. It was designed by observing
@@ -245,7 +249,7 @@ passing our parse options in.
 
 \begin{code}
 species :: IO (DecodeValidation ByteString [Species])
-species = parseDecodeFromFile speciesDecoder opts file
+species = parseDecodeFromFile' parser speciesDecoder opts file
 \end{code}
 
 And that's it! We've defined a data type for our rows, built a FieldDecode for

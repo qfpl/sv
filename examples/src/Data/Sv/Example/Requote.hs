@@ -4,7 +4,7 @@ import Control.Lens
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import System.Exit (exitFailure)
-import Text.Trifecta (parseFromFile)
+import qualified Text.Trifecta as T (parseFromFile)
 
 import Data.Sv
 import Data.Sv.Parse (separatedValues)
@@ -37,7 +37,7 @@ opts = defaultParseOptions
 
 requote :: IO ()
 requote = do
-  svMay <- parseFromFile (separatedValues opts) original
+  svMay <- T.parseFromFile (separatedValues opts) original
   case svMay of
     Nothing -> exitFailure
     Just s ->

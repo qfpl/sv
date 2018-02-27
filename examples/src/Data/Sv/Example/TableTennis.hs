@@ -43,7 +43,7 @@ handicap :: FieldDecode' ByteString Handicap
 handicap = Handicap <$> day <*> difference <*> D.utf8 <*> D.utf8
 
 difference :: FieldDecode' ByteString Difference
-difference = D.attoparsec (
+difference = D.withAttoparsec (
     (char '+' $> Plus <|> char '-' $> Minus) <*> integer
   )
 

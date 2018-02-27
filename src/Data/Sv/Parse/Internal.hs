@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 {-|
 Module      : Data.Sv.Parse.Internal
 Copyright   : (C) CSIRO 2017-2018
@@ -15,7 +13,6 @@ on this module at your own risk!
 
 module Data.Sv.Parse.Internal (
   separatedValues
-  , separatedValuesEof
   , header
   , field
   , singleQuotedField
@@ -40,10 +37,10 @@ import qualified Data.Vector as V
 import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
 import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
+import           Data.Sv.Syntax.Sv       (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), headedness, Separator)
 import           Data.Sv.Syntax.Field    (Field (Unquoted, Quoted))
 import           Data.Sv.Syntax.Record   (Record (Record), Records (Records, EmptyRecords))
-import           Data.Sv.Syntax.Sv       (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), Separator)
-import           Data.Sv.Parse.Options   (ParseOptions, headedness, separator, endOnBlankLine, encodeString)
+import           Data.Sv.Parse.Options   (ParseOptions, separator, endOnBlankLine, encodeString)
 import           Data.Vector.NonEmpty as V
 import           Text.Escape             (Unescaped (Unescaped))
 import           Text.Newline            (Newline (CR, CRLF, LF))
@@ -171,8 +168,3 @@ header opts = case view headedness opts of
 separatedValues :: CharParsing m => ParseOptions s -> m (Sv s)
 separatedValues opts =
   Sv (view separator opts) <$> header opts <*> records opts <*> ending opts
-
--- | Parse an Sv and ensure the end of the file follows.
-separatedValuesEof :: CharParsing m => ParseOptions s -> m (Sv s)
-separatedValuesEof opts =
-  separatedValues opts <* eof

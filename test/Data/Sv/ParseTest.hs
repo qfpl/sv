@@ -20,7 +20,7 @@ import           Text.Parser.Char     (CharParsing)
 import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
 
 import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parse       (ParseOptions, defaultParseOptions, separator, headedness, encodeString)
+import           Data.Sv.Parse       (ParseOptions, defaultParseOptions, headedness, separator, encodeString)
 import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
 import           Data.Sv.Syntax.Sv   (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
 import           Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
