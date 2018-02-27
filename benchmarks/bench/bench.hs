@@ -56,10 +56,10 @@ bdFs' :: String -> IO (BenchData (Sv ByteString))
 bdFs' subdir = traverse sanitySv =<< bdFs subdir
 
 opts :: ParseOptions ByteString
-opts = defaultParseOptions & headedness .~ Unheaded & parsingLib .~ Attoparsec
+opts = defaultParseOptions & headedness .~ Unheaded
 
 parseDec :: ByteString -> DecodeValidation ByteString [Row]
-parseDec = D.parseDecode rowDec opts
+parseDec = D.parseDecode' attoparsecByteString rowDec opts
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
@@ -69,12 +69,12 @@ failOnError v = case v of
       exitFailure
   Success s -> pure s
 
-failOnLeft :: Either String b -> IO b
-failOnLeft = either (\s -> putStrLn s *> exitFailure) pure
+failOnLeft :: Show s => Either s b -> IO b
+failOnLeft = either (\s -> print s *> exitFailure) pure
 
 sanitySv :: ByteString -> IO (Sv ByteString)
 sanitySv bs = do
-  s <- failOnError (parse bs)
+  s <- failOnLeft (parse bs)
   _ <- failOnError (dec s)
   s `seq` pure s
 
@@ -84,8 +84,8 @@ sanityCassava bs = do
   _ <- failOnLeft (parseDecCassava bs)
   pure ()
 
-parse :: ByteString -> DecodeValidation ByteString (Sv ByteString)
-parse = D.parse opts
+parse :: ByteString -> Either ByteString (Sv ByteString)
+parse = parseSv' attoparsecByteString opts
 
 dec :: Sv ByteString -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec

@@ -34,6 +34,7 @@ module Data.Sv.Syntax.Sv (
   , noHeader
   , mkHeader
   , Headedness (Unheaded, Headed)
+  , HasHeadedness (headedness)
   , getHeadedness
   , Separator
   , HasSeparator (separator)
@@ -50,7 +51,6 @@ import Data.Monoid        ((<>))
 import Data.Traversable   (Traversable (traverse))
 import GHC.Generics       (Generic)
 
-import Data.Sv.Parse.Options (Headedness (Unheaded, Headed), Separator, HasSeparator (separator), comma, pipe, tab)
 import Data.Sv.Syntax.Field  (HasFields (fields))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords), HasRecord (record), HasRecords (records, traverseNewlines, traverseRecords), recordList)
 import Text.Newline       (Newline)
@@ -167,3 +167,46 @@ noHeader = Nothing
 -- | Convenience constructor for 'Header', usually when you're building 'Sv's
 mkHeader :: Record s -> Newline -> Maybe (Header s)
 mkHeader r n = Just (Header r n)
+
+-- | Does the 'Sv' have a 'Header' or not? A header is a row at the beginning
+-- of a file which contains the string names of each of the columns.
+--
+-- If a header is present, it must not be decoded with the rest of the data.
+data Headedness =
+  Unheaded | Headed
+  deriving (Eq, Ord, Show)
+
+-- | Classy lens for 'Headedness'
+class HasHeadedness c where
+  headedness :: Lens' c Headedness
+
+instance HasHeadedness Headedness where
+  headedness = id
+
+-- | By what are your values separated? The answer is often 'comma', but not always.
+--
+-- A 'Separator' is just a 'Char'. It could be a sum type instead, since it
+-- will usually be comma or pipe, but our preference has been to be open here
+-- so that you can use whatever you'd like. There are test cases, for example,
+-- ensuring that you're free to use null-byte separated values if you so desire.
+type Separator = Char
+
+-- | Classy lens for 'Separator'
+class HasSeparator c where
+  separator :: Lens' c Separator
+
+instance HasSeparator Char where
+  separator = id
+  {-# INLINE separator #-}
+
+-- | The venerable comma separator. Used for CSV documents.
+comma :: Separator
+comma = ','
+
+-- | The pipe separator. Used for PSV documents.
+pipe :: Separator
+pipe = '|'
+
+-- | Tab is a separator too - why not?
+tab :: Separator
+tab = '\t'

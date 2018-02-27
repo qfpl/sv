@@ -18,7 +18,7 @@ module Data.Sv.Encode.Options (
 
 import Control.Lens (Lens')
 
-import Data.Sv.Parse.Options (Separator, HasSeparator (separator), comma)
+import Data.Sv.Syntax.Sv (Separator, HasSeparator (separator), comma)
 import Text.Newline (Newline (CRLF))
 import Text.Space (Spaces)
 import Text.Quote (Quote (DoubleQuote))

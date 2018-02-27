@@ -31,7 +31,7 @@ cost :: TokenParsing m => m Cost
 cost = string "$" *> fmap Cost integer
 
 item :: FieldDecode' ByteString Item
-item = Item <$> D.utf8 <*> D.int <*> D.trifecta cost
+item = Item <$> D.utf8 <*> D.int <*> D.withTrifecta cost
 
 sv2 :: (CharParsing m) => ParseOptions s -> m (Sv s, Sv s)
 sv2 o = (,) <$> separatedValues o <*> separatedValues o

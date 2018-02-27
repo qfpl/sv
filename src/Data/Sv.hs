@@ -8,14 +8,83 @@ Portability : non-portable
 -}
 
 module Data.Sv (
+  -- * Decoding
+    decode
+  , parseDecode
+  , parseDecode'
+  , parseDecodeFromFile
+  , parseDecodeFromFile'
+  , decodeMay
+  , decodeEither
+  , decodeEither'
+
+  , FieldDecode (..)
+  , FieldDecode'
+  , DecodeState (..)
+  , Validation (..)
+  , DecodeValidation
+  , DecodeError (..)
+  , DecodeErrors (..)
+
+  , runFieldDecode
+  , (>>==)
+  , (==<<)
+  , fieldDecode
+  , fieldDecodeWithQuotes
+  , fieldDecodeWithSpaces
+  , validateMay
+  , validateMay'
+  , promote
+
+  -- * Parsing
+  , parseSv
+  , parseSv'
+  , parseSvFromFile
+  , parseSvFromFile'
+  , separatedValues
+  , ParseOptions (..)
+  , Headedness (..)
+  , defaultParseOptions
+  , orDefault
+  , defaultHeadedness
+  , defaultSeparator
+  , SvParser (..)
+  , trifecta
+  , attoparsecByteString
+  , attoparsecText
+
+  -- * Printing
+  , printSv
+  , printSvLazy
+  , printSvText
+  , printSvTextLazy
+  , printSv'
+  , printSvLazy'
+  , writeSvToFile
+  , writeSvToHandle
+  , writeSvToFile'
+  , writeSvToHandle'
+  , PrintOptions
+  , defaultPrintOptions
+
+  -- * Encoding
+  , encode
+  , encodeToFile
+  , encodeToHandle
+  , encodeBuilder
+  , encodeRow
+  , encodeSv
+  , Encode (..)
+  , EncodeOptions (..)
+  , defaultEncodeOptions
+
   -- * Core data types
-  Sv (..)
+  , Sv (..)
   , mkSv
   , emptySv
   , Header (..)
   , noHeader
   , mkHeader
-  , Headedness (..)
   , getHeadedness
   , Separator
   , comma
@@ -40,68 +109,6 @@ module Data.Sv (
   , singleRecord
   , recordList
 
-  -- * Decoding
-  , decode
-  , parseDecode
-  , parseDecodeFromFile
-  , decodeMay
-  , decodeEither
-  , decodeEither'
-
-  , FieldDecode (..)
-  , FieldDecode'
-  , DecodeState (..)
-  , Validation (..)
-  , DecodeValidation
-  , DecodeError (..)
-  , DecodeErrors (..)
-
-  , runFieldDecode
-  , (>>==)
-  , (==<<)
-  , fieldDecode
-  , fieldDecodeWithQuotes
-  , fieldDecodeWithSpaces
-  , validateMay
-  , validateMay'
-  , promote
-
-  -- * Parsing
-  , separatedValues
-  , separatedValuesEof
-  , ParseOptions (..)
-  , defaultParseOptions
-  , orDefault
-  , ParsingLib (..)
-  , defaultParsingLib
-
-  -- * Printing
-  , printSv
-  , printSvLazy
-  , printSvText
-  , printSvTextLazy
-  , printSv'
-  , printSvLazy'
-  , writeSvToFile
-  , writeSvToHandle
-  , writeSvToFile'
-  , writeSvToHandle'
-  , PrintOptions
-  , HasPrintOptions (..)
-  , defaultPrintOptions
-
-  -- * Encoding
-  , encode
-  , encodeToFile
-  , encodeToHandle
-  , encodeBuilder
-  , encodeRow
-  , encodeSv
-  , Encode (..)
-  , EncodeOptions (..)
-  , HasEncodeOptions (..)
-  , defaultEncodeOptions
-
   -- * Lenses
   , HasSv (..)
   , HasHeader (..)
@@ -112,7 +119,8 @@ module Data.Sv (
   , HasRecord (..)
   , HasRecords (..)
   , HasParseOptions (..)
-  , HasParsingLib (..)
+  , HasPrintOptions (..)
+  , HasEncodeOptions (..)
 
   -- * Operators
   , Alt ((<!>))
