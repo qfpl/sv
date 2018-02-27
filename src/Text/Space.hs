@@ -40,6 +40,7 @@ import Control.Lens     (Lens', Prism', prism, prism')
 import Data.Semigroup   (Semigroup ((<>)))
 import Data.Text        (Text)
 import qualified Data.Text as Text
+import qualified Data.Vector as V
 import GHC.Generics     (Generic)
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
@@ -78,19 +79,19 @@ instance AsHorizontalSpace Char where
   _HorizontalSpace = prism' spaceToChar charToSpace
 
 -- | Helpful alias for lists of 'Space's
-type Spaces = [HorizontalSpace]
+type Spaces = V.Vector HorizontalSpace
 
 -- | One space
 single :: Spaces
-single = [Space]
+single = V.singleton Space
 
 -- | As many spaces as you'd like
 manySpaces :: Int -> Spaces
-manySpaces = flip replicate Space
+manySpaces = flip V.replicate Space
 
 -- | One tab
 tab :: Spaces
-tab = [Tab]
+tab = V.singleton Tab
 
 -- | Turn a 'Space' into a 'Char'. To go the other way, see 'charToSpace'
 spaceToChar :: HorizontalSpace -> Char
@@ -109,19 +110,14 @@ spacesText :: Prism' Text Spaces
 spacesText =
   prism'
     (Text.pack . foldMap (pure . spaceToChar))
-    (foldMap c2s . Text.unpack)
+    (fmap V.fromList . traverse charToSpace . Text.unpack)
 
 -- | Parse 'String' into 'Spaces', or convert 'Spaces' into 'String'
 spacesString :: Prism' String Spaces
 spacesString =
   prism'
-    (fmap spaceToChar)
-    (foldMap c2s)
-
-c2s :: Char -> Maybe Spaces
-c2s ' ' = Just single
-c2s '\t' = Just tab
-c2s _   = Nothing
+    (fmap spaceToChar . V.toList)
+    (fmap V.fromList . traverse charToSpace)
 
 -- | 'Spaced' is a value with zero or many horizontal spaces around it on
 -- both sides.

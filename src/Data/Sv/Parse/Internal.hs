@@ -47,7 +47,7 @@ import           Data.Sv.Parse.Options   (ParseOptions, headedness, separator, e
 import           Data.Vector.NonEmpty as V
 import           Text.Escape             (Unescaped (Unescaped))
 import           Text.Newline            (Newline (CR, CRLF, LF))
-import           Text.Space              (HorizontalSpace (Space, Tab), Spaced, betwixt)
+import           Text.Space              (HorizontalSpace (Space, Tab), Spaces, Spaced, betwixt)
 import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 -- | This function is in newer versions of the parsers package, but in
@@ -123,8 +123,8 @@ space sep =
   let removeIfSep c s = if sep == c then empty else char c $> s
   in  removeIfSep ' ' Space <|> removeIfSep '\t' Tab
 
-spaces :: CharParsing m => Separator -> m [HorizontalSpace]
-spaces = many . space
+spaces :: CharParsing m => Separator -> m Spaces
+spaces = fmap V.fromList . many . space
 
 -- | Combinator to parse some data surrounded by spaces
 spaced :: CharParsing m => Separator -> m a -> m (Spaced a)
