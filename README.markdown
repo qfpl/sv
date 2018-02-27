@@ -16,6 +16,7 @@ their dataset.
 ## Examples:
 
 * Decoding a real CSV: [Species.lhs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Species.lhs)
+* Handling "NULL" and "Unknown" occuring in a column of numbers: [Numbers.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs)
 * Dealing with non-rectangular data: [Ragged.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs)
 * Handling multiple logical documents in one file: [Concat.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Concat.hs)
 * Integrating with an existing attoparsec parser to read date stamps: [TableTennis.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/TableTennis.hs)
