@@ -37,9 +37,13 @@ module Data.Sv.Decode (
 , mapErrors
 
 -- * Primitives
+-- ** Row-based
+, row
+, rowWithSpacing
+-- ** Field-based
 , contents
-, raw
 , untrimmed
+, raw
 , byteString
 , utf8
 , lazyUtf8
@@ -93,6 +97,8 @@ import qualified Prelude as P
 
 import Control.Lens (alaf, review, view)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Reader (ReaderT (ReaderT))
+import Control.Monad.State (state)
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (first, second)
@@ -113,6 +119,8 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
@@ -125,7 +133,7 @@ import Data.Sv.Parse (separatedValues)
 import Data.Sv.Parse.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), encodeString)
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
 import Data.Sv.Syntax.Sv (Sv, recordList)
-import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
+import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces, spacedValue)
 
 -- | Decodes a sv into a list of its values using the provided 'FieldDecode'
 decode :: FieldDecode' s a -> Sv s -> DecodeValidation s [a]
@@ -210,6 +218,17 @@ untrimmed =
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: FieldDecode e s s
 contents = fieldDecode pure
+
+-- | Grab the whole row as a raw 'Vector'
+row :: FieldDecode e s (Vector s)
+row = (fmap . fmap) (view (spacedValue.fieldContents)) rowWithSpacing
+
+-- | Grab the whole row, including all spacing and quoting information,
+-- as a raw 'Vector'
+rowWithSpacing :: FieldDecode e s (Vector (SpacedField s))
+rowWithSpacing =
+  FieldDecode . Compose . DecodeState . ReaderT $ \v ->
+    state (const (pure v, Ind (V.length v)))
 
 -- | Get the contents of a field as a bytestring.
 --
