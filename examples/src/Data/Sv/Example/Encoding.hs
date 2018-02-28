@@ -67,7 +67,7 @@ makeLenses ''Example
 -- or in our case
 --
 -- @
--- divide :: (Produt -> (Text, Int)) -> Encode Text -> Encode Int -> Encode Product
+-- divide :: (Product -> (Text, Int)) -> Encode Text -> Encode Int -> Encode Product
 -- @
 productEnc :: Encode Product
 productEnc = E.divide (\(Product t d) -> (t,d)) E.text E.double
