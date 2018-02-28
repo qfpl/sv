@@ -11,11 +11,13 @@ copyright:
 category:            Example
 build-type:          Simple
 extra-source-files:  ChangeLog.md
-                     , csv/species.csv
-                     , csv/ragged.csv
                      , csv/concat.csv
+                     , csv/encoding.expected.csv
+                     , csv/numbers.csv
+                     , csv/ragged.csv
                      , csv/requote.csv
                      , csv/requote.golden.csv
+                     , csv/species.csv
                      , csv/tt-handicap.csv
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3
@@ -25,6 +27,8 @@ tested-with:         GHC == 7.10.3
 
 library
   exposed-modules:     Data.Sv.Example.Concat
+                       , Data.Sv.Example.Encoding
+                       , Data.Sv.Example.Numbers
                        , Data.Sv.Example.Ragged
                        , Data.Sv.Example.Requote
                        , Data.Sv.Example.Species
@@ -32,14 +36,17 @@ library
   build-depends:       base >= 4.8 && < 4.11
                        , sv
                        , bytestring >= 0.9.1.10 && < 0.11
+                       , contravariant-extras >= 0.3 && < 0.4
                        , lens >= 4 && < 5
                        , parsers >= 0.12 && <0.13
+                       , semigroups >= 0.18 && < 0.19
                        , semigroupoids >= 5 && <6
                        , text >= 1.0 && < 1.3
                        , time >= 1.5 && < 1.10
                        , trifecta >= 1.5 && < 1.8
   hs-source-dirs:      src
   default-language:    Haskell2010
+  ghc-options:         -Wall
 
 test-suite test
   type:                exitcode-stdio-1.0

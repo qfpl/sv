@@ -48,6 +48,7 @@ module Data.Sv.Decode (
 , string
 , ignore
 , replace
+, exactly
 , emptyField
 , int
 , integer
@@ -102,10 +103,10 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose))
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (First (First))
 import Data.Readable (Readable (fromBS))
-import Data.Semigroup (Semigroup ((<>)))
+import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Semigroup.Foldable (asum1)
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
@@ -244,6 +245,13 @@ ignore = replace ()
 -- | Throw away the contents of a field, and return the given value.
 replace :: a -> FieldDecode e s a
 replace a = a <$ contents
+
+-- | Exactly this string, or else fail
+exactly :: (Semigroup s, Eq s, IsString s) => s -> FieldDecode' s s
+exactly s = contents >>== \z ->
+  if s == z
+  then pure s
+  else badDecode (sconcat ("'":|[z,"' was not equal to '",s,"'"]))
 
 -- | Decode a field as an 'Int'
 int :: FieldDecode' ByteString Int
