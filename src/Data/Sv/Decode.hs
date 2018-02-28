@@ -37,9 +37,6 @@ module Data.Sv.Decode (
 , mapErrors
 
 -- * Primitives
--- ** Row-based
-, row
-, rowWithSpacing
 -- ** Field-based
 , contents
 , untrimmed
@@ -59,6 +56,9 @@ module Data.Sv.Decode (
 , float
 , double
 , boolean
+-- ** Row-based
+, row
+, rowWithSpacing
 
 -- * Combinators
 , Alt ((<!>))
