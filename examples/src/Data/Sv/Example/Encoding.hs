@@ -1,10 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Data.Sv.Example.Encoding where
 
+import Contravariant.Extras.Contrazip (contrazip6)
+import Control.Lens (makeLenses, makePrisms)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
+import Data.Semigroup ((<>))
 import Data.Text (Text)
 import System.Exit (exitFailure)
 
@@ -14,21 +18,37 @@ import qualified Data.Sv.Encode as E
 expectedFile :: FilePath
 expectedFile = "csv/encoding.expected.csv"
 
--- | Here's our data type to encode. It has a few standard types as well as
--- some other algebraic data types we're about to define.
-data Example =
-  Example ByteString Text Int Double Product Sum
+data Product =
+  Product {
+    _p1 :: Text
+  , _p2 :: Double
+  }
   deriving Show
 
-data Product =
-  Product Text Double
-  deriving Show
+makeLenses ''Product
 
 data Sum
   = Sum1 Int
   | Sum2 Double
   | Sum3 Text
   deriving Show
+
+makePrisms ''Sum
+
+-- | Here's our data type to encode. It has a few standard types as well as
+-- some other algebraic data types we're about to define.
+data Example =
+  Example {
+    _e1 :: ByteString
+  , _e2 :: Text
+  , _e3 :: Int
+  , _e4 :: Double
+  , _e5 :: Product
+  , _e6 :: Sum
+  }
+  deriving Show
+
+makeLenses ''Example
 
 -- | Here we're defining an encoder for a 'Product' by using the
 -- 'divide' combinator.
@@ -74,7 +94,7 @@ productEnc = E.divide (\(Product t d) -> (t,d)) E.text E.double
 -- E.choose split :: Encode Int -> Encode (Either Double Text) -> Encode Sum
 -- E.chosen E.double E.text :: Encode (Either Double Text)
 -- @
-
+--
 sumEnc :: Encode Sum
 sumEnc = E.choose split E.int $ E.chosen E.double E.text
   where
@@ -84,6 +104,16 @@ sumEnc = E.choose split E.int $ E.chosen E.double E.text
         Sum2 d -> Right (Left d)
         Sum3 t -> Right (Right t)
 
+-- | 'exampleEnc' puts it all together. 'Example' is a large product, so we
+-- split it into nested tuples so that it can work with 'divide' and 'divided',
+-- then we pass the encoders one-by-one. This is the same pattern we used with
+-- 'choose' and 'chosen' above, but we have more components, so we nest deeper.
+--
+-- @
+-- divide  :: (a -> (b,c)) -> Encode b -> Encode c -> Encode a
+-- divided :: Encode b -> Encode c -> Encode (b,c)
+-- @
+--
 exampleEnc :: Encode Example
 exampleEnc =
   E.divide (\(Example b t i d p s) -> (b,(t,(i,(d,(p,s)))))) E.byteString $
@@ -114,4 +144,50 @@ main = do
   let encoded = encode opts exampleEnc examples
   LBS.putStr encoded
   putStrLn ""
-  when (expected /= encoded) exitFailure
+
+  -- validation
+  when (expected /= encoded) $ putStrLn "expected /= encoded" *> exitFailure
+  let encoded2 = encode opts exampleEncContravariantExtras examples
+  let encoded3 = encode opts exampleEncLens examples
+  when (expected /= encoded2) $ putStrLn "expected /= encoded2" *> exitFailure
+  when (expected /= encoded3) $ putStrLn "expected /= encoded3" *> exitFailure
+
+-- | Bonus Round #1
+--
+-- Here is an alternative definition of exampleEnc that you might prefer.
+-- This one depends on the @contravariant-extras@ package from hackage,
+-- which provides 'contrazip6' along with many other @contrazipN@ functions.
+exampleEncContravariantExtras :: Encode Example
+exampleEncContravariantExtras =
+  E.contramap (\(Example b t i d p s) -> (b,t,i,d,p,s)) $
+    contrazip6 E.byteString E.text E.int E.double productEnc sumEnc
+
+-- | Bonus Round #2
+--
+-- In this alternative, we're using lenses and prisms (derived automatically
+-- via 'makeLenses' and 'makePrisms') with the 'encodeOf' combinator and the
+-- 'Semigroup' instance on 'Encode'.
+--
+-- 'encodeOf' works with optics of many types (Lens, Prism, Traversal, Getter)
+-- and builds an encoder based on running that optic.
+--
+-- If you did not want to use lens, you could use 'contramap' with
+-- field accessor functions.
+--
+-- This version is pretty clean. It's my favourite of the three :)
+productEncLens :: Encode Product
+productEncLens =
+  E.encodeOf p1 E.text <> E.encodeOf p2 E.double
+
+sumEncLens :: Encode Sum
+sumEncLens =
+    E.encodeOf _Sum1 E.int <> E.encodeOf _Sum2 E.double <> E.encodeOf _Sum3 E.text
+
+exampleEncLens :: Encode Example
+exampleEncLens =
+      E.encodeOf e1 E.byteString
+  <>  E.encodeOf e2 E.text
+  <>  E.encodeOf e3 E.int
+  <>  E.encodeOf e4 E.double
+  <>  E.encodeOf e5 productEncLens
+  <>  E.encodeOf e6 sumEncLens

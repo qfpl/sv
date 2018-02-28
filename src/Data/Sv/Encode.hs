@@ -45,6 +45,10 @@ choose :: (a -> Either b c) -> Encode b -> Encode c -> Encode a
 
 which can be read "if 'a' is either 'b' or 'c', and I can handle 'b',
 and I can handle 'c', then I can handle 'a'".
+
+For an example of encoding, see
+<https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs
+Encoding.hs>
 -}
 
 module Data.Sv.Encode (
@@ -92,6 +96,7 @@ module Data.Sv.Encode (
 , lazyByteString
 
 -- * Combinators
+, Contravariant (contramap)
 , Divisible (divide, conquer)
 , divided
 , Decidable (choose, lose)
