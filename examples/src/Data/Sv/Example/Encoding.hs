@@ -141,14 +141,14 @@ main = do
   LBS.putStr expected
   putStrLn ""
   putStrLn "Encoded:"
-  let encoded = encode opts exampleEnc examples
+  let encoded = encode exampleEnc opts examples
   LBS.putStr encoded
   putStrLn ""
 
   -- validation
   when (expected /= encoded) $ putStrLn "expected /= encoded" *> exitFailure
-  let encoded2 = encode opts exampleEncContravariantExtras examples
-  let encoded3 = encode opts exampleEncLens examples
+  let encoded2 = encode exampleEncContravariantExtras opts examples
+  let encoded3 = encode exampleEncLens opts examples
   when (expected /= encoded2) $ putStrLn "expected /= encoded2" *> exitFailure
   when (expected /= encoded3) $ putStrLn "expected /= encoded3" *> exitFailure
 

@@ -50,9 +50,9 @@ decidableTests :: TestTree
 decidableTests =
   testGroup "decidable" [
     testCase "encode an Int" $
-      encodeRow opts intOrString i @?= "\"5\""
+      encodeRow intOrString opts i @?= "\"5\""
   , testCase "encode a String" $
-      encodeRow opts intOrString s @?= "\"hello\""
+      encodeRow intOrString opts s @?= "\"hello\""
   ]
 
 intEmptyAndString :: Encode IntAndString
@@ -65,26 +65,26 @@ divisibleTests :: TestTree
 divisibleTests =
   testGroup "divisible" [
     testCase "encode an IntAndString" $
-      encodeRow opts intAndString ias @?= "\"10\",\"goodbye\""
+      encodeRow intAndString opts ias @?= "\"10\",\"goodbye\""
   , testCase "encode an IntAndString with an empty between" $
-      encodeRow opts intEmptyAndString ias @?= "\"10\",\"\",\"goodbye\""
+      encodeRow intEmptyAndString opts ias @?= "\"10\",\"\",\"goodbye\""
   ]
 
 encodeTests :: TestTree
 encodeTests =
   testCase "multiple lines" $
-    encode opts (divided intAndString intOrString) [(IAS 3 "book", I 4), (IAS 7 "film", S "ok")]
+    encode (divided intAndString intOrString) opts [(IAS 3 "book", I 4), (IAS 7 "film", S "ok")]
       @?= "\"3\",\"book\",\"4\"\r\n\"7\",\"film\",\"ok\""
 
 escapeTests :: TestTree
 escapeTests =
   testGroup "escape" [
     testCase "string" $
-      encodeRow opts E.string "hello \"test\" case" @?= "\"hello \"\"test\"\" case\""
+      encodeRow E.string opts "hello \"test\" case" @?= "\"hello \"\"test\"\" case\""
   , testCase "text" $
-      encodeRow opts E.text "this is also\"a test\"" @?= "\"this is also\"\"a test\"\"\""
+      encodeRow E.text opts "this is also\"a test\"" @?= "\"this is also\"\"a test\"\"\""
   , testCase "bytestring - strict" $
-      encodeRow opts E.byteString "\"test\"ing\" " @?= "\"\"\"test\"\"ing\"\" \""
+      encodeRow E.byteString opts "\"test\"ing\" " @?= "\"\"\"test\"\"ing\"\" \""
   , testCase "bytestring - lazy" $
-      encodeRow opts E.lazyByteString "\"" @?= "\"\"\"\""
+      encodeRow E.lazyByteString opts "\"" @?= "\"\"\"\""
   ]
