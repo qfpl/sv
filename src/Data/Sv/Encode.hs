@@ -74,6 +74,7 @@ module Data.Sv.Encode (
 , encodeSv
 
 -- * Primitive encodes
+-- ** Field-based
 , const
 , showEncode
 , nop
@@ -94,6 +95,8 @@ module Data.Sv.Encode (
 , text
 , byteString
 , lazyByteString
+-- ** Row-based
+, row
 
 -- * Combinators
 , Contravariant (contramap)
@@ -133,6 +136,7 @@ import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decida
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
+import qualified Data.Sequence as Seq
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -275,6 +279,9 @@ orEmpty = choose (maybe (Left ()) Right) empty
 (<<?) :: Strict.ByteString -> Encode a -> Encode (Maybe a)
 (<<?) = flip (?>>)
 {-# INLINE (<<?) #-}
+
+row :: Encode s -> Encode [s]
+row enc = Encode $ \opts list -> join $ Seq.fromList $ fmap (getEncode enc opts) list
 
 -- | Encode a single 'Char'
 char :: Encode Char
