@@ -43,9 +43,10 @@ module Data.Sv.Decode (
 , alterInputIso
 
 -- * Primitives
+-- ** Field-based
 , contents
-, raw
 , untrimmed
+, raw
 , byteString
 , utf8
 , lazyUtf8
@@ -54,12 +55,16 @@ module Data.Sv.Decode (
 , string
 , ignore
 , replace
+, exactly
 , emptyField
 , int
 , integer
 , float
 , double
 , boolean
+-- ** Row-based
+, row
+, rowWithSpacing
 
 -- * Combinators
 , Alt ((<!>))
@@ -96,6 +101,8 @@ import qualified Prelude as P
 
 import Control.Lens (AnIso, alaf, review, view, withIso)
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Reader (ReaderT (ReaderT))
+import Control.Monad.State (state)
 import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (first, second)
@@ -105,17 +112,19 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose))
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (First (First))
 import Data.Profunctor (lmap)
 import Data.Readable (Readable (fromBS))
-import Data.Semigroup (Semigroup ((<>)))
+import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Semigroup.Foldable (asum1)
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
@@ -128,7 +137,7 @@ import qualified Data.Sv.Parse as P (trifecta)
 import Data.Sv.Parse.Options (ParseOptions)
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
 import Data.Sv.Syntax.Sv (Sv, recordList)
-import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces)
+import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces, spacedValue)
 
 -- | Decodes a sv into a list of its values using the provided 'FieldDecode'
 decode :: FieldDecode' s a -> Sv s -> DecodeValidation s [a]
@@ -218,6 +227,17 @@ untrimmed =
 contents :: FieldDecode e s s
 contents = fieldDecode pure
 
+-- | Grab the whole row as a raw 'Vector'
+row :: FieldDecode e s (Vector s)
+row = (fmap . fmap) (view (spacedValue.fieldContents)) rowWithSpacing
+
+-- | Grab the whole row, including all spacing and quoting information,
+-- as a raw 'Vector'
+rowWithSpacing :: FieldDecode e s (Vector (SpacedField s))
+rowWithSpacing =
+  FieldDecode . Compose . DecodeState . ReaderT $ \v ->
+    state (const (pure v, Ind (V.length v)))
+
 -- | Get the contents of a field as a bytestring.
 --
 -- Alias for 'contents'
@@ -252,6 +272,13 @@ ignore = replace ()
 -- | Throw away the contents of a field, and return the given value.
 replace :: a -> FieldDecode e s a
 replace a = a <$ contents
+
+-- | Exactly this string, or else fail
+exactly :: (Semigroup s, Eq s, IsString s) => s -> FieldDecode' s s
+exactly s = contents >>== \z ->
+  if s == z
+  then pure s
+  else badDecode (sconcat ("'":|[z,"' was not equal to '",s,"'"]))
 
 -- | Decode a field as an 'Int'
 int :: FieldDecode' ByteString Int
