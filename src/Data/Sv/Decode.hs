@@ -100,8 +100,7 @@ import Prelude hiding (either)
 import qualified Prelude as P
 
 import Control.Lens (AnIso, alaf, review, view, withIso)
-import Control.Lens (alaf, review, view)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
 import Data.Attoparsec.ByteString (parseOnly)
