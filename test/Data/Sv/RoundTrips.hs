@@ -8,6 +8,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.UTF8 as UTF8
+import Data.Semigroup ((<>))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Vector as V
@@ -103,9 +104,9 @@ parOpts = defaultParseOptions & headedness .~ Unheaded
 
 roundTripCodec :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
 roundTripCodec name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) -> [
-    testCase "encode . decode" $
+    testCase (UTF8.toString bs <> ": encode . decode") $
       Success (BL.fromStrict bs) @?= (encode encOpts enc <$> parseDecode dec parOpts bs)
-  , testCase "decode . encode" $
+  , testCase (UTF8.toString bs <> ": decode . encode") $
       Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow encOpts enc a)
   ]
 
