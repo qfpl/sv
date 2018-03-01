@@ -18,15 +18,15 @@ module Data.Sv (
   , decodeEither
   , decodeEither'
 
-  , FieldDecode (..)
-  , FieldDecode'
+  , Decode (..)
+  , Decode'
   , DecodeState (..)
   , Validation (..)
   , DecodeValidation
   , DecodeError (..)
   , DecodeErrors (..)
 
-  , runFieldDecode
+  , runDecode
   , (>>==)
   , (==<<)
   , fieldDecode

@@ -148,19 +148,19 @@ longRowEnc = mconcat [
   , E.encodeOf lrC coproductEnc
   ]
 
-rowDec :: FieldDecode' ByteString Row
+rowDec :: Decode' ByteString Row
 rowDec =  Long <$> longRowDec <!> Short <$> shortRowDec
 
-shortRowDec :: FieldDecode' ByteString ShortRow
+shortRowDec :: Decode' ByteString ShortRow
 shortRowDec = ShortRow <$> D.byteString <*> D.byteString <*> D.byteString
 
-productDec :: FieldDecode' ByteString Product
+productDec :: Decode' ByteString Product
 productDec = Product <$> D.int <*> D.float <*> D.double
 
-coproductDec :: FieldDecode' ByteString Coproduct
+coproductDec :: Decode' ByteString Coproduct
 coproductDec = I <$> D.int <!> B <$> D.byteString <!> D <$> D.double
 
-longRowDec :: FieldDecode' ByteString LongRow
+longRowDec :: Decode' ByteString LongRow
 longRowDec = LongRow <$> D.byteString <*> D.string <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
 
 samples :: Gen a -> Int -> IO [a]

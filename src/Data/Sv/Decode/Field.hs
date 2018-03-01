@@ -8,8 +8,8 @@ Portability : non-portable
 -}
 
 module Data.Sv.Decode.Field (
-  FieldDecode (..)
-, runFieldDecode
+  Decode (..)
+, runDecode
 , (>>==)
 , (==<<)
 , fieldDecode
@@ -36,57 +36,57 @@ import Data.Sv.Syntax.Field (Field, SpacedField, fieldContents)
 import Data.Sv.Syntax.Record (Record, _fields)
 import Text.Space (Spaced (_value))
 
--- | Convenience to get the underlying function out of a FieldDecode in a useful form
-runFieldDecode :: FieldDecode e s a -> Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)
-runFieldDecode = runDecodeState . getCompose . unwrapFieldDecode
+-- | Convenience to get the underlying function out of a Decode in a useful form
+runDecode :: Decode e s a -> Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)
+runDecode = runDecodeState . getCompose . unwrapDecode
 
--- | This can be used to build a 'FieldDecode' whose value depends on the
--- result of another 'FieldDecode'. This is especially useful since 
-(>>==) :: FieldDecode e s a -> (a -> DecodeValidation e b) -> FieldDecode e s b
+-- | This can be used to build a 'Decode' whose value depends on the
+-- result of another 'Decode'. This is especially useful since
+(>>==) :: Decode e s a -> (a -> DecodeValidation e b) -> Decode e s b
 (>>==) = flip (==<<)
 infixl 1 >>==
 {-# INLINE (>>==) #-}
 
 -- | flipped '(>>==)''
-(==<<) :: (a -> DecodeValidation e b) -> FieldDecode e s a -> FieldDecode e s b
-(==<<) f (FieldDecode c) =
-  FieldDecode (rmapC (`bindValidation` (view _Validation . f)) c)
+(==<<) :: (a -> DecodeValidation e b) -> Decode e s a -> Decode e s b
+(==<<) f (Decode c) =
+  Decode (rmapC (`bindValidation` (view _Validation . f)) c)
     where
       rmapC g (Compose fga) = Compose (fmap g fga)
 infixr 1 ==<<
 
--- | Build a 'FieldDecode' from a function.
+-- | Build a 'Decode' from a function.
 --
 -- This version gives you just the contents of the field, with no information
 -- about the spacing or quoting around that field.
-fieldDecode :: (s -> DecodeValidation e a) -> FieldDecode e s a
+fieldDecode :: (s -> DecodeValidation e a) -> Decode e s a
 fieldDecode f = fieldDecodeWithQuotes (f . view fieldContents)
 
--- | Build a 'FieldDecode' from a function.
+-- | Build a 'Decode' from a function.
 --
 -- This version gives you access to the whole 'Field', which includes
 -- information about whether quotes were used, and if so which ones.
-fieldDecodeWithQuotes :: (Field s -> DecodeValidation e a) -> FieldDecode e s a
+fieldDecodeWithQuotes :: (Field s -> DecodeValidation e a) -> Decode e s a
 fieldDecodeWithQuotes f = fieldDecodeWithSpaces (f . _value)
 
--- | Build a 'FieldDecode' from a function.
+-- | Build a 'Decode' from a function.
 --
 -- This version gives you access to the whole 'SpacedField', which includes
 -- information about spacing both before and after the field, and about quotes
 -- if they were used.
-fieldDecodeWithSpaces :: (SpacedField s -> DecodeValidation e a) -> FieldDecode e s a
+fieldDecodeWithSpaces :: (SpacedField s -> DecodeValidation e a) -> Decode e s a
 fieldDecodeWithSpaces f =
-  FieldDecode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
+  Decode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
     if i >= length v
     then (unexpectedEndOfRow, Ind i)
     else (f (v ! i), Ind (i+1))
 
--- | promotes a FieldDecode to work on a whole 'Record' at once
-promote :: FieldDecode' s a -> Record s -> DecodeValidation s a
+-- | promotes a Decode to work on a whole 'Record' at once
+promote :: Decode' s a -> Record s -> DecodeValidation s a
 promote dec rs =
   let vec = V.fromList . toList . _fields $ rs
       len = length vec
-  in  case runFieldDecode dec vec (Ind 0) of
+  in  case runDecode dec vec (Ind 0) of
     (d, Ind i) ->
       if i >= len
       then d

@@ -29,17 +29,17 @@ data IntOrString =
   I Int | S String
   deriving (Eq, Ord, Show)
 
-intOrString :: FieldDecode ByteString ByteString IntOrString
+intOrString :: Decode ByteString ByteString IntOrString
 intOrString = I <$> D.int <!> S <$> D.string
 
 data V3 a =
   V3 a a a
   deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 
-v3 :: Semigroup e => FieldDecode e s a -> FieldDecode e s (V3 a)
+v3 :: Semigroup e => Decode e s a -> Decode e s (V3 a)
 v3 f = sequenceA (V3 f f f)
 
-v3ios :: FieldDecode ByteString ByteString (V3 IntOrString)
+v3ios :: Decode ByteString ByteString (V3 IntOrString)
 v3ios = v3 intOrString
 
 csv1 :: ByteString
@@ -73,7 +73,7 @@ varyingLength = intercalate "\r\n" [
   , "one,two,three,four,five"
   ]
 
-str2 :: FieldDecode' ByteString (ByteString, ByteString)
+str2 :: Decode' ByteString (ByteString, ByteString)
 str2 = liftA2 (,) D.contents D.contents
 
 varyingLengthTest :: TestTree

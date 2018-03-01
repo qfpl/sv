@@ -34,15 +34,15 @@ data Handicap =
   Handicap Day Difference Name Name
   deriving (Eq, Ord, Show)
 
-day :: FieldDecode' ByteString Day
+day :: Decode' ByteString Day
 day =
   D.string >>==
     validateMay (BadDecode "Invalid time") . parseTimeM True defaultTimeLocale "%Y%0m%0d"
 
-handicap :: FieldDecode' ByteString Handicap
+handicap :: Decode' ByteString Handicap
 handicap = Handicap <$> day <*> difference <*> D.utf8 <*> D.utf8
 
-difference :: FieldDecode' ByteString Difference
+difference :: Decode' ByteString Difference
 difference = D.withAttoparsec (
     (char '+' $> Plus <|> char '-' $> Minus) <*> integer
   )

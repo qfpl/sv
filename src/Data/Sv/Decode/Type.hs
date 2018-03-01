@@ -12,8 +12,8 @@ Portability : non-portable
 -}
 
 module Data.Sv.Decode.Type (
-  FieldDecode (..)
-, FieldDecode'
+  Decode (..)
+, Decode'
 , DecodeState (..)
 , runDecodeState
 , Ind (Ind)
@@ -39,28 +39,28 @@ import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField)
 
--- | A 'FieldDecode e s a' is for decoding some fields from a CSV row into our type 'a'.
+-- | A 'Decode e s a' is for decoding some fields from a CSV row into our type 'a'.
 --
 -- It also knows the string input type 's' (usually 'ByteString' or 'Text') and the
 -- type 'e' of error strings (usually the same as 's')
 --
--- There are primitive 'FieldDecode's, and combinators for composing or
--- otherwise manipulating them. In particular, 'FieldDecode' is an
+-- There are primitive 'Decode's, and combinators for composing or
+-- otherwise manipulating them. In particular, 'Decode' is an
 -- 'Applicative' functor and an 'Alt'. 'Alt' is 'Control.Applicative.Alternative'
 -- without 'Control.Applicative.empty'
 --
--- 'FieldDecode' is not a 'Monad', but we can perform monad-like operations on
+-- 'Decode' is not a 'Monad', but we can perform monad-like operations on
 -- it with 'Data.Sv.Decode.Field.>>=='
-newtype FieldDecode e s a =
-  FieldDecode { unwrapFieldDecode :: Compose (DecodeState s) (DecodeValidation e) a }
+newtype Decode e s a =
+  Decode { unwrapDecode :: Compose (DecodeState s) (DecodeValidation e) a }
   deriving (Functor, Apply, Applicative)
 
--- | 'FieldDecode'' is 'FieldDecode' with the input and error types the same.
-type FieldDecode' s = FieldDecode s s
+-- | 'Decode'' is 'Decode' with the input and error types the same.
+type Decode' s = Decode s s
 
-instance Alt (FieldDecode e s) where
-  FieldDecode (Compose as) <!> FieldDecode (Compose bs) =
-    FieldDecode . Compose . DecodeState . ReaderT $ \v -> state $ \i ->
+instance Alt (Decode e s) where
+  Decode (Compose as) <!> Decode (Compose bs) =
+    Decode . Compose . DecodeState . ReaderT $ \v -> state $ \i ->
       case runDecodeState as v i of
         (a, j) -> case runDecodeState bs v i of
           (b, k) ->
@@ -70,8 +70,8 @@ instance Alt (FieldDecode e s) where
                   Failure e -> (Failure e, k)
                   Success (z, m) -> (Success z, m)
 
-instance Profunctor (FieldDecode e) where
-  lmap f (FieldDecode (Compose dec)) = FieldDecode (Compose (lmap f dec))
+instance Profunctor (Decode e) where
+  lmap f (Decode (Compose dec)) = Decode (Compose (lmap f dec))
   rmap = fmap
 
 -- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
@@ -130,5 +130,5 @@ instance Functor DecodeErrors where
 instance NFData e => NFData (DecodeErrors e)
 
 -- | 'DecodeValidation' is the error-accumulating 'Applicative' underlying
--- 'FieldDecode'
+-- 'Decode'
 type DecodeValidation e = Validation (DecodeErrors e)

@@ -19,7 +19,7 @@ type Name = Text
 type Age = Int
 data Person = Person Name Age deriving Show
 
-person :: FieldDecode' ByteString Person
+person :: Decode' ByteString Person
 person = Person <$> D.utf8 <*> D.int
 
 type Stock = Int
@@ -30,7 +30,7 @@ data Item = Item Name Stock Cost deriving Show
 cost :: TokenParsing m => m Cost
 cost = string "$" *> fmap Cost integer
 
-item :: FieldDecode' ByteString Item
+item :: Decode' ByteString Item
 item = Item <$> D.utf8 <*> D.int <*> D.withTrifecta cost
 
 sv2 :: (CharParsing m) => ParseOptions s -> m (Sv s, Sv s)

@@ -106,16 +106,16 @@ combining these primitive decoders. Decoders are Applicative and
 Alternative, giving us access to many derived combinators. There are also
 other useful combinators defined in Data.Sv.Decode.
 
-A FieldDecode has three type paramters. The first of these is the string
+A Decode has three type paramters. The first of these is the string
 type to use for errors. Usually one would use Text or Bytestring. The second
 type parameter is the input string type. We recommend these be the same.
-In this case, they're both ByteString. A type alias FieldDecode' is provided,
+In this case, they're both ByteString. A type alias Decode' is provided,
 which has these two type parameters the same. That type alias will be used for
-the rest of the file. The final paramter for a FieldDecode is the type we're
+the rest of the file. The final paramter for a Decode is the type we're
 decoding into.
 
 \begin{code}
-idDecode :: FieldDecode ByteString ByteString ID
+idDecode :: Decode ByteString ByteString ID
 idDecode = ID <$> D.int
 \end{code}
 
@@ -137,12 +137,12 @@ data NcaCode
   deriving Show
 \end{code}
 
-... and here is our decoder. We use the FieldDecode primitive `categorical',
+... and here is our decoder. We use the Decode primitive `categorical',
 as it makes specifying categorical data easier and provides specific error
 messages when a field does not parse as any known category.
 
 \begin{code}
-nca :: FieldDecode' ByteString NcaCode
+nca :: Decode' ByteString NcaCode
 nca =
   D.categorical [
     (NExtinct, "PE")
@@ -171,7 +171,7 @@ data EpbcCode
   | EConservationDependent -- CD
   deriving Show
 
-epbc :: FieldDecode' ByteString EpbcCode
+epbc :: Decode' ByteString EpbcCode
 epbc =
   D.categorical [
     (EExtinct, "EX")
@@ -196,7 +196,7 @@ data Endemicity
   | VagrantUndefined -- VU
   deriving Show
 
-endemicity :: FieldDecode' ByteString Endemicity
+endemicity :: Decode' ByteString Endemicity
 endemicity =
   D.categorical [
     (QueenslandEndemic, "Q")
@@ -224,7 +224,7 @@ data Significance
   | N
   deriving Show
 
-significance :: FieldDecode' ByteString Significance
+significance :: Decode' ByteString Significance
 significance =
   D.categorical' [
     (Y, ["Y", "y", "yes"])
@@ -238,7 +238,7 @@ categorical decoders, each wrapped in orEmpty since they might be missing.
 It's all glued together with Applicative combinators.
 
 \begin{code}
-speciesDecoder :: FieldDecode' ByteString Species
+speciesDecoder :: Decode' ByteString Species
 speciesDecoder = let s = D.byteString in
   Species <$> idDecode <*> s <*> s <*> s <*> s <*> s <*> s <*>
     D.orEmpty nca <*> D.orEmpty epbc <*> D.orEmpty significance <*> D.orEmpty endemicity
@@ -252,7 +252,7 @@ species :: IO (DecodeValidation ByteString [Species])
 species = parseDecodeFromFile' parser speciesDecoder opts file
 \end{code}
 
-And that's it! We've defined a data type for our rows, built a FieldDecode for
+And that's it! We've defined a data type for our rows, built a Decode for
 that type, and then parsed our CSV file into useful Haskell data types.
 
 \begin{code}
