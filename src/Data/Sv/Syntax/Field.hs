@@ -24,16 +24,16 @@ module Data.Sv.Syntax.Field (
   , fieldContents
 ) where
 
-import Control.DeepSeq     (NFData)
-import Control.Lens        (Lens, Prism', Traversal', lens, prism)
-import Data.Foldable       (Foldable (foldMap))
-import Data.Functor        (Functor (fmap))
-import Data.Traversable    (Traversable (traverse))
-import GHC.Generics        (Generic)
+import Control.DeepSeq (NFData)
+import Control.Lens (Lens, Prism', Traversal', lens, prism)
+import Data.Foldable (Foldable (foldMap))
+import Data.Functor (Functor (fmap))
+import Data.Traversable (Traversable (traverse))
+import GHC.Generics (Generic)
 
-import Text.Escape         (Unescaped (Unescaped, getRawUnescaped))
-import Text.Quote          (Quote)
-import Text.Space          (Spaced (Spaced))
+import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
+import Text.Quote (Quote)
+import Text.Space (Spaced (Spaced))
 
 -- | A 'Field' is a single cell from a CSV document.
 --

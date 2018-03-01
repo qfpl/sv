@@ -33,22 +33,22 @@ module Data.Sv.Syntax.Record (
   , recordList
 ) where
 
-import Control.DeepSeq    (NFData)
-import Control.Lens       (Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
-import Data.Foldable      (Foldable (foldMap))
-import Data.Functor       (Functor (fmap))
+import Control.DeepSeq (NFData)
+import Control.Lens (Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
+import Data.Foldable (Foldable (foldMap))
+import Data.Functor (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Semigroup     (Semigroup)
-import Data.Traversable   (Traversable (traverse))
-import GHC.Generics       (Generic)
+import Data.Semigroup (Semigroup)
+import Data.Traversable (Traversable (traverse))
+import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField, Field (Unquoted), HasFields (fields))
 import Data.Vector.NonEmpty (NonEmptyVector)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import qualified Data.Vector.NonEmpty as V
-import Text.Newline       (Newline)
-import Text.Space         (Spaced, spacedValue)
+import Text.Newline (Newline)
+import Text.Space (Spaced, spacedValue)
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
 -- by a separator (often a comma).

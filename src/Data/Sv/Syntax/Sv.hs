@@ -43,17 +43,17 @@ module Data.Sv.Syntax.Sv (
   , tab
 ) where
 
-import Control.DeepSeq    (NFData)
-import Control.Lens       (Lens', Traversal')
-import Data.Foldable      (Foldable (foldMap))
-import Data.Functor       (Functor (fmap), (<$>))
-import Data.Monoid        ((<>))
-import Data.Traversable   (Traversable (traverse))
-import GHC.Generics       (Generic)
+import Control.DeepSeq (NFData)
+import Control.Lens (Lens', Traversal')
+import Data.Foldable (Foldable (foldMap))
+import Data.Functor (Functor (fmap), (<$>))
+import Data.Monoid ((<>))
+import Data.Traversable (Traversable (traverse))
+import GHC.Generics (Generic)
 
-import Data.Sv.Syntax.Field  (HasFields (fields))
+import Data.Sv.Syntax.Field (HasFields (fields))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords), HasRecord (record), HasRecords (records, traverseNewlines, traverseRecords), recordList)
-import Text.Newline       (Newline)
+import Text.Newline (Newline)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.
 --   Often the separator is a comma, but this type does not make that

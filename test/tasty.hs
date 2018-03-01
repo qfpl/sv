@@ -5,7 +5,7 @@ import Test.Tasty (defaultMain, testGroup)
 import Data.Sv.DecodeTest (test_Decode)
 import Data.Sv.EncodeTest (test_Encode)
 import Data.Sv.ParseTest (test_Parse)
-import Data.Sv.PrintTest  (test_Print)
+import Data.Sv.PrintTest (test_Print)
 import Data.Sv.RoundTrips (test_Roundtrips)
 
 main :: IO ()

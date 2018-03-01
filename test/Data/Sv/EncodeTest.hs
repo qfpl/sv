@@ -7,7 +7,6 @@ import Control.Lens (makeClassyPrisms)
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.Semigroup ((<>))
-
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 

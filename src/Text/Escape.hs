@@ -26,19 +26,19 @@ module Text.Escape (
   , escapeChar
 ) where
 
-import Control.DeepSeq    (NFData)
+import Control.DeepSeq (NFData)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy.UTF8 as UTF8L
-import Data.Foldable      (Foldable)
-import Data.Functor       (Functor)
-import Data.Monoid        (Monoid)
-import Data.Semigroup     (Semigroup ((<>)))
-import Data.Text          (Text)
+import Data.Foldable (Foldable)
+import Data.Functor (Functor)
+import Data.Monoid (Monoid)
+import Data.Semigroup (Semigroup ((<>)))
+import Data.Text (Text)
 import qualified Data.Text as Text
-import Data.Traversable   (Traversable)
-import GHC.Generics       (Generic)
+import Data.Traversable (Traversable)
+import GHC.Generics (Generic)
 
 -- | Wrapper for text that is known to be in an unescaped form
 newtype Unescaped a =

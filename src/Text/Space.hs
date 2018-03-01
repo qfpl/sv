@@ -35,13 +35,13 @@ module Text.Space
   )
 where
 
-import Control.DeepSeq  (NFData (rnf))
-import Control.Lens     (Lens', Prism', prism, prism')
-import Data.Semigroup   (Semigroup ((<>)))
-import Data.Text        (Text)
+import Control.DeepSeq (NFData (rnf))
+import Control.Lens (Lens', Prism', prism, prism')
+import Data.Semigroup (Semigroup ((<>)))
+import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Vector as V
-import GHC.Generics     (Generic)
+import GHC.Generics (Generic)
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
 -- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'

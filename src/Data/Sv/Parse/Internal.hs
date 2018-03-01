@@ -25,27 +25,27 @@ module Data.Sv.Parse.Internal (
   , ending
 ) where
 
-import           Control.Applicative     (Alternative ((<|>), empty), optional)
-import           Control.Lens            (review, view)
-import           Data.CharSet            (CharSet, (\\))
+import Control.Applicative (Alternative ((<|>), empty), optional)
+import Control.Lens (review, view)
+import Data.CharSet (CharSet, (\\))
 import qualified Data.CharSet as CharSet (fromList, insert, singleton)
-import           Data.Functor            (($>), (<$>), void)
-import           Data.List.NonEmpty      (NonEmpty ((:|)))
-import           Data.Maybe              (fromMaybe)
-import           Data.Semigroup          ((<>))
+import Data.Functor (($>), (<$>), void)
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Maybe (fromMaybe)
+import Data.Semigroup ((<>))
 import qualified Data.Vector as V
-import           Text.Parser.Char        (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
-import           Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
+import Text.Parser.Char (CharParsing, char, notChar, noneOfSet, oneOfSet, string)
+import Text.Parser.Combinators (between, choice, eof, many, notFollowedBy, sepEndBy, try)
 
-import           Data.Sv.Syntax.Sv       (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), headedness, Separator)
-import           Data.Sv.Syntax.Field    (Field (Unquoted, Quoted))
-import           Data.Sv.Syntax.Record   (Record (Record), Records (Records, EmptyRecords))
-import           Data.Sv.Parse.Options   (ParseOptions, separator, endOnBlankLine, encodeString)
-import           Data.Vector.NonEmpty as V
-import           Text.Escape             (Unescaped (Unescaped))
-import           Text.Newline            (Newline (CR, CRLF, LF))
-import           Text.Space              (HorizontalSpace (Space, Tab), Spaces, Spaced, betwixt)
-import           Text.Quote              (Quote (SingleQuote, DoubleQuote), quoteChar)
+import Data.Sv.Syntax.Sv (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unheaded, Headed), headedness, Separator)
+import Data.Sv.Syntax.Field (Field (Unquoted, Quoted))
+import Data.Sv.Syntax.Record (Record (Record), Records (Records, EmptyRecords))
+import Data.Sv.Parse.Options (ParseOptions, separator, endOnBlankLine, encodeString)
+import Data.Vector.NonEmpty as V
+import Text.Escape (Unescaped (Unescaped))
+import Text.Newline (Newline (CR, CRLF, LF))
+import Text.Space (HorizontalSpace (Space, Tab), Spaces, Spaced, betwixt)
+import Text.Quote (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 -- | This function is in newer versions of the parsers package, but in
 -- order to maintain compatibility with older versions I've left it here.

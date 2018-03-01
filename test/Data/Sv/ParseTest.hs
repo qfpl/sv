@@ -3,31 +3,31 @@
 
 module Data.Sv.ParseTest (test_Parse) where
 
-import           Control.Lens         ((&), (.~))
-import           Data.ByteString      (ByteString)
+import Control.Lens ((&), (.~))
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
-import           Data.List.NonEmpty   (NonEmpty ((:|)), nonEmpty)
-import           Data.Either          (isLeft)
-import           Data.Foldable        (fold)
-import           Data.Semigroup       (Semigroup ((<>)))
-import           Data.Text            (Text, pack)
-import           Hedgehog
-import           Test.Tasty           (TestName, TestTree, testGroup)
-import           Test.Tasty.Hedgehog  (testProperty)
-import           Test.Tasty.HUnit     (Assertion, assertBool, testCase, (@?=))
-import           Text.Newline         (Newline (CR, LF, CRLF), newlineText)
-import           Text.Parser.Char     (CharParsing)
-import           Text.Trifecta        (Result (Success, Failure), parseByteString, _errDoc)
+import Data.List.NonEmpty (NonEmpty ((:|)), nonEmpty)
+import Data.Either (isLeft)
+import Data.Foldable (fold)
+import Data.Semigroup (Semigroup ((<>)))
+import Data.Text (Text, pack)
+import Hedgehog
+import Test.Tasty (TestName, TestTree, testGroup)
+import Test.Tasty.Hedgehog (testProperty)
+import Test.Tasty.HUnit (Assertion, assertBool, testCase, (@?=))
+import Text.Newline (Newline (CR, LF, CRLF), newlineText)
+import Text.Parser.Char (CharParsing)
+import Text.Trifecta (Result (Success, Failure), parseByteString, _errDoc)
 
-import           Data.Sv.Generators  (genCsvString)
-import           Data.Sv.Parse       (ParseOptions, defaultParseOptions, headedness, separator, encodeString)
-import           Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
-import           Data.Sv.Syntax.Sv   (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
-import           Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
-import           Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
-import           Text.Escape         (Unescaped (Unescaped))
-import           Text.Space          (Spaced (Spaced), manySpaces, noSpaces)
-import           Text.Quote          (Quote (SingleQuote, DoubleQuote), quoteToString)
+import Data.Sv.Generators (genCsvString)
+import Data.Sv.Parse (ParseOptions, defaultParseOptions, headedness, separator, encodeString)
+import Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singleQuotedField, spaced, spacedField)
+import Data.Sv.Syntax.Sv (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
+import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
+import Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
+import Text.Escape (Unescaped (Unescaped))
+import Text.Space (Spaced (Spaced), manySpaces, noSpaces)
+import Text.Quote (Quote (SingleQuote, DoubleQuote), quoteToString)
 
 test_Parse :: TestTree
 test_Parse =

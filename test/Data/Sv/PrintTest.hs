@@ -3,7 +3,6 @@
 module Data.Sv.PrintTest (test_Print) where
 
 import Data.ByteString (ByteString)
-
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCase)
 

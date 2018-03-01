@@ -11,7 +11,14 @@ any time. Depend on it at your own peril.
 These functions exist to be called by 'Data.Sv.Print'
 -}
 
-module Data.Sv.Print.Internal where
+module Data.Sv.Print.Internal (
+  printNewline
+  , printField
+  , printSpaced
+  , printRecord
+  , printRecords
+  , printHeader
+) where
 
 import Control.Lens (review, view)
 import Data.Bifoldable (bifoldMap)
