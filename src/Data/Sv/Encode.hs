@@ -168,29 +168,29 @@ mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 
 -- | Encode the given list with the given 'Encode', configured by the given
 -- 'EncodeOptions'.
-encode :: EncodeOptions -> Encode a -> [a] -> LBS.ByteString
-encode opts enc = BS.toLazyByteString . encodeBuilder opts enc
+encode :: Encode a -> EncodeOptions -> [a] -> LBS.ByteString
+encode enc opts = BS.toLazyByteString . encodeBuilder enc opts
 
 -- | Encode, writing the output to a file handle.
-encodeToHandle :: EncodeOptions -> Encode a -> [a] -> Handle -> IO ()
-encodeToHandle opts enc as h =
-  BS.hPutBuilder h (encodeBuilder opts enc as)
+encodeToHandle :: Encode a -> EncodeOptions -> [a] -> Handle -> IO ()
+encodeToHandle enc opts as h =
+  BS.hPutBuilder h (encodeBuilder enc opts as)
 
 -- | Encode, writing to a file. This is way is more efficient than encoding to
 -- a 'ByteString' and then writing to file.
-encodeToFile :: EncodeOptions -> Encode a -> [a] -> FilePath -> IO ()
-encodeToFile opts enc as fp = do
+encodeToFile :: Encode a -> EncodeOptions -> [a] -> FilePath -> IO ()
+encodeToFile enc opts as fp = do
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  encodeToHandle opts enc as h
+  encodeToHandle enc opts as h
   hClose h
 
 -- | Encode to a ByteString 'Builder', which is useful if you are going
 -- to combine the output with other 'ByteString's.
-encodeBuilder :: EncodeOptions -> Encode a -> [a] -> BS.Builder
-encodeBuilder opts e as =
-  let enc = encodeRowBuilder opts e
+encodeBuilder :: Encode a -> EncodeOptions -> [a] -> BS.Builder
+encodeBuilder e opts as =
+  let enc = encodeRowBuilder e opts
       nl  = newlineText (_newline opts)
       terminal = if _terminalNewline opts then nl else mempty
   in  case as of
@@ -198,12 +198,12 @@ encodeBuilder opts e as =
     (a:as') -> enc a <> mconcat [nl <> enc a' | a' <- as'] <> terminal
 
 -- | Encode one row only
-encodeRow :: EncodeOptions -> Encode a -> a -> LBS.ByteString
-encodeRow opts e = BS.toLazyByteString . encodeRowBuilder opts e
+encodeRow :: Encode a -> EncodeOptions -> a -> LBS.ByteString
+encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
 
 -- | Encode one row only, as a ByteString 'Builder'
-encodeRowBuilder :: EncodeOptions -> Encode a -> a -> BS.Builder
-encodeRowBuilder opts e =
+encodeRowBuilder :: Encode a -> EncodeOptions -> a -> BS.Builder
+encodeRowBuilder e opts =
   let addSeparators = intersperseSeq (BS.charUtf8 (view separator opts))
       quotep = foldMap (BS.charUtf8 . review quoteChar) (view quote opts)
       addQuotes x = quotep <> x <> quotep
@@ -214,8 +214,8 @@ encodeRowBuilder opts e =
 
 -- | Build an 'Sv' rather than going straight to 'ByteString'. This allows you
 -- to query the Sv or run sanity checks.
-encodeSv :: EncodeOptions -> Encode a -> Maybe (NonEmpty Strict.ByteString) -> [a] -> Sv Strict.ByteString
-encodeSv opts e headerStrings as =
+encodeSv :: Encode a -> EncodeOptions -> Maybe (NonEmpty Strict.ByteString) -> [a] -> Sv Strict.ByteString
+encodeSv e opts headerStrings as =
   let encoded :: [Seq BS.Builder]
       encoded = getEncode e opts <$> as
       nl = view newline opts
