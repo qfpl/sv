@@ -38,16 +38,24 @@ test_Roundtrips =
   testGroup "Round trips" [
     csvRoundTrip
   , fieldRoundTrip
-  , bool
-  , char
-  , int
-  , integer
-  , float
-  , double
-  , string
-  , byteString
-  , lazyByteString
-  , text
+  , testGroup "decode/encode isomorphisms" [
+      bool
+    , char
+    , int
+    , integer
+    , float
+    , double
+    , string
+    , byteString
+    , lazyByteString
+    , text
+    ]
+  , testGroup "decode/encode normalising" [
+      boolSI
+    , floatSI
+    , doubleSI
+    ]
+
   ]
 
 printAfterParseRoundTrip :: (forall m. CharParsing m => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
@@ -102,41 +110,81 @@ encOpts = defaultEncodeOptions & quote .~ Nothing
 parOpts :: ParseOptions ByteString
 parOpts = defaultParseOptions & headedness .~ Unheaded
 
-roundTripCodec :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
-roundTripCodec name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) -> [
-    testCase (UTF8.toString bs <> ": encode . decode") $
+-- Round-trips an encode/decode pair. This version checks whether the pair
+-- form an isomorphism
+roundTripCodecIso :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
+roundTripCodecIso name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) ->
+  [ testCase (UTF8.toString bs <> ": encode . decode") $
       Success (BL.fromStrict bs) @?= (encode encOpts enc <$> parseDecode dec parOpts bs)
   , testCase (UTF8.toString bs <> ": decode . encode") $
       Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow encOpts enc a)
   ]
 
+-- Round-trips an encode/decode pair. This version checks whether the pair
+-- form a split-idempotent. That is to say, one direction is identity, the other is
+-- idempotent.
+roundTripCodecSplitIdempotent :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
+roundTripCodecSplitIdempotent name dec enc bsas =
+    let deco = parseDecode dec parOpts
+        enco = encode encOpts enc
+        encdec = fmap enco . deco
+    in  testGroup name . flip foldMap bsas $ \(bs,a) ->
+      [ testCase (UTF8.toString bs <> ": decode . encode . decode") $
+          Success (Success [a]) @?= (deco . BL.toStrict <$> encdec bs)
+      , testCase (UTF8.toString bs <> ": decode . encode") $
+          Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ enco [a])
+      ]
+
 byteString :: TestTree
-byteString = roundTripCodec "bytestring" D.contents E.byteString
+byteString = roundTripCodecIso "bytestring" D.contents E.byteString
   [ ("hello","hello")]
 
 lazyByteString :: TestTree
-lazyByteString = roundTripCodec "lazy bytestring" D.lazyByteString E.lazyByteString [("hello","hello")]
+lazyByteString = roundTripCodecIso "lazy bytestring" D.lazyByteString E.lazyByteString [("hello","hello")]
 
 bool :: TestTree
-bool = roundTripCodec "bool" D.boolean E.booltruefalse [("true", True), ("false", False)]
+bool = roundTripCodecIso "bool" D.boolean E.booltruefalse [("true", True), ("false", False)]
 
 char :: TestTree
-char = roundTripCodec "char" D.char E.char [(UTF8.fromString "c", 'c'), (UTF8.fromString "💩", '💩')]
+char = roundTripCodecIso "char" D.char E.char [(UTF8.fromString "c", 'c'), (UTF8.fromString "💩", '💩')]
 
 string :: TestTree
-string = roundTripCodec "string" D.string E.string [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+string = roundTripCodecIso "string" D.string E.string [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
 
 int :: TestTree
-int = roundTripCodec "int" D.int E.int [("5", 5)]
+int = roundTripCodecIso "int" D.int E.int [("5", 5)]
 
 integer :: TestTree
-integer = roundTripCodec "integer" D.integer E.integer [("5", 5)]
+integer = roundTripCodecIso "integer" D.integer E.integer
+  [ ("5", 5)
+  , ("1000000", 1000000)
+  ]
 
 float :: TestTree
-float = roundTripCodec "float" D.float E.float [("5.0", 5)]
+float = roundTripCodecIso "float" D.float E.float
+  [ ("5.0", 5)
+  , ("10.5", 10.5)
+  , ("12345.678", 12345.678)
+  ]
 
 double :: TestTree
-double = roundTripCodec "double" D.double E.double [("5.0", 5)]
+double = roundTripCodecIso "double" D.double E.double [("5.0", 5)]
 
 text :: TestTree
-text = roundTripCodec "text" D.utf8 E.text [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+text = roundTripCodecIso "text" D.utf8 E.text [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+
+boolSI :: TestTree
+boolSI = roundTripCodecSplitIdempotent "bool" D.boolean E.bool10
+  [ ("1", True)
+  , ("0", False)
+  ]
+
+floatSI :: TestTree
+floatSI = roundTripCodecSplitIdempotent "float" D.float E.float
+  [ ("5", 5)
+  ]
+
+doubleSI :: TestTree
+doubleSI = roundTripCodecSplitIdempotent "double" D.double E.double
+  [ ("5", 5)
+  ]
