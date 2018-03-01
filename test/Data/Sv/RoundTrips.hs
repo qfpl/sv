@@ -20,6 +20,9 @@ import Test.Tasty.HUnit ((@?=), testCase)
 import Text.Parser.Char (CharParsing)
 import Text.Trifecta (parseByteString)
 
+import Data.Sv
+import qualified Data.Sv.Decode as D
+import qualified Data.Sv.Encode as E
 import Data.Sv.Decode.Error (eitherTrifectaResult)
 import Data.Sv.Generators
 import Data.Sv.Syntax (Sv, Headedness, SpacedField, comma)
@@ -34,6 +37,16 @@ test_Roundtrips =
   testGroup "Round trips" [
     csvRoundTrip
   , fieldRoundTrip
+  , bool
+  , char
+  , int
+  , integer
+  , float
+  , double
+  , string
+  , byteString
+  , lazyByteString
+  , text
   ]
 
 printAfterParseRoundTrip :: (forall m. CharParsing m => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
@@ -81,3 +94,48 @@ prop_csvRoundTrip =
   in  property $ do
     (c,h) <- forAll gen
     eitherTrifectaResult (fmap printSvText (parse h (printSvText c))) === pure (printSvText c)
+
+encOpts :: EncodeOptions
+encOpts = defaultEncodeOptions & quote .~ Nothing
+
+parOpts :: ParseOptions ByteString
+parOpts = defaultParseOptions & headedness .~ Unheaded
+
+roundTripCodec :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
+roundTripCodec name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) -> [
+    testCase "encode . decode" $
+      Success (BL.fromStrict bs) @?= (encode encOpts enc <$> parseDecode dec parOpts bs)
+  , testCase "decode . encode" $
+      Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow encOpts enc a)
+  ]
+
+byteString :: TestTree
+byteString = roundTripCodec "bytestring" D.contents E.byteString
+  [ ("hello","hello")]
+
+lazyByteString :: TestTree
+lazyByteString = roundTripCodec "lazy bytestring" D.lazyByteString E.lazyByteString [("hello","hello")]
+
+bool :: TestTree
+bool = roundTripCodec "bool" D.boolean E.booltruefalse [("true", True), ("false", False)]
+
+char :: TestTree
+char = roundTripCodec "char" D.char E.char [(UTF8.fromString "c", 'c'), (UTF8.fromString "💩", '💩')]
+
+string :: TestTree
+string = roundTripCodec "string" D.string E.string [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+
+int :: TestTree
+int = roundTripCodec "int" D.int E.int [("5", 5)]
+
+integer :: TestTree
+integer = roundTripCodec "integer" D.integer E.integer [("5", 5)]
+
+float :: TestTree
+float = roundTripCodec "float" D.float E.float [("5.0", 5)]
+
+double :: TestTree
+double = roundTripCodec "double" D.double E.double [("5.0", 5)]
+
+text :: TestTree
+text = roundTripCodec "text" D.utf8 E.text [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]

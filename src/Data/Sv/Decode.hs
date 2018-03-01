@@ -41,21 +41,22 @@ module Data.Sv.Decode (
 , contents
 , untrimmed
 , raw
+, char
 , byteString
 , utf8
 , lazyUtf8
 , ascii
 , lazyByteString
 , string
-, ignore
-, replace
-, exactly
-, emptyField
 , int
 , integer
 , float
 , double
 , boolean
+, ignore
+, replace
+, exactly
+, emptyField
 -- ** Row-based
 , row
 , rowWithSpacing
@@ -229,6 +230,14 @@ rowWithSpacing :: FieldDecode e s (Vector (SpacedField s))
 rowWithSpacing =
   FieldDecode . Compose . DecodeState . ReaderT $ \v ->
     state (const (pure v, Ind (V.length v)))
+
+-- | Get a field that's a single char. This will fail if there are mulitple
+-- characters in the field.
+char :: FieldDecode' ByteString Char
+char = string >>== \cs -> case cs of
+  [] -> badDecode "Expected single char but got empty string"
+  (c:[]) -> pure c
+  (_:_:_) -> badDecode ("Expected single char but got " <> fromString cs)
 
 -- | Get the contents of a field as a bytestring.
 --
