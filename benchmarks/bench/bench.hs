@@ -11,9 +11,9 @@ import qualified Data.Attoparsec.ByteString as A
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import Data.Foldable (traverse_)
 import Data.Csv as C
 import Data.Csv.Parser as C
+import Data.Foldable (traverse_)
 import Data.Vector (Vector)
 import GHC.Generics
 import System.Exit (exitFailure)
@@ -52,14 +52,14 @@ hard = "hard"
 bdFs :: String -> IO (BenchData ByteString)
 bdFs subdir = traverse (loadFile subdir) inds
 
-bdFs' :: String -> IO (BenchData (Sv ByteString))
-bdFs' subdir = traverse sanitySv =<< bdFs subdir
+bdFs' :: SvParser ByteString -> String -> IO (BenchData (Sv ByteString))
+bdFs' svp subdir = traverse (sanitySv svp) =<< bdFs subdir
 
 opts :: ParseOptions ByteString
-opts = defaultParseOptions & headedness .~ Unheaded & parsingLib .~ Attoparsec
+opts = defaultParseOptions & headedness .~ Unheaded
 
-parseDec :: ByteString -> DecodeValidation ByteString [Row]
-parseDec = D.parseDecode rowDec opts
+parseDec :: SvParser ByteString -> ByteString -> DecodeValidation ByteString [Row]
+parseDec svp = D.parseDecode' svp rowDec opts
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
@@ -69,12 +69,12 @@ failOnError v = case v of
       exitFailure
   Success s -> pure s
 
-failOnLeft :: Either String b -> IO b
-failOnLeft = either (\s -> putStrLn s *> exitFailure) pure
+failOnLeft :: Show s => Either s b -> IO b
+failOnLeft = either (\s -> print s *> exitFailure) pure
 
-sanitySv :: ByteString -> IO (Sv ByteString)
-sanitySv bs = do
-  s <- failOnError (parse bs)
+sanitySv :: SvParser ByteString -> ByteString -> IO (Sv ByteString)
+sanitySv svp bs = do
+  s <- failOnLeft (parse svp bs)
   _ <- failOnError (dec s)
   s `seq` pure s
 
@@ -84,8 +84,8 @@ sanityCassava bs = do
   _ <- failOnLeft (parseDecCassava bs)
   pure ()
 
-parse :: ByteString -> DecodeValidation ByteString (Sv ByteString)
-parse = D.parse opts
+parse :: SvParser ByteString -> ByteString -> Either ByteString (Sv ByteString)
+parse svp = parseSv' svp opts
 
 dec :: Sv ByteString -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
@@ -113,20 +113,30 @@ main :: IO ()
 main = do
   easies <- bdFs easy
   hards <- bdFs hard
-  traverse_ sanitySv easies
-  traverse_ sanitySv hards
+  traverse_ (sanitySv trifecta) easies
+  traverse_ (sanitySv attoparsecByteString) easies
   traverse_ sanityCassava easies
+  traverse_ (sanitySv trifecta) hards
+  traverse_ (sanitySv attoparsecByteString) hards
   defaultMain
-      [ env (bdFs  easy) $ mkBench "Parse" parse
+      [ env (bdFs  easy) $ mkBench "Parse (Trifecta)" (parse trifecta)
+      , env (bdFs  easy) $ mkBench "Parse (Data.Attoparsec.ByteString)" (parse attoparsecByteString)
+      --, env (bdFs  easy) $ mkBench "Parse (Data.Attoparsec.Text)" (parse attoparsecText)
       , env (bdFs  easy) $ mkBench "Parse Cassava" parseCassava
-      , env (bdFs' easy) $ mkBench "Decode" dec
+      , env (bdFs' attoparsecByteString easy) $ mkBench "Decode" dec
       -- cassava does not seem to have a "decode only" option against which to compare
-      , env (bdFs  easy) $ mkBench "Parse and decode" parseDec
+      , env (bdFs  easy) $ mkBench "Parse and decode (Trifecta)" (parseDec trifecta)
+      , env (bdFs  easy) $ mkBench "Parse and decode (Data.Attoparsec.ByteString)" (parseDec attoparsecByteString)
+      --, env (bdFs  easy) $ mkBench "Parse and decode (Data.Attoparsec.Text)" (parseDec rowDecT attoparsecText)
       , env (bdFs  easy) $ mkBench "Parse and decode Cassava" parseDecCassava
 
       -- These "hard" benchmarks are the RFC 1480 non-compliant versions.
       -- They cannot be compared to cassava as it can't parse them.
-      , env (bdFs  hard) $ mkBench "Parse (hard mode)" parse
-      , env (bdFs' hard) $ mkBench "Decode (hard mode)" dec
-      , env (bdFs  hard) $ mkBench "Parse and decode (hard mode)" parseDec
+      , env (bdFs  hard) $ mkBench "Parse (Trifecta) (hard mode)" (parse trifecta)
+      , env (bdFs  hard) $ mkBench "Parse (Data.Attoparsec.ByteString) (hard mode)" (parse attoparsecByteString)
+      --, env (bdFs  hard) $ mkBench "Parse (Data.Attoparsec.Text) (hard mode)" (parse attoparsecText)
+      , env (bdFs' attoparsecByteString hard) $ mkBench "Decode (hard mode)" dec
+      , env (bdFs  hard) $ mkBench "Parse and decode (Trifecta) (hard mode)" (parseDec trifecta)
+      , env (bdFs  hard) $ mkBench "Parse and decode (Data.Attoparsec.ByteString) (hard mode)" (parseDec attoparsecByteString)
+      --, env (bdFs  hard) $ mkBench "Parse and decode (Data.Attoparsec.Text) (hard mode)" (parseDec rowDecT attoparsecText)
       ]

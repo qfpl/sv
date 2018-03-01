@@ -24,7 +24,7 @@ import Text.Trifecta (parseByteString)
 import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
-import Data.Sv.Decode.Error (eitherTrifectaResult)
+import Data.Sv.Decode.Error (trifectaResultToEither)
 import Data.Sv.Generators
 import Data.Sv.Syntax (Sv, Headedness, SpacedField, comma)
 import Data.Sv.Parse (defaultParseOptions, headedness, encodeString, separatedValues)
@@ -61,7 +61,7 @@ test_Roundtrips =
 printAfterParseRoundTrip :: (forall m. CharParsing m => m a) -> (a -> ByteString) -> TestName -> ByteString -> TestTree
 printAfterParseRoundTrip parser display name s =
   testCase name $
-    fmap display (eitherTrifectaResult $ parseByteString parser mempty s) @?= Right s
+    fmap display (trifectaResultToEither $ parseByteString parser mempty s) @?= Right s
 
 fieldRoundTrip :: TestTree
 fieldRoundTrip =
@@ -102,7 +102,7 @@ prop_csvRoundTrip =
       parse h = parseByteString (parseCsv h) mempty
   in  property $ do
     (c,h) <- forAll gen
-    eitherTrifectaResult (fmap printSvText (parse h (printSvText c))) === pure (printSvText c)
+    trifectaResultToEither (fmap printSvText (parse h (printSvText c))) === pure (printSvText c)
 
 encOpts :: EncodeOptions
 encOpts = defaultEncodeOptions & quote .~ Nothing
@@ -115,9 +115,9 @@ parOpts = defaultParseOptions & headedness .~ Unheaded
 roundTripCodecIso :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
 roundTripCodecIso name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) ->
   [ testCase (UTF8.toString bs <> ": encode . decode") $
-      Success (BL.fromStrict bs) @?= (encode encOpts enc <$> parseDecode dec parOpts bs)
+      Success (BL.fromStrict bs) @?= (encode enc encOpts <$> parseDecode dec parOpts bs)
   , testCase (UTF8.toString bs <> ": decode . encode") $
-      Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow encOpts enc a)
+      Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow enc encOpts a)
   ]
 
 -- Round-trips an encode/decode pair. This version checks whether the pair
@@ -126,7 +126,7 @@ roundTripCodecIso name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,
 roundTripCodecSplitIdempotent :: (Eq a, Show a) => TestName -> FieldDecode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
 roundTripCodecSplitIdempotent name dec enc bsas =
     let deco = parseDecode dec parOpts
-        enco = encode encOpts enc
+        enco = encode enc encOpts
         encdec = fmap enco . deco
     in  testGroup name . flip foldMap bsas $ \(bs,a) ->
       [ testCase (UTF8.toString bs <> ": decode . encode . decode") $
