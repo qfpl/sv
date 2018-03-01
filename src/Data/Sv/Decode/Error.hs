@@ -23,6 +23,7 @@ module Data.Sv.Decode.Error (
 , validateEither'
 , validateMay
 , validateMay'
+, eitherTrifectaResult
 , validateTrifectaResult
 ) where
 
@@ -75,8 +76,12 @@ validateMay e = maybe (decodeError e) pure
 validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 validateMay' ab e a = validateMay e (ab a)
 
--- | Convert a Trifecta 'Result' to a DecodeValidation
-validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
-validateTrifectaResult f result = case result of
+-- | Convert a Trifecta 'Result' to an 'Either'
+eitherTrifectaResult :: Trifecta.Result a -> Either String a
+eitherTrifectaResult result = case result of
   Trifecta.Success a -> pure a
-  Trifecta.Failure e -> decodeError . f . show . Trifecta._errDoc $ e
+  Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
+
+-- | Convert a Trifecta 'Result' to a 'DecodeValidation'
+validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
+validateTrifectaResult f = either (decodeError . f) pure . eitherTrifectaResult

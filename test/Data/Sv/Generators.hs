@@ -52,7 +52,7 @@ genNewline =
 
 genSep :: Gen Separator
 genSep =
-  Gen.element ['|', ',']
+  Gen.element ['|', ',', '\t', '\x1F4A9']
 
 genSpaced :: Gen Spaces -> Gen s -> Gen (Spaced s)
 genSpaced spc str =
@@ -93,8 +93,6 @@ genRecords spc s =
         rec
         (V.fromList <$> Gen.list (Range.linear 0 1000) nlr)
       )
-
---(Gen.list (Range.linear 0 1000) _)
 
 genCsvString :: Gen ByteString
 genCsvString =
