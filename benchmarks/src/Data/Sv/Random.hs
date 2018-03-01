@@ -170,7 +170,7 @@ rows :: Int -> IO [Row]
 rows = samples rowGen
 
 rowsSv :: Int -> IO (Sv ByteString)
-rowsSv = fmap (E.encodeSv defaultEncodeOptions rowEnc Nothing) . rows
+rowsSv = fmap (E.encodeSv rowEnc defaultEncodeOptions Nothing) . rows
 
 rowsSv' :: Int -> IO (Sv ByteString)
 rowsSv' =
