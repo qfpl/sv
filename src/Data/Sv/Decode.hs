@@ -20,21 +20,27 @@ You will need a 'FieldDecode' for your desired type.
 A 'FieldDecode' can be built using the primitives in this file. 'FieldDecode'
 is an 'Applicative' and an 'Alternative', allowing for composition of these
 values.
+
+This module is intended to be imported qualified like so
+
+@import qualified Data.Sv.Decode as D@
 -}
 
 module Data.Sv.Decode (
   -- * Running FieldDecodes
   decode
 , parseDecode
+, parseDecode'
 , parseDecodeFromFile
-, parse
-, parseFromFile
+, parseDecodeFromFile'
 
 -- * Convenience constructors and functions
 , decodeMay
 , decodeEither
 , decodeEither'
 , mapErrors
+, alterInput
+, alterInputIso
 
 -- * Primitives
 -- ** Field-based
@@ -80,23 +86,21 @@ module Data.Sv.Decode (
 , decodeReadWithMsg
 
 -- * Building FieldDecodes from parsers
-, trifecta
-, attoparsec
-, parsec
+, withTrifecta
+, withAttoparsec
+, withParsec
 
 -- TODO
 , module Data.Sv.Decode.Error
 , module Data.Sv.Decode.Field
 , module Data.Sv.Decode.Type
-, ParsingLib (Trifecta, Attoparsec)
-, HasParsingLib (parsingLib)
 ) where
 
 import Prelude hiding (either)
 import qualified Prelude as P
 
-import Control.Lens (alaf, review, view)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Lens (AnIso, alaf, review, view, withIso)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
 import Data.Attoparsec.ByteString (parseOnly)
@@ -104,13 +108,13 @@ import qualified Data.Attoparsec.ByteString as A (Parser)
 import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (First (First))
+import Data.Profunctor (lmap)
 import Data.Readable (Readable (fromBS))
 import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Semigroup.Foldable (asum1)
@@ -123,14 +127,14 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
-import Text.Trifecta (CharParsing, eof, parseByteString, parseFromFileEx)
-import qualified Text.Trifecta as T (Parser)
+import qualified Text.Trifecta as Tri
 
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Field
 import Data.Sv.Decode.Type
-import Data.Sv.Parse (separatedValues)
-import Data.Sv.Parse.Options (ParseOptions, ParsingLib (Trifecta, Attoparsec), HasParsingLib (parsingLib), encodeString)
+import Data.Sv.Parse (SvParser, parseSv', parseSvFromFile')
+import qualified Data.Sv.Parse as P (trifecta)
+import Data.Sv.Parse.Options (ParseOptions)
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
 import Data.Sv.Syntax.Sv (Sv, recordList)
 import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces, spacedValue)
@@ -139,52 +143,56 @@ import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces, spacedValue)
 decode :: FieldDecode' s a -> Sv s -> DecodeValidation s [a]
 decode f = traverse (promote f) . recordList
 
--- | Parse text as an Sv
-parse :: forall s. ParseOptions s -> ByteString -> DecodeValidation s (Sv s)
-parse opts s =
-  let lib = view parsingLib opts
-      enc = view encodeString opts
-      p :: CharParsing f => f (Sv s)
-      p = separatedValues opts
-      parse' :: ByteString -> DecodeValidation s (Sv s)
-      parse' = case lib of
-        Trifecta -> validateTrifectaResult (BadParse . enc) . parseByteString p mempty
-        Attoparsec -> validateEither' (BadParse . enc) . parseOnly p
-  in  parse' s
-
-
--- TODO probably move this guy to .Parse
-
--- | Load a file and parse it as an 'Sv'.
-parseFromFile :: forall m s . MonadIO m => ParseOptions s -> FilePath -> m (DecodeValidation s (Sv s))
-parseFromFile opts fp =
-  let lib = view parsingLib opts
-      enc = view encodeString opts
-      p :: CharParsing f => f (Sv s)
-      p = separatedValues opts
-  in  case lib of
-    Trifecta -> validateTrifectaResult (BadParse . enc) <$> parseFromFileEx p fp
-    Attoparsec -> validateEither' (BadParse . enc) . parseOnly p <$> liftIO (BS.readFile fp)
+-- | Parse a 'ByteString' as an Sv, and then decode it with the given decoder.
+--
+-- This version uses 'Trifecta' to parse the 'ByteString', which is assumed to
+-- be UTF-8 encoded. If you want a different library, use 'parseDecode''.
+parseDecode ::
+  FieldDecode' ByteString a
+  -> ParseOptions ByteString
+  -> ByteString
+  -> DecodeValidation ByteString [a]
+parseDecode = parseDecode' P.trifecta
 
 -- | Parse text as an Sv, and then decode it with the given decoder.
-parseDecode ::
-  FieldDecode' s a
+--
+-- This version lets you choose which parsing library to use by providing an
+-- 'SvParser'. Common selections are 'trifecta' and 'attoparsecByteString'.
+parseDecode' ::
+  SvParser s
+  -> FieldDecode' s a
   -> ParseOptions s
-  -> ByteString
+  -> s
   -> DecodeValidation s [a]
-parseDecode d opts s =
-  parse opts s `bindValidation` decode d
+parseDecode' svp d opts s =
+  P.either badDecode pure (parseSv' svp opts s) `bindValidation` decode d
 
 -- | Load a file, parse it, and decode it.
+--
+-- This version uses Trifecta to parse the file, which is assumed to be UTF-8
+-- encoded.
 parseDecodeFromFile ::
   MonadIO m
-  => FieldDecode' s a
+  => FieldDecode' ByteString a
+  -> ParseOptions ByteString
+  -> FilePath
+  -> m (DecodeValidation ByteString [a])
+parseDecodeFromFile = parseDecodeFromFile' P.trifecta
+
+-- | Load a file, parse it, and decode it.
+--
+-- This version lets you choose which parsing library to use by providing an
+-- 'SvParser'. Common selections are 'trifecta' and 'attoparsecByteString'.
+parseDecodeFromFile' ::
+  MonadIO m
+  => SvParser s
+  -> FieldDecode' s a
   -> ParseOptions s
   -> FilePath
   -> m (DecodeValidation s [a])
-parseDecodeFromFile d opts fp = do
-  sv <- parseFromFile opts fp
-  pure (sv `bindValidation` decode d)
+parseDecodeFromFile' svp d opts fp = do
+  sv <- parseSvFromFile' svp opts fp
+  pure (P.either badDecode pure sv `bindValidation` decode d)
 
 -- | Build a 'Decode', given a function that returns 'Maybe'.
 --
@@ -401,25 +409,37 @@ named name =
 mapErrors :: (e -> x) -> FieldDecode e s a -> FieldDecode x s a
 mapErrors f (FieldDecode (Compose r)) = FieldDecode (Compose (fmap (first (fmap f)) r))
 
+-- | This transforms a @FieldDecode' s a@ into a @FieldDecode' t a@. It needs
+-- functions in both directions because the errors can include fragments of the
+-- input.
+--
+-- @alterInput :: (s -> t) -> (t -> s) -> FieldDecode' s a -> FieldDecode' t a@
+alterInput :: (e -> x) -> (t -> s) -> FieldDecode e s a -> FieldDecode x t a
+alterInput f g = mapErrors f . lmap g
+
+-- | Like @alterInput@, but uses an @Control.Lens.Iso@
+alterInputIso :: AnIso e s x t -> FieldDecode e s a -> FieldDecode x t a
+alterInputIso i = withIso i alterInput
+
 ---- Promoting parsers to 'FieldDecode's
 
 -- | Build a 'FieldDecode' from a Trifecta parser
-trifecta :: T.Parser a -> FieldDecode' ByteString a
-trifecta =
+withTrifecta :: Tri.Parser a -> FieldDecode' ByteString a
+withTrifecta =
   mkParserFunction
     (validateTrifectaResult (BadDecode . UTF8.fromString))
-    (flip parseByteString mempty)
+    (flip Tri.parseByteString mempty)
 
 -- | Build a 'FieldDecode' from an Attoparsec parser
-attoparsec :: A.Parser a -> FieldDecode' ByteString a
-attoparsec =
+withAttoparsec :: A.Parser a -> FieldDecode' ByteString a
+withAttoparsec =
   mkParserFunction
     (validateEither' (BadDecode . fromString))
     parseOnly
 
 -- | Build a 'FieldDecode' from a Parsec parser
-parsec :: Parsec ByteString () a -> FieldDecode' ByteString a
-parsec =
+withParsec :: Parsec ByteString () a -> FieldDecode' ByteString a
+withParsec =
   -- Parsec will include a position, but it will only confuse the user
   -- since it won't correspond obviously to a position in their source file.
   let dropPos = drop 1 . dropWhile (/= ':')
@@ -428,12 +448,12 @@ parsec =
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::
-  CharParsing p
+  Tri.CharParsing p
   => (f a -> DecodeValidation ByteString a)
   -> (p a -> ByteString -> f a)
   -> p a
   -> FieldDecode' ByteString a
 mkParserFunction err run p =
-  let p' = p <* eof
+  let p' = p <* Tri.eof
   in  byteString >>== (err . run p')
 {-# INLINE mkParserFunction #-}
