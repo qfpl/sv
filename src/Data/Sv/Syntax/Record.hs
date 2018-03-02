@@ -144,6 +144,7 @@ class HasRecords c s | c -> s where
 
 instance HasRecords (Records s) s where
   records = id
+  {-# INLINE records #-}
 
 instance Functor Records where
   fmap f rs = case rs of

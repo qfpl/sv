@@ -50,6 +50,7 @@ class HasPrintOptions c a | c -> a where
 
 instance HasPrintOptions (PrintOptions a) a where
   printOptions = id
+  {-# INLINE printOptions #-}
   build f (PrintOptions x1 x2) = fmap (\ y -> PrintOptions y x2) (f x1)
   {-# INLINE build #-}
   escape f (PrintOptions x1 x2) = fmap (PrintOptions x1) (f x2)

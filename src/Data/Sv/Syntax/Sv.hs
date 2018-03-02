@@ -83,24 +83,20 @@ class (HasRecords c s, HasSeparator c) => HasSv c s | c -> s where
   traverseHeader = maybeHeader . traverse
   finalNewlines = sv . finalNewlines
 
-instance HasSeparator (Sv s) where
-  separator f (Sv x1 x2 x3 x4) =
-    fmap (\y -> Sv y x2 x3 x4) (f x1)
-  {-# INLINE separator #-}
-
 instance HasRecords (Sv s) s where
   records f (Sv x1 x2 x3 x4) =
     fmap (\y -> Sv x1 x2 y x4) (f x3)
   {-# INLINE records #-}
 
 instance HasSv (Sv s) s where
-  {-# INLINE maybeHeader #-}
-  {-# INLINE finalNewlines #-}
   sv = id
+  {-# INLINE sv #-}
   maybeHeader f (Sv x1 x2 x3 x4) =
     fmap (\y -> Sv x1 y x3 x4) (f x2)
+  {-# INLINE maybeHeader #-}
   finalNewlines f (Sv x1 x2 x3 x4) =
     fmap (Sv x1 x2 x3) (f x4)
+  {-# INLINE finalNewlines #-}
 
 -- | Convenience constructor for Sv
 mkSv :: Separator -> Maybe (Header s) -> [Newline] -> Records s -> Sv s
@@ -145,13 +141,14 @@ class HasHeader c s | c -> s where
   headerRecord = header . headerRecord
 
 instance HasHeader (Header s) s where
-  {-# INLINE headerNewline #-}
-  {-# INLINE headerRecord #-}
   header = id
+  {-# INLINE header #-}
   headerNewline f (Header x1 x2)
     = fmap (Header x1) (f x2)
+  {-# INLINE headerNewline #-}
   headerRecord f (Header x1 x2)
     = fmap (\y -> Header y x2) (f x1)
+  {-# INLINE headerRecord #-}
 
 instance HasRecord (Header s) s where
   record = headerRecord
@@ -197,6 +194,11 @@ class HasSeparator c where
 
 instance HasSeparator Char where
   separator = id
+  {-# INLINE separator #-}
+
+instance HasSeparator (Sv s) where
+  separator f (Sv x1 x2 x3 x4) =
+    fmap (\y -> Sv y x2 x3 x4) (f x1)
   {-# INLINE separator #-}
 
 -- | The venerable comma separator. Used for CSV documents.

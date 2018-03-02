@@ -2,6 +2,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DefaultSignatures #-}
 
 {-|
 Module      : Data.Sv.Parse.Options
@@ -58,21 +59,30 @@ instance Functor ParseOptions where
 class (HasSeparator c, HasHeadedness c) => HasParseOptions c d s t | c -> s, d -> t, c t -> d, d s -> c where
   parseOptions :: Lens c d (ParseOptions s) (ParseOptions t)
   encodeString :: Lens c d (String -> s) (String -> t)
+  {-# INLINE encodeString #-}
   endOnBlankLine :: c ~ d => Lens c d Bool Bool
+  {-# INLINE endOnBlankLine #-}
+  encodeString = parseOptions . encodeString
+  default endOnBlankLine :: (s ~ t, c ~ d) => Lens c d Bool Bool
+  endOnBlankLine = parseOptions . endOnBlankLine
 
 instance HasParseOptions (ParseOptions s) (ParseOptions t) s t where
   parseOptions = id
   {-# INLINE parseOptions #-}
   encodeString = lens _encodeString (\c s -> c { _encodeString = s })
+  {-# INLINE encodeString #-}
   endOnBlankLine = lens _endOnBlankLine (\c b -> c { _endOnBlankLine = b })
+  {-# INLINE endOnBlankLine #-}
 
 instance HasSeparator (ParseOptions s) where
   separator =
     lens _parseSeparator (\c s -> c { _parseSeparator = s })
+  {-# INLINE separator #-}
 
 instance HasHeadedness (ParseOptions s) where
   headedness =
     lens _headedness (\c h -> c { _headedness = h })
+  {-# INLINE headedness #-}
 
 -- | 'defaultParseOptions' is used to parse a CSV file featuring a header row, using
 -- Trifecta as the parsing library. It uses UTF-8 'ByteString's

@@ -70,20 +70,25 @@ class HasFields c s => AsField c s | c -> s where
   _Unquoted :: Prism' c s
   _Quoted :: Prism' c (Quote, Unescaped s)
   _Unquoted = _Field . _Unquoted
+  {-# INLINE _Unquoted #-}
   _Quoted = _Field . _Quoted
+  {-# INLINE _Quoted #-}
 
 instance AsField (Field s) s where
   _Field = id
+  {-# INLINE _Field #-}
   _Unquoted = prism Unquoted
     (\x -> case x of
       Unquoted y -> Right y
       _          -> Left x
     )
+  {-# INLINE _Unquoted #-}
   _Quoted = prism (uncurry Quoted)
     (\x -> case x of
       Quoted y z -> Right (y,z)
       _          -> Left x
     )
+  {-# INLINE _Quoted #-}
 
 -- | Classy 'Traversal'' for things containing 'Field's
 class HasFields c s | c -> s where
@@ -91,6 +96,7 @@ class HasFields c s | c -> s where
 
 instance HasFields (Field s) s where
   fields = id
+  {-# INLINE fields #-}
 
 -- | Build a quoted field with a normal string
 unescapedField :: Quote -> s -> Field s

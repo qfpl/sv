@@ -68,22 +68,23 @@ instance HasSeparator EncodeOptions where
   {-# INLINE separator #-}
 
 instance HasEncodeOptions EncodeOptions where
-  {-# INLINE newline #-}
-  {-# INLINE quote #-}
-  {-# INLINE spacingAfter #-}
-  {-# INLINE spacingBefore #-}
-  {-# INLINE terminalNewline #-}
   encodeOptions = id
+  {-# INLINE encodeOptions #-}
   newline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 x2 x3 x4 y x6) (f x5)
+  {-# INLINE newline #-}
   quote f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 x2 x3 y x5 x6) (f x4)
+  {-# INLINE quote #-}
   spacingAfter f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 x2 y x4 x5 x6) (f x3)
+  {-# INLINE spacingAfter #-}
   spacingBefore f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 y x3 x4 x5 x6) (f x2)
+  {-# INLINE spacingBefore #-}
   terminalNewline f (EncodeOptions x1 x2 x3 x4 x5 x6) =
     fmap (\ y -> EncodeOptions x1 x2 x3 x4 x5 y) (f x6)
+  {-# INLINE terminalNewline #-}
 
 -- | The default options for encoding.
 --
