@@ -280,6 +280,8 @@ orEmpty = choose (maybe (Left ()) Right) empty
 (<<?) = flip (?>>)
 {-# INLINE (<<?) #-}
 
+-- | Encode a list as a whole row at once, using the same 'Encode'
+-- for every element
 row :: Encode s -> Encode [s]
 row enc = Encode $ \opts list -> join $ Seq.fromList $ fmap (getEncode enc opts) list
 
