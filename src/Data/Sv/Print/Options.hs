@@ -29,13 +29,16 @@ import qualified Data.ByteString.Builder as Builder
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
-import Text.Escape (Escaper, escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
+import Text.Escape (Escaper', escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
 
 -- | Options to configure the printing process
 data PrintOptions a =
   PrintOptions {
+    -- | How do I convert these values into ByteString 'Builder's? This depends
+    -- not only on type, but on character encoding. Default: 'utf8PrintOptions'
     _build :: a -> Builder
-  , _escape :: Escaper a
+    -- | How do I escape quotes which appear in this value? Default: 'escapeUtf8'
+  , _escape :: Escaper' a
   }
 
 -- | Classy optics for 'PrintOptions'
@@ -43,7 +46,7 @@ class HasPrintOptions c a | c -> a where
   printOptions :: Lens' c (PrintOptions a)
   build :: Lens' c (a -> Builder)
   {-# INLINE build #-}
-  escape :: Lens' c (Escaper a)
+  escape :: Lens' c (Escaper' a)
   {-# INLINE escape #-}
   build = printOptions . build
   escape = printOptions . escape
@@ -56,15 +59,15 @@ instance HasPrintOptions (PrintOptions a) a where
   escape f (PrintOptions x1 x2) = fmap (PrintOptions x1) (f x2)
   {-# INLINE escape #-}
 
--- | Print options for 'Sv's containing UTF8 bytestrings
+-- | Print options for 'Sv's containing UTF-8 bytestrings
 defaultPrintOptions :: PrintOptions BS.ByteString
 defaultPrintOptions = utf8PrintOptions
 
--- | Print options for 'Sv's containing UTF8 bytestrings
+-- | Print options for 'Sv's containing UTF-8 bytestrings
 utf8PrintOptions :: PrintOptions BS.ByteString
 utf8PrintOptions = PrintOptions Builder.byteString escapeUtf8
 
--- | Print options for 'Sv's containing UTF8 lazy bytestrings
+-- | Print options for 'Sv's containing UTF-8 lazy bytestrings
 utf8LazyPrintOptions :: PrintOptions BL.ByteString
 utf8LazyPrintOptions = PrintOptions Builder.lazyByteString escapeUtf8Lazy
 

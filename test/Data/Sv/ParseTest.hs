@@ -26,7 +26,7 @@ import Data.Sv.Syntax.Sv (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Sep
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
 import Text.Escape (Unescaped (Unescaped))
-import Text.Space (Spaced (Spaced), manySpaces, noSpaces)
+import Text.Space (Spaced (Spaced), manySpaces, unspaced)
 import Text.Quote (Quote (SingleQuote, DoubleQuote), quoteToString)
 
 test_Parse :: TestTree
@@ -63,13 +63,13 @@ qs = Quoted SingleQuote . Unescaped
 qsr :: s -> Record s
 qsr = Record . pure . nospc . qs
 uq :: s -> SpacedField s
-uq = noSpaces . Unquoted
+uq = unspaced . Unquoted
 uqa :: NonEmpty s -> Record s
 uqa = recordNel . fmap uq
 uqaa :: [NonEmpty s] -> [Record s]
 uqaa = fmap uqa
 nospc :: Field s -> SpacedField s
-nospc = noSpaces
+nospc = unspaced
 
 quotedFieldTest :: (forall m . CharParsing m => m (SpacedField Text)) -> TestName -> Quote -> TestTree
 quotedFieldTest parser name quote =

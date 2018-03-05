@@ -48,13 +48,13 @@ newtype Unescaped a =
 instance NFData a => NFData (Unescaped a)
 
 -- | A function that, given a char, escapes all occurrences of that char.
-type Escaper a = Char -> Unescaped a -> a
-
--- | A function that, given a char, escapes all occurrences of that char.
 --
 -- This version allows the escaping to be type-changing. For example, escaping
 -- a single char can result in a string with two characters.
-type Escaper' s t = Char -> Unescaped s -> t
+type Escaper s t = Char -> Unescaped s -> t
+
+-- | A function that, given a char, escapes all occurrences of that char.
+type Escaper' a = Char -> Unescaped a -> a
 
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character, non-recursively, in the given 'String'.
@@ -62,7 +62,7 @@ type Escaper' s t = Char -> Unescaped s -> t
 -- >>> escapeString ''' "hello 'string'"
 -- "hello ''string''"
 --
-escapeString :: Escaper String
+escapeString :: Escaper' String
 escapeString c = concatMap (doubleChar c) . getRawUnescaped
 
 -- | Replaces all occurrences of the given character with two occurrences of that
@@ -73,7 +73,7 @@ escapeString c = concatMap (doubleChar c) . getRawUnescaped
 -- >>> escapeText ''' "hello 'text'"
 -- "hello ''text''"
 --
-escapeText :: Escaper Text
+escapeText :: Escaper' Text
 escapeText c =
   let ct = Text.singleton c
   in  Text.replace ct (ct <> ct) . getRawUnescaped
@@ -86,7 +86,7 @@ escapeText c =
 -- >>> escapeUtf8 ''' "hello 'bytestring'"
 -- "hello ''bytestring''"
 --
-escapeUtf8 :: Escaper B.ByteString
+escapeUtf8 :: Escaper' B.ByteString
 escapeUtf8 c =
   UTF8.fromString . concatMap (doubleChar c) . UTF8.toString . getRawUnescaped
 
@@ -98,7 +98,7 @@ escapeUtf8 c =
 -- >>> escapeUtf8Lazy ''' "hello 'lazy bytestring'"
 -- "hello ''lazy bytestring''"
 --
-escapeUtf8Lazy :: Escaper L.ByteString
+escapeUtf8Lazy :: Escaper' L.ByteString
 escapeUtf8Lazy c =
   UTF8L.fromString . concatMap (doubleChar c) . UTF8L.toString . getRawUnescaped
 
@@ -110,7 +110,7 @@ escapeUtf8Lazy c =
 -- >>> escapeChar ''' 'z'
 -- "z"
 --
-escapeChar :: Escaper' Char String
+escapeChar :: Escaper Char String
 escapeChar c = doubleChar c . getRawUnescaped
 
 doubleChar :: Char -> Char -> String

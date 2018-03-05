@@ -70,7 +70,7 @@ makeLenses ''Example
 -- divide :: (Product -> (Text, Int)) -> Encode Text -> Encode Int -> Encode Product
 -- @
 productEnc :: Encode Product
-productEnc = E.divide (\(Product t d) -> (t,d)) E.text E.double
+productEnc = divide (\(Product t d) -> (t,d)) E.text E.double
 
 -- | Here we're defining an encoder for a 'Sum' using the 'choose' combinator.
 --
@@ -91,12 +91,12 @@ productEnc = E.divide (\(Product t d) -> (t,d)) E.text E.double
 --
 -- @
 -- split :: Sum -> Either Int (Either Double Text)
--- E.choose split :: Encode Int -> Encode (Either Double Text) -> Encode Sum
--- E.chosen E.double E.text :: Encode (Either Double Text)
+-- choose split :: Encode Int -> Encode (Either Double Text) -> Encode Sum
+-- chosen E.double E.text :: Encode (Either Double Text)
 -- @
 --
 sumEnc :: Encode Sum
-sumEnc = E.choose split E.int $ E.chosen E.double E.text
+sumEnc = choose split E.int $ chosen E.double E.text
   where
     split s =
       case s of
@@ -116,11 +116,11 @@ sumEnc = E.choose split E.int $ E.chosen E.double E.text
 --
 exampleEnc :: Encode Example
 exampleEnc =
-  E.divide (\(Example b t i d p s) -> (b,(t,(i,(d,(p,s)))))) E.byteString $
-    E.divided E.text $
-    E.divided E.int $
-    E.divided E.double $
-    E.divided productEnc sumEnc
+  divide (\(Example b t i d p s) -> (b,(t,(i,(d,(p,s)))))) E.byteString $
+    divided E.text $
+    divided E.int $
+    divided E.double $
+    divided productEnc sumEnc
 
 examples :: [Example]
 examples =
@@ -159,7 +159,7 @@ main = do
 -- which provides 'contrazip6' along with many other @contrazipN@ functions.
 exampleEncContravariantExtras :: Encode Example
 exampleEncContravariantExtras =
-  E.contramap (\(Example b t i d p s) -> (b,t,i,d,p,s)) $
+  contramap (\(Example b t i d p s) -> (b,t,i,d,p,s)) $
     contrazip6 E.byteString E.text E.int E.double productEnc sumEnc
 
 -- | Bonus Round #2

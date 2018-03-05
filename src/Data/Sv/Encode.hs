@@ -131,7 +131,7 @@ import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (fold, foldMap, toList)
 import Data.Functor.Contravariant (Contravariant (contramap))
-import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose), divided, chosen)
+import Data.Functor.Contravariant.Divisible (Divisible (conquer), Decidable (choose))
 import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
@@ -286,7 +286,7 @@ row enc = Encode $ \opts list -> join $ Seq.fromList $ fmap (getEncode enc opts)
 
 -- | Encode a single 'Char'
 char :: Encode Char
-char = escaped' escapeChar BS.charUtf8 BS.stringUtf8
+char = escaped escapeChar BS.charUtf8 BS.stringUtf8
 
 -- | Encode an 'Int'
 int :: Encode Int
@@ -306,28 +306,28 @@ double = unsafeBuilder BS.doubleDec
 
 -- | Encode a 'String'
 string :: Encode String
-string = escaped escapeString BS.stringUtf8
+string = escaped' escapeString BS.stringUtf8
 
 -- | Encode a 'Data.Text.Text'
 text :: Encode T.Text
-text = escaped escapeText (BS.byteString . T.encodeUtf8)
+text = escaped' escapeText (BS.byteString . T.encodeUtf8)
 
 -- | Encode a strict 'Data.ByteString.ByteString'
 byteString :: Encode Strict.ByteString
-byteString = escaped escapeUtf8 BS.byteString
+byteString = escaped' escapeUtf8 BS.byteString
 
 -- | Encode a lazy 'Data.ByteString.Lazy.ByteString'
 lazyByteString :: Encode LBS.ByteString
-lazyByteString = escaped escapeUtf8Lazy BS.lazyByteString
+lazyByteString = escaped' escapeUtf8Lazy BS.lazyByteString
 
-escaped :: Escaper s -> (s -> BS.Builder) -> Encode s
-escaped escaper = join (escaped' escaper)
-
-escaped' :: Escaper' s t -> (s -> BS.Builder) -> (t -> BS.Builder) -> Encode s
-escaped' esc sb tb = mkEncodeWithOpts $ \opts s ->
+escaped :: Escaper s t -> (s -> BS.Builder) -> (t -> BS.Builder) -> Encode s
+escaped esc sb tb = mkEncodeWithOpts $ \opts s ->
   case _quote opts of
     Nothing -> sb s
     Just q -> tb $ esc (review quoteChar q) (Unescaped s)
+
+escaped' :: Escaper' s -> (s -> BS.Builder) -> Encode s
+escaped' escaper = join (escaped escaper)
 
 -- | Encode a 'Bool' as False or True
 boolTrueFalse :: Encode Bool

@@ -17,53 +17,16 @@ module Data.Sv (
   , decodeMay
   , decodeEither
   , decodeEither'
-
-  , Decode (..)
-  , Decode'
-  , Validation (..)
-  , DecodeValidation
-  , DecodeError (..)
-  , DecodeErrors (..)
-
-  , runDecode
   , (>>==)
   , (==<<)
-  , mkDecode
-  , mkDecodeWithQuotes
-  , mkDecodeWithSpaces
-  , validateMay
-  , validateMay'
+  , module Data.Sv.Decode.Type
+  , module Data.Sv.Decode.Error
 
   -- * Parsing
-  , parseSv
-  , parseSv'
-  , parseSvFromFile
-  , parseSvFromFile'
-  , separatedValues
-  , ParseOptions (..)
-  , Headedness (..)
-  , defaultParseOptions
-  , orDefault
-  , defaultHeadedness
-  , defaultSeparator
-  , SvParser (..)
-  , trifecta
-  , attoparsecByteString
-  , attoparsecText
+  , module Data.Sv.Parse
 
   -- * Printing
-  , printSv
-  , printSvLazy
-  , printSvText
-  , printSvTextLazy
-  , printSv'
-  , printSvLazy'
-  , writeSvToFile
-  , writeSvToHandle
-  , writeSvToFile'
-  , writeSvToHandle'
-  , PrintOptions
-  , defaultPrintOptions
+  , module Data.Sv.Print
 
   -- * Encoding
   , encode
@@ -72,57 +35,14 @@ module Data.Sv (
   , encodeBuilder
   , encodeRow
   , encodeSv
-  , Encode (..)
-  , EncodeOptions (..)
-  , defaultEncodeOptions
+  , module Data.Sv.Encode.Type
+  , module Data.Sv.Encode.Options
 
   -- * Core data types
-  , Sv (..)
-  , mkSv
-  , emptySv
-  , Header (..)
-  , noHeader
-  , mkHeader
-  , getHeadedness
-  , Separator
-  , comma
-  , pipe
-  , tab
+  , module Data.Sv.Syntax
 
-  , Field (..)
-  , SpacedField
-  , Spaced (Spaced)
-  , unescapedField
-  , foldField
-  , fieldContents
-
-  , Record (..)
-  , recordSpacedFieldsIso
-  , emptyRecord
-  , singleField
-  , Records (..)
-  , _EmptyRecords
-  , _NonEmptyRecords
-  , mkRecords
-  , singleRecord
-  , recordList
-
-  -- * Lenses
-  , HasSv (..)
-  , HasHeader (..)
-  , HasHeadedness (..)
-  , HasSeparator (..)
-  , HasFields (..)
-  , AsField (..)
-  , HasRecord (..)
-  , HasRecords (..)
-  , HasParseOptions (..)
-  , HasPrintOptions (..)
-  , HasEncodeOptions (..)
-
-  -- * Re-exports
+  -- * Re-exports from contravariant and semigroupoids
   , Alt ((<!>))
-  , Applicative (pure, (<*>))
   , module Data.Functor.Contravariant
   , module Data.Functor.Contravariant.Divisible
 
@@ -132,7 +52,11 @@ import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 
 import Data.Sv.Decode
+import Data.Sv.Decode.Type
+import Data.Sv.Decode.Error
 import Data.Sv.Encode
+import Data.Sv.Encode.Options
+import Data.Sv.Encode.Type
 import Data.Sv.Parse
 import Data.Sv.Print
 import Data.Sv.Syntax

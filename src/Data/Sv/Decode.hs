@@ -93,6 +93,8 @@ module Data.Sv.Decode (
 , orElseE
 , categorical
 , categorical'
+, (>>==)
+, (==<<)
 , bindDecode
 
 -- * Building Decodes from Readable
@@ -121,8 +123,6 @@ module Data.Sv.Decode (
 -- * Implementation details
 , runDecode
 , buildDecode
-, (>>==)
-, (==<<)
 , mkDecode
 , mkDecodeWithQuotes
 , mkDecodeWithSpaces

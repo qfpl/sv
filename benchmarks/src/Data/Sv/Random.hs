@@ -122,7 +122,7 @@ rowGen =
   ]
 
 rowEnc :: Encode Row
-rowEnc = E.choose (\x -> case x of {Long r -> Left r ; Short r -> Right r}) longRowEnc shortRowEnc
+rowEnc = choose (\x -> case x of {Long r -> Left r ; Short r -> Right r}) longRowEnc shortRowEnc
 
 shortRowEnc :: Encode ShortRow
 shortRowEnc =

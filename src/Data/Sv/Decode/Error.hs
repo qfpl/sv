@@ -28,12 +28,10 @@ module Data.Sv.Decode.Error (
 , validateTrifectaResult
 
 -- * Re-exports from @validation@
-, DecodeValidation
-, Validation (Failure, Success)
 , bindValidation
 ) where
 
-import Data.Validation (Validation (Success, Failure), bindValidation)
+import Data.Validation (Validation (Failure), bindValidation)
 import Data.Vector (Vector)
 import qualified Text.Trifecta as Trifecta (Result (Success, Failure), _errDoc)
 

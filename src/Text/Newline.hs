@@ -25,7 +25,12 @@ import Data.Text (Text)
 
 -- | 'Newline' is a sum type for line endings
 data Newline =
-  CR | LF | CRLF
+  -- | > "\r"
+  CR
+  -- | > "\n"
+  | LF
+  -- | > "\rn"
+  | CRLF
   deriving (Eq, Ord, Show)
 
 instance NFData Newline where

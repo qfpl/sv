@@ -29,7 +29,6 @@ module Text.Space
   , Spaced (Spaced, _before, _after, _value)
   , HasSpaced (spaced, spacedValue, before, after)
   , betwixt
-  , noSpaces
   , unspaced
   , removeSpaces
   )
@@ -44,7 +43,7 @@ import qualified Data.Vector as V
 import GHC.Generics (Generic)
 
 -- | 'HorizontalSpace' is a subset of 'Char'. To move back and forth betwen
--- it and 'Char', 'String', or 'Text', use '_HorizontalSpace'
+-- it and 'Char', 'String', or 'Data.Text.Text', use '_HorizontalSpace'
 data HorizontalSpace =
   Space
   | Tab
@@ -104,7 +103,7 @@ charToSpace c = case c of
   '\t' -> Just Tab
   _    -> Nothing
 
--- | Parse 'Text' into 'Spaces', or turn spaces into 'Text'
+-- | Parse 'Text' into 'Spaces', or turn spaces into 'Data.Text.Text'
 spacesText :: Prism' Text Spaces
 spacesText =
   prism'
@@ -157,7 +156,7 @@ instance Functor Spaced where
 
 -- | Appends the right parameter on the inside of the left parameter
 --
--- Eg. Spaced "   " () " " *> Spaced "\t\t\t" () "\t \t" == Spaced "   \t\t\t" () "\t \t "
+-- > Spaced "   " () " " *> Spaced "\t\t\t" () "\t \t" == Spaced "   \t\t\t" () "\t \t "
 instance Applicative Spaced where
   pure = unspaced
   Spaced b t f <*> Spaced b' t' a = Spaced (b <> b') (t' <> t) (f a)
@@ -173,17 +172,13 @@ instance Traversable Spaced where
 betwixt :: Spaces -> a -> Spaces -> Spaced a
 betwixt b a t = Spaced b t a
 
--- | 'unspaced a' is an 'a' that is between two empty 's's.
+-- | Places its argument in a 'Spaced' with no spaces.
 unspaced :: a -> Spaced a
 unspaced = uniform mempty
 
--- | `uniform spaces a` is 'a' between two of the same 'spaces'.
+-- | 'uniform' puts the same spacing both before and after something.
 uniform :: Spaces -> a -> Spaced a
 uniform s a = Spaced s s a
-
--- | Put the given argument between no spaces
-noSpaces :: a -> Spaced a
-noSpaces = uniform mempty
 
 -- | Remove spaces from the argument
 removeSpaces :: Spaced a -> Spaced a

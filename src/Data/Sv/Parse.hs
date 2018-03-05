@@ -14,17 +14,7 @@ module Data.Sv.Parse (
 , parseSvFromFile'
 , separatedValues
 
--- ParseOptions
-
-, ParseOptions (ParseOptions, _headedness, _endOnBlankLine, _parseSeparator, _encodeString)
-, HasParseOptions (parseOptions, endOnBlankLine, encodeString)
-, HasSeparator (..)
-, HasHeadedness (..)
-, defaultParseOptions
-, orDefault
-, defaultHeadedness
-, defaultSeparator
-
+, module Data.Sv.Parse.Options
 , SvParser (..)
 , trifecta
 , attoparsecByteString
@@ -81,17 +71,19 @@ parseSvFromFile' svp opts fp =
 --
 -- The parser is written in terms of the @parsers@ library, meaning it can be
 -- instantiated to several different parsing libraries. By default, we use
--- 'Trifecta', because its error messages are so helpful. 'Attoparsec' might
--- be faster, but we haven't benchmarked our parser yet, so we don't know.
+-- 'trifecta', because 'Text.Trifecta's error messages are so helpful.
+-- 'attoparsecByteString' is faster though, if your input is ASCII and
+  -- you care a lot about speed.
 --
 -- It is worth noting that Trifecta assumes UTF-8 encoding of the input data.
 -- UTF-8 is backwards-compatible with 7-bit ASCII, so this will work for many
 -- documents. However, not all documents are ASCII or UTF-8. For example, our
--- @test/species.csv@ test file is Windows-1252, which is a non-ISO extension
+-- <https://github.com/qfpl/sv/blob/master/examples/csv/species.csv species.csv>
+-- test file is Windows-1252, which is a non-ISO extension
 -- of latin1 8-bit ASCII. For documents encoded as Windows-1252, Trifecta's
 -- assumption is invalid and parse errors result.
--- 'Attoparsec' works fine for this character encoding.
-
+-- 'Attoparsec' works fine for this character encoding, but it wouldn't work
+-- well on a UTF-8 encoded document including non-ASCII characters.
 data SvParser s = SvParser
   { runSvParser :: ParseOptions s -> s -> Either String (Sv s)
   , runSvParserFromFile :: ParseOptions s -> FilePath -> IO (Either String (Sv s))

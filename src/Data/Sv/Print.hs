@@ -18,9 +18,7 @@ module Data.Sv.Print (
 , writeSvToHandle
 , writeSvToFile'
 , writeSvToHandle'
-, PrintOptions
-, HasPrintOptions (..)
-, defaultPrintOptions
+, module Data.Sv.Print.Options
 ) where
 
 import Data.ByteString (ByteString)

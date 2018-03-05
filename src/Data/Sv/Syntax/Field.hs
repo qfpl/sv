@@ -61,7 +61,7 @@ instance Traversable Field where
     Unquoted s -> Unquoted <$> f s
     Quoted q v -> Quoted q <$> traverse f v
 
--- | 'Field's are very often surrounded by spaces
+-- | 'Field's are often surrounded by spaces
 type SpacedField a = Spaced (Field a)
 
 -- | Classy prisms for 'Field'

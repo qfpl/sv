@@ -6,9 +6,10 @@ Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
 
-This module is considered an implementation detail and is likely to change at
-any time. Depend on it at your own peril.
-These functions exist to be called by 'Data.Sv.Print'
+This module is considered an implementation detail.
+As the "Internal" module name suggests, this module is exempt from
+the PVP, so depend on it at your own risk!
+These functions exist to be called by 'Data.Sv.Print'.
 -}
 
 module Data.Sv.Print.Internal (
