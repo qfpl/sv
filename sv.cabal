@@ -7,13 +7,13 @@ maintainer:          george@wils.online
 copyright:           Copyright (c) 2017-2018, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
 category:            CSV, Text, Web
 synopsis:
-  Values which are separated, often by commas
+  Encode and decode separated values (CSV, PSV, ...)
 
 description:
   <<http://i.imgur.com/uZnp9ke.png>>
   .
-  sv is a swiss army knife for CSV and similar formats (such as PSV, TSV,
-  and many more). It can parse, decode, encode, and print these formats.
+  sv (separated values) is a library for parsing, decoding, encoding, and
+  printing CSV and similar formats (such as PSV, TSV, and many more).
   .
   sv uses an Applicative combinator style for decoding and encoding, rather
   than a type class based approach. This means we can have multiple decoders
