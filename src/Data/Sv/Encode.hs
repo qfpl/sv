@@ -9,6 +9,10 @@ Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
 
+This module is intended to be imported qualified as follows
+
+@import Data.Sv.Encode as E@
+
 To produce a CSV file from data types, build an 'Encode' for your data
 type. This module contains primitives, combinators, and type class instances
 to help you to do so.
@@ -99,11 +103,6 @@ module Data.Sv.Encode (
 , row
 
 -- * Combinators
-, Contravariant (contramap)
-, Divisible (divide, conquer)
-, divided
-, Decidable (choose, lose)
-, chosen
 , (?>)
 , (<?)
 , (?>>)
@@ -237,7 +236,7 @@ encodeSv e opts headerStrings as =
       b2r = maybe emptyRecord (Record . V.fromNel) . nonEmpty . toList . fmap b2f
   in  Sv sep header rs terminal
 
--- | Encode this 'ByteString' every time, ignoring the input.
+-- | Encode this 'Data.ByteString.ByteString' every time, ignoring the input.
 const :: Strict.ByteString -> Encode a
 const b = contramap (P.const b) byteString
 
@@ -356,23 +355,37 @@ bool10 = mkEncodeBS $ B.bool "0" "1"
 
 -- | Given an optic from @s@ to @a@, Try to use it to build an encode.
 --
--- @encodeOf :: Iso'       s a -> Encode a -> Encode s@
--- @encodeOf :: Lens'      s a -> Encode a -> Encode s@
--- @encodeOf :: Prism'     s a -> Encode a -> Encode s@
--- @encodeOf :: Traversal' s a -> Encode a -> Encode s@
--- @encodeOf :: Fold       s a -> Encode a -> Encode s@
--- @encodeOf :: Getter     s a -> Encode a -> Encode s@
+-- @
+-- encodeOf :: Iso'       s a -> Encode a -> Encode s
+-- encodeOf :: Lens'      s a -> Encode a -> Encode s
+-- encodeOf :: Prism'     s a -> Encode a -> Encode s
+-- encodeOf :: Traversal' s a -> Encode a -> Encode s
+-- encodeOf :: Fold       s a -> Encode a -> Encode s
+-- encodeOf :: Getter     s a -> Encode a -> Encode s
+-- @
 --
 -- This is very useful when you have a prism for each constructor of your type.
 -- You can define an 'Encode' as follows:
+--
 -- @
 -- myEitherEncode :: Encode a -> Encode b -> Encode (Either a b)
 -- myEitherEncode encA encB = encodeOf _Left encA <> encodeOf _Right encB
 -- @
+--
+-- In this example, when the prism lookup returns 'Nothing', the empty encoder
+-- is returned. This is the 'mempty' for the 'Encode' monoid, so it won't
+-- add a field to the resulting CSV. This is the behaviour you want for
+-- combining a collection of prisms.
+--
+-- But this encoder also works with lenses (or weaker optics), which will
+-- never fail their lookup, in which case it never returns 'mempty'.
+-- So this actually does the right thing for both sum and product types.
 encodeOf :: Getting (First a) s a -> Encode a -> Encode s
 encodeOf g = encodeOfMay g . choose (maybe (Left ()) Right) conquer
 
 -- | Like 'encodeOf', but you can handle 'Nothing' however you'd like.
+-- In 'encodeOf', it is handled by the Encode which does nothing,
+-- but for example you might like to use 'orEmpty' to encode an empty field.
 encodeOfMay :: Getting (First a) s a -> Encode (Maybe a) -> Encode s
 encodeOfMay g x = contramap (preview g) x
 

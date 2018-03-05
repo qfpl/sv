@@ -17,11 +17,11 @@ module Data.Sv.Decode.Type (
 , buildDecode
 , DecodeState (..)
 , runDecodeState
-, Ind (Ind)
+, Ind (..)
 , DecodeError (..)
 , DecodeErrors (..)
 , DecodeValidation
-, Validation (Success, Failure)
+, Validation (..)
 ) where
 
 import Control.DeepSeq (NFData)

@@ -120,10 +120,16 @@ module Data.Sv (
   , HasPrintOptions (..)
   , HasEncodeOptions (..)
 
-  -- * Operators
+  -- * Re-exports
   , Alt ((<!>))
   , Applicative (pure, (<*>))
+  , module Data.Functor.Contravariant
+  , module Data.Functor.Contravariant.Divisible
+
 ) where
+
+import Data.Functor.Contravariant
+import Data.Functor.Contravariant.Divisible
 
 import Data.Sv.Decode
 import Data.Sv.Encode

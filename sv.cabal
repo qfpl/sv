@@ -37,6 +37,14 @@ description:
   the user to have a great degree of freedom to build the right decoder for
   their dataset.
   .
+  Parts of sv are intended to be imported as follows
+  .
+  @
+  import Data.Sv
+  import qualified Data.Sv.Decode as D
+  import qualified Data.Sv.Encode as E
+  @
+  .
   Examples:
   .
   * Decoding a real CSV: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Species.lhs Species.lhs>

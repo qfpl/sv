@@ -27,6 +27,13 @@ sv tries not to be opinionated about how your data should look. We intend for
 the user to have a great degree of freedom to build the right decoder for
 their dataset.
 
+sv is intended to be imported as follows
+
+```hs
+import Data.Sv
+import qualified Data.Sv.Decode as D
+import qualified Data.Sv.Encode as E
+```
 
 ## Examples:
 
