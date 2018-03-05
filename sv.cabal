@@ -4,18 +4,34 @@ license:             BSD3
 license-file:        LICENCE
 author:              George Wilson
 maintainer:          george@wils.online
-copyright:           Copyright (c) 2017, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
-category:            CSV
+copyright:           Copyright (c) 2017-2018, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
+category:            CSV, Text, Web
 synopsis:
   Values which are separated, often by commas
 
 description:
-  sv is a swiss army knife for CSV and similar formats (such as PSV, TSV,
-  and many more).
+  <<http://i.imgur.com/uZnp9ke.png>>
   .
-  sv focuses on correctness, on flexible and composable decoder data types,
-  and on useful and informative errors.
-  Speed is also important to us, but not as important as the above.
+  sv is a swiss army knife for CSV and similar formats (such as PSV, TSV,
+  and many more). It can parse, decode, encode, and print these formats.
+  .
+  sv uses an Applicative combinator style for decoding and encoding, rather
+  than a type class based approach. This means we can have multiple decoders
+  for the same type, multiple combinators of the same type, and we never have
+  to worry about orphan instances. These decoders can be stiched together from
+  provided primitives and combinators, or you can build one out of a parser
+  from your favourite parser combinator library.
+  .
+  sv returns values for all errors that occur - not just the first. Errors have
+  more structure than just a string, indicating what went wrong.
+  .
+  sv's parser is exposed so you can use it independently of the decoding, and
+  encoding and printing are similarly standalone.
+  .
+  sv focuses on correctness, on flexible and composable data types,
+  and on useful and informative error values.
+  Speed is also important to us, but it is not as important as these other
+  qualities.
   .
   sv tries not to be opinionated about how your data should look. We intend for
   the user to have a great degree of freedom to build the right decoder for
@@ -25,7 +41,7 @@ description:
   .
   * Decoding a real CSV: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Species.lhs Species.lhs>
   * Encoding data to a CSV: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs Encoding.hs>
- * Handling "NULL" and "Unknown" occuring in a column of numbers: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs Numbers.hs>
+  * Handling NULL and Unknown occuring in a column of numbers: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs Numbers.hs>
   * Dealing with non-rectangular data: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs Ragged.hs>
   * Handling multiple logical documents in one file: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Concat.hs Concat.hs>
   * Integrating with an existing attoparsec parser to read date stamps: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/TableTennis.hs TableTennis.hs>
