@@ -49,7 +49,6 @@ data HorizontalSpace =
   Space
   | Tab
   deriving (Eq, Ord, Show)
--- TODO Others?
 
 instance NFData HorizontalSpace where
   rnf x = seq x ()

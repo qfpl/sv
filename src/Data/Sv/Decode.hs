@@ -18,17 +18,31 @@ data in memory, it can be decoded with 'parseDecode'.
 You will need a 'Decode' for your desired type.
 
 A 'Decode' can be built using the primitives in this file. 'Decode'
-is an 'Applicative' and an 'Alternative', allowing for composition of these
-values.
+is an 'Applicative' and an 'Data.Functor.Alt.Alt', allowing for composition
+of these values with '<*>' and '<!>'
+
+The primitive 'Decode's in this file which use 'ByteString' expect UTF-8
+encoding. The Decode type has an instance of 'Data.Profunctor.Profunctor',
+so you can 'lmap' or 'alterInput' to reencode on the way in.
 
 This module is intended to be imported qualified like so
 
-@import qualified Data.Sv.Decode as D@
+@
+import qualified Data.Sv.Decode as D
+@
 -}
 
 module Data.Sv.Decode (
+  -- * The types
+  Decode (..)
+, Decode'
+, Validation (..)
+, DecodeValidation
+, DecodeError (..)
+, DecodeErrors (..)
+
   -- * Running Decodes
-  decode
+, decode
 , parseDecode
 , parseDecode'
 , parseDecodeFromFile
@@ -42,7 +56,7 @@ module Data.Sv.Decode (
 , alterInput
 , alterInputIso
 
--- * Primitives
+-- * Primitive Decodes
 -- ** Field-based
 , contents
 , untrimmed
@@ -51,7 +65,6 @@ module Data.Sv.Decode (
 , byteString
 , utf8
 , lazyUtf8
-, ascii
 , lazyByteString
 , string
 , int
@@ -68,8 +81,8 @@ module Data.Sv.Decode (
 , rowWithSpacing
 
 -- * Combinators
-, Alt ((<!>))
-, Applicative (pure, (<*>))
+, Alt (..)
+, Applicative (..)
 , choice
 , element
 , optionalField
@@ -80,6 +93,7 @@ module Data.Sv.Decode (
 , orElseE
 , categorical
 , categorical'
+, bindDecode
 
 -- * Building Decodes from Readable
 , decodeRead
@@ -91,14 +105,32 @@ module Data.Sv.Decode (
 , withAttoparsec
 , withParsec
 
--- TODO
-, module Data.Sv.Decode.Error
-, module Data.Sv.Decode.Field
-, module Data.Sv.Decode.Type
+-- * Working with errors
+, onError
+, decodeError
+, unexpectedEndOfRow
+, expectedEndOfRow
+, unknownCategoricalValue
+, badParse
+, badDecode
+, validateEither
+, validateEither'
+, validateMay
+, validateMay'
+
+-- * Implementation details
+, runDecode
+, buildDecode
+, (>>==)
+, (==<<)
+, mkDecode
+, mkDecodeWithQuotes
+, mkDecodeWithSpaces
+, promote
 ) where
 
 import Prelude hiding (either)
-import qualified Prelude as P
+import qualified Prelude
 
 import Control.Lens (AnIso, alaf, review, view, withIso)
 import Control.Monad.IO.Class (MonadIO)
@@ -111,8 +143,9 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
+import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
-import Data.Functor.Compose (Compose (Compose))
+import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Monoid (First (First))
 import Data.Profunctor (lmap)
@@ -124,21 +157,21 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
-import Data.Vector (Vector)
+import Data.Validation (_Validation)
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
 
 import Data.Sv.Decode.Error
-import Data.Sv.Decode.Field
 import Data.Sv.Decode.Type
-import Data.Sv.Parse (SvParser, parseSv', parseSvFromFile')
-import qualified Data.Sv.Parse as P (trifecta)
+import qualified Data.Sv.Parse as P
 import Data.Sv.Parse.Options (ParseOptions)
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
+import Data.Sv.Syntax.Record (Record, _fields)
 import Data.Sv.Syntax.Sv (Sv, recordList)
-import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaces, spacedValue)
+import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaced (_value), Spaces, spacedValue)
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
 decode :: Decode' s a -> Sv s -> DecodeValidation s [a]
@@ -146,7 +179,7 @@ decode f = traverse (promote f) . recordList
 
 -- | Parse a 'ByteString' as an Sv, and then decode it with the given decoder.
 --
--- This version uses 'Trifecta' to parse the 'ByteString', which is assumed to
+-- This version uses 'Text.Trifecta.Trifecta' to parse the 'ByteString', which is assumed to
 -- be UTF-8 encoded. If you want a different library, use 'parseDecode''.
 parseDecode ::
   Decode' ByteString a
@@ -158,15 +191,15 @@ parseDecode = parseDecode' P.trifecta
 -- | Parse text as an Sv, and then decode it with the given decoder.
 --
 -- This version lets you choose which parsing library to use by providing an
--- 'SvParser'. Common selections are 'trifecta' and 'attoparsecByteString'.
+-- 'P.SvParser'. Common selections are 'P.trifecta' and 'P.attoparsecByteString'.
 parseDecode' ::
-  SvParser s
+  P.SvParser s
   -> Decode' s a
   -> ParseOptions s
   -> s
   -> DecodeValidation s [a]
 parseDecode' svp d opts s =
-  P.either badDecode pure (parseSv' svp opts s) `bindValidation` decode d
+  Prelude.either badDecode pure (P.parseSv' svp opts s) `bindValidation` decode d
 
 -- | Load a file, parse it, and decode it.
 --
@@ -183,36 +216,36 @@ parseDecodeFromFile = parseDecodeFromFile' P.trifecta
 -- | Load a file, parse it, and decode it.
 --
 -- This version lets you choose which parsing library to use by providing an
--- 'SvParser'. Common selections are 'trifecta' and 'attoparsecByteString'.
+-- 'P.SvParser'. Common selections are 'P.trifecta' and 'P.attoparsecByteString'.
 parseDecodeFromFile' ::
   MonadIO m
-  => SvParser s
+  => P.SvParser s
   -> Decode' s a
   -> ParseOptions s
   -> FilePath
   -> m (DecodeValidation s [a])
 parseDecodeFromFile' svp d opts fp = do
-  sv <- parseSvFromFile' svp opts fp
-  pure (P.either badDecode pure sv `bindValidation` decode d)
+  sv <- P.parseSvFromFile' svp opts fp
+  pure (Prelude.either badDecode pure sv `bindValidation` decode d)
 
 -- | Build a 'Decode', given a function that returns 'Maybe'.
 --
 -- Return the given error if the function returns 'Nothing'.
 decodeMay :: DecodeError e -> (s -> Maybe a) -> Decode e s a
-decodeMay e f = fieldDecode (validateMay e . f)
+decodeMay e f = mkDecode (validateMay e . f)
 
 -- | Build a 'Decode', given a function that returns 'Either'.
 decodeEither :: (s -> Either (DecodeError e) a) -> Decode e s a
-decodeEither f = fieldDecode (validateEither . f)
+decodeEither f = mkDecode (validateEither . f)
 
 -- | Build a 'Decode', given a function that returns 'Either', and a function to
 -- build the error.
 decodeEither' :: (e -> DecodeError e') -> (s -> Either e a) -> Decode e' s a
-decodeEither' e f = fieldDecode (validateEither' e . f)
+decodeEither' e f = mkDecode (validateEither' e . f)
 
 -- | Succeeds with the whole field structure, including spacing and quoting information
 raw :: Decode e s (SpacedField s)
-raw = fieldDecodeWithSpaces pure
+raw = mkDecodeWithSpaces pure
 
 -- | Returns the field contents. This keeps the spacing around an unquoted field.
 untrimmed :: (AsHorizontalSpace s, Monoid s) => Decode e s s
@@ -226,14 +259,14 @@ untrimmed =
 
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: Decode e s s
-contents = fieldDecode pure
+contents = mkDecode pure
 
--- | Grab the whole row as a raw 'Vector'
+-- | Grab the whole row as a 'Vector'
 row :: Decode e s (Vector s)
 row = (fmap . fmap) (view (spacedValue.fieldContents)) rowWithSpacing
 
 -- | Grab the whole row, including all spacing and quoting information,
--- as a raw 'Vector'
+-- as a 'Vector'
 rowWithSpacing :: Decode e s (Vector (SpacedField s))
 rowWithSpacing =
   Decode . Compose . DecodeState . ReaderT $ \v ->
@@ -245,7 +278,7 @@ char :: Decode' ByteString Char
 char = string >>== \cs -> case cs of
   [] -> badDecode "Expected single char but got empty string"
   (c:[]) -> pure c
-  (_:_:_) -> badDecode ("Expected single char but got " <> fromString cs)
+  (_:_:_) -> badDecode ("Expected single char but got " <> UTF8.fromString cs)
 
 -- | Get the contents of a field as a bytestring.
 --
@@ -253,18 +286,16 @@ char = string >>== \cs -> case cs of
 byteString :: Decode' ByteString ByteString
 byteString = contents
 
--- | Get the contents of a UTF8 encoded field as 'Text'
+-- | Get the contents of a UTF-8 encoded field as 'Text'
+--
+-- This will also work for ASCII text, as ASCII is a subset of UTF-8
 utf8 :: Decode' ByteString Text
 utf8 = contents >>==
-  P.either (badDecode . UTF8.fromString . show) pure . decodeUtf8'
+  Prelude.either (badDecode . UTF8.fromString . show) pure . decodeUtf8'
 
--- | Get the contents of a field as a 'Data.Text.Lazy.Text'
+-- | Get the contents of a field as a lazy 'Data.Text.Lazy.Text'
 lazyUtf8 :: Decode' ByteString LT.Text
 lazyUtf8 = LT.fromStrict <$> utf8
-
--- | Get the contents of an ASCII encoded field as 'Text'
-ascii ::  Decode' ByteString Text
-ascii = utf8
 
 -- | Get the contents of a field as a 'Data.ByteString.Lazy.ByteString'
 lazyByteString :: Decode' ByteString LBS.ByteString
@@ -282,7 +313,7 @@ ignore = replace ()
 replace :: a -> Decode e s a
 replace a = a <$ contents
 
--- | Exactly this string, or else fail
+-- | Decode exactly the given string, or else fail.
 exactly :: (Semigroup s, Eq s, IsString s) => s -> Decode' s s
 exactly s = contents >>== \z ->
   if s == z
@@ -320,7 +351,7 @@ boolean' s =
 
 -- | Succeed only when the given field is the empty string.
 --
--- The empty string surrounded in quotes is still the empty string.
+-- The empty string surrounded in quotes or spaces is still the empty string.
 emptyField :: (Eq s, IsString s, Semigroup s) => Decode' s ()
 emptyField = contents >>== \c ->
   if c == fromString "" then
@@ -340,15 +371,19 @@ element = asum1
 ignoreFailure :: Decode e s a -> Decode e s (Maybe a)
 ignoreFailure a = Just <$> a <!> Nothing <$ ignore
 
--- | Try the given 'Decode'. If the field is the empty string, succeed with 'Nothing'.
+-- | If the field is the empty string, succeed with 'Nothing'.
+-- Otherwise try the given 'Decode'.
 orEmpty :: (Eq s, IsString s, Semigroup s) => Decode' s a -> Decode' s (Maybe a)
 orEmpty a = Nothing <$ emptyField <!> Just <$> a
 
 -- | Try the given 'Decode'. If it fails, succeed without consuming anything.
+--
+-- This usually isn't what you want. 'ignoreFailure' and 'orEmpty' are more
+-- likely what you are after.
 optionalField :: Decode e s a -> Decode e s (Maybe a)
 optionalField a = Just <$> a <!> pure Nothing
 
--- | Try the left, then try the right, and wrap the winner in an 'Either'.
+-- | Try the first, then try the second, and wrap the winner in an 'Either'.
 --
 -- This is left-biased, meaning if they both succeed, left wins.
 either :: Decode e s a -> Decode e s b -> Decode e s (Either a b)
@@ -364,14 +399,23 @@ orElseE b a = fmap Right b <!> replace (Left a)
 
 -- | Decode categorical data, given a list of the values and the strings which match them.
 --
--- This is very useful for sum types with nullary constructors.
+-- Usually this is used with sum types with nullary constructors.
+--
+-- > data TrafficLight = Red | Amber | Green
+-- > categorical [(Red, "red"), (Amber, "amber"), (Green, "green")]
 categorical :: (Ord s, Show a) => [(a, s)] -> Decode' s a
 categorical = categorical' . fmap (fmap pure)
 
--- | Decode categorical data, given a list of the values and the strings which match them.
+-- | Decode categorical data, given a list of the values and lists of strings
+-- which match them.
 --
--- This version allows for multiple strings to match each value.
--- For an example of its usage, see the source for 'boolean'.
+-- This version allows for multiple strings to match each value, which is
+-- useful for when the categories are inconsistently labelled.
+--
+-- > data TrafficLight = Red | Amber | Green
+-- > categorical' [(Red, ["red", "R"]), (Amber, ["amber", "orange", "A"]), (Green, ["green", "G"])]
+--
+-- For another example of its usage, see the source for 'boolean'.
 categorical' :: forall s a . (Ord s, Show a) => [(a, [s])] -> Decode' s a
 categorical' as =
   let as' :: [(a, Set s)]
@@ -382,7 +426,7 @@ categorical' as =
         then Just a
         else Nothing
   in  contents >>== \s ->
-    validateMay (UnknownCanonicalValue s (fmap snd as)) $
+    validateMay (UnknownCategoricalValue s (fmap snd as)) $
       alaf First foldMap (go s) as'
 
 -- | Use the 'Readable' instance to try to decode the given value.
@@ -414,7 +458,7 @@ named name =
 
 -- | Map over the errors of a 'Decode'
 --
--- To map over the other two paramters, use the 'Profunctor' instance.
+-- To map over the other two paramters, use the 'Data.Profunctor.Profunctor' instance.
 mapErrors :: (e -> x) -> Decode e s a -> Decode x s a
 mapErrors f (Decode (Compose r)) = Decode (Compose (fmap (first (fmap f)) r))
 
@@ -466,3 +510,87 @@ mkParserFunction err run p =
   let p' = p <* Tri.eof
   in  byteString >>== (err . run p')
 {-# INLINE mkParserFunction #-}
+
+-- | Convenience to get the underlying function out of a Decode in a useful form
+runDecode :: Decode e s a -> Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)
+runDecode = runDecodeState . getCompose . unwrapDecode
+{-# INLINE runDecode #-}
+
+-- | This can be used to build a 'Decode' whose value depends on the
+-- result of another 'Decode'. This is especially useful since 'Decode' is not
+-- a 'Monad'.
+--
+-- If you need something like this but with more power, look at 'bindDecode'
+(>>==) :: Decode e s a -> (a -> DecodeValidation e b) -> Decode e s b
+(>>==) = flip (==<<)
+infixl 1 >>==
+{-# INLINE (>>==) #-}
+
+-- | flipped '>>=='
+(==<<) :: (a -> DecodeValidation e b) -> Decode e s a -> Decode e s b
+(==<<) f (Decode c) =
+  Decode (rmapC (`bindValidation` (view _Validation . f)) c)
+    where
+      rmapC g (Compose fga) = Compose (fmap g fga)
+infixr 1 ==<<
+
+-- | Bind through a 'Decode'.
+--
+-- This bind does not agree with the 'Applicative' instance because it does
+-- not accumulate multiple error values. This is a violation of the 'Monad'
+-- laws, meaning 'Decode' is not a 'Monad'.
+--
+-- That is not to say that there is anything wrong with using this function.
+-- It can be quite useful.
+bindDecode :: Decode e s a -> (a -> Decode e s b) -> Decode e s b
+bindDecode d f =
+  buildDecode $ \v i ->
+    case runDecode d v i of
+      (Failure e, i') -> (Failure e, i')
+      (Success a, i') -> runDecode (f a) v i'
+
+-- | Run a 'Decode', and based on its errors build a new 'Decode'.
+onError :: Decode e s a -> (DecodeErrors e -> Decode e s a) -> Decode e s a
+onError d f =
+  buildDecode $ \v i ->
+    case runDecode d v i of
+      (Failure e, i') -> runDecode (f e) v i'
+      (Success a, i') -> (Success a, i')
+
+-- | Build a 'Decode' from a function.
+--
+-- This version gives you just the contents of the field, with no information
+-- about the spacing or quoting around that field.
+mkDecode :: (s -> DecodeValidation e a) -> Decode e s a
+mkDecode f = mkDecodeWithQuotes (f . view fieldContents)
+
+-- | Build a 'Decode' from a function.
+--
+-- This version gives you access to the whole 'Field', which includes
+-- information about whether quotes were used, and if so which ones.
+mkDecodeWithQuotes :: (Field s -> DecodeValidation e a) -> Decode e s a
+mkDecodeWithQuotes f = mkDecodeWithSpaces (f . _value)
+
+-- | Build a 'Decode' from a function.
+--
+-- This version gives you access to the whole 'SpacedField', which includes
+-- information about spacing both before and after the field, and about quotes
+-- if they were used.
+mkDecodeWithSpaces :: (SpacedField s -> DecodeValidation e a) -> Decode e s a
+mkDecodeWithSpaces f =
+  Decode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
+    if i >= length v
+    then (unexpectedEndOfRow, Ind i)
+    else (f (v ! i), Ind (i+1))
+
+-- | promotes a Decode to work on a whole 'Record' at once. This does not need
+-- to be called by the user. Instead use 'decode'.
+promote :: Decode' s a -> Record s -> DecodeValidation s a
+promote dec rs =
+  let vec = V.fromList . toList . _fields $ rs
+      len = length vec
+  in  case runDecode dec vec (Ind 0) of
+    (d, Ind i) ->
+      if i >= len
+      then d
+      else d *> expectedEndOfRow (V.force (V.drop i vec))

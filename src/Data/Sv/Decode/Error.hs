@@ -10,21 +10,27 @@ Portability : non-portable
 module Data.Sv.Decode.Error (
   DecodeError (..)
 , DecodeErrors (..)
-, DecodeValidation
-, Validation (Failure, Success)
-, bindValidation
+
+-- * Convenience constructors
 , decodeError
 , unexpectedEndOfRow
 , expectedEndOfRow
-, unknownCanonicalValue
+, unknownCategoricalValue
 , badParse
 , badDecode
+
+-- * Conversions
 , validateEither
 , validateEither'
 , validateMay
 , validateMay'
 , trifectaResultToEither
 , validateTrifectaResult
+
+-- * Re-exports from @validation@
+, DecodeValidation
+, Validation (Failure, Success)
+, bindValidation
 ) where
 
 import Data.Validation (Validation (Success, Failure), bindValidation)
@@ -42,21 +48,26 @@ decodeError = Failure . DecodeErrors . pure
 unexpectedEndOfRow :: DecodeValidation e a
 unexpectedEndOfRow = decodeError UnexpectedEndOfRow
 
--- | Given the rest of the row, fail with 'ExpectedEndOfRow'
+-- | Fail with 'ExpectedEndOfRow'. This takes the rest of the row, so that it
+-- can be displayed to the user.
 expectedEndOfRow :: Vector (SpacedField e) -> DecodeValidation e a
 expectedEndOfRow = decodeError . ExpectedEndOfRow
 
--- | Given the unknown value and the list of good canonical values,
--- fail with 'UnknownCanonicalValue'
-unknownCanonicalValue :: e -> [[e]] -> DecodeValidation e a
-unknownCanonicalValue unknown valids =
-  decodeError (UnknownCanonicalValue unknown valids)
+-- | Fail with 'UnknownCategoricalValue'.
+-- It takes the unknown value and the list of good categorical values.
+--
+-- This mostly exists to be used by the 'Data.Sv.Decode.categorical' function.
+unknownCategoricalValue :: e -> [[e]] -> DecodeValidation e a
+unknownCategoricalValue unknown valids =
+  decodeError (UnknownCategoricalValue unknown valids)
 
--- | Fail with 'BadParse' with the given message
+-- | Fail with 'BadParse' with the given message. This is for when the parse
+-- step fails, and decoding does not even begin.
 badParse :: e -> DecodeValidation e a
 badParse = decodeError . BadParse
 
--- | Fail with 'BadDecode' with the given message
+-- | Fail with 'BadDecode' with the given message. This is something of a
+-- generic error for when decoding a field goes wrong.
 badDecode :: e -> DecodeValidation e a
 badDecode = decodeError . BadDecode
 

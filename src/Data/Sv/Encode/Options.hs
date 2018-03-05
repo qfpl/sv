@@ -24,16 +24,20 @@ import Text.Space (Spaces)
 import Text.Quote (Quote (DoubleQuote))
 
 -- | These are options to configure encoding. A default is provided as
--- 'defaultEncodeOptions'. This will determine whether your output file is
--- separated by commas or tabs, whether fields are quoted, and what kind of
--- newline you like.
+-- 'defaultEncodeOptions'.
 data EncodeOptions =
   EncodeOptions {
+    -- | Are your values separated by commas, tabs, or something else? Default: comma
     _encodeSeparator :: Separator
+    -- | Between a comma and the next value, would you like some spacing? Default: no spacing
   , _spacingBefore :: Spaces
+    -- | Between a value and the next comma, would you like some spacing? Default: no spacing
   , _spacingAfter :: Spaces
+    -- | Would you like quotes around your values? If so, double quotes or single? Deafult: Double quotes
   , _quote :: Maybe Quote
+    -- | What kind of newline would you like? Default: CRLF
   , _newline :: Newline
+    -- | Should the file be terminated with a newline? Default: No
   , _terminalNewline :: Bool
   }
 

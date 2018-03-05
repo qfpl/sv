@@ -20,7 +20,6 @@ module Data.Sv (
 
   , Decode (..)
   , Decode'
-  , DecodeState (..)
   , Validation (..)
   , DecodeValidation
   , DecodeError (..)
@@ -29,12 +28,11 @@ module Data.Sv (
   , runDecode
   , (>>==)
   , (==<<)
-  , fieldDecode
-  , fieldDecodeWithQuotes
-  , fieldDecodeWithSpaces
+  , mkDecode
+  , mkDecodeWithQuotes
+  , mkDecodeWithSpaces
   , validateMay
   , validateMay'
-  , promote
 
   -- * Parsing
   , parseSv
