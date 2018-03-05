@@ -29,6 +29,7 @@ module Text.Space
   , Spaced (Spaced, _before, _after, _value)
   , HasSpaced (spaced, spacedValue, before, after)
   , betwixt
+  , uniform
   , unspaced
   , removeSpaces
   )
