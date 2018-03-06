@@ -14,7 +14,7 @@ maintainer:          george@wils.online
 -- copyright:           
 category:            CSV
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  changelog.md
 cabal-version:       >=1.10
 tested-with:
   GHC == 7.10.3

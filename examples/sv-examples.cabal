@@ -10,7 +10,7 @@ maintainer:          george@wils.online
 copyright:           
 category:            Example
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  changelog.md
                      , csv/concat.csv
                      , csv/encoding.expected.csv
                      , csv/numbers.csv
