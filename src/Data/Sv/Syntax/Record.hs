@@ -34,7 +34,7 @@ module Data.Sv.Syntax.Record (
 ) where
 
 import Control.DeepSeq (NFData)
-import Control.Lens (Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
+import Control.Lens (Lens, Lens', Iso, Prism, Prism', Traversal', _1, _2, beside, iso, prism, prism', toListOf)
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -66,19 +66,19 @@ recordSpacedFieldsIso = iso _fields Record
 {-# INLINE recordSpacedFieldsIso #-}
 
 -- | Classy lenses for 'Record'
-class HasRecord s t | s -> t where
-  record :: Lens' s (Record t)
-  spacedFields :: Lens' s (NonEmptyVector (Spaced (Field t)))
+class HasRecord s t a b | s -> a, t -> b where
+  record :: Lens s t (Record a) (Record b)
+  spacedFields :: Lens s t (NonEmptyVector (Spaced (Field a))) (NonEmptyVector (Spaced (Field b)))
   {-# INLINE spacedFields #-}
   spacedFields = record . spacedFields
 
-instance HasRecord (Record s) s where
+instance HasRecord (Record a) (Record b) a b where
   record = id
   {-# INLINE record #-}
   spacedFields = recordSpacedFieldsIso
   {-# INLINE spacedFields #-}
 
-instance HasFields (Record s) s where
+instance HasFields (Record a) (Record b) a b where
   fields = spacedFields . traverse . spacedValue
 
 instance Functor Record where

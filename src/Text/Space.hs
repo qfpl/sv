@@ -1,3 +1,4 @@
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -36,7 +37,7 @@ module Text.Space
 where
 
 import Control.DeepSeq (NFData (rnf))
-import Control.Lens (Lens', Prism', prism, prism')
+import Control.Lens (Lens, Prism', prism, prism')
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -131,19 +132,22 @@ data Spaced a =
 instance NFData a => NFData (Spaced a)
 
 -- | Classy lenses for 'Spaced'
-class HasSpaced c s | c -> s where
-  spaced :: Lens' c (Spaced s)
-  after :: Lens' c Spaces
+class HasSpaced s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  spaced :: Lens s t (Spaced a) (Spaced b)
+  after :: (s ~ t) => Lens s t Spaces Spaces
   {-# INLINE after #-}
-  before :: Lens' c Spaces
+  before :: (s ~ t) => Lens s t Spaces Spaces
   {-# INLINE before #-}
-  spacedValue :: Lens' c s
+  spacedValue :: Lens s t a b
   {-# INLINE spacedValue #-}
+  default after :: (s ~ t, a ~ b) => Lens s t Spaces Spaces
   after = spaced . after
+  default before :: (s ~ t, a ~ b) => Lens s t Spaces Spaces
   before = spaced . before
+  default spacedValue :: (s ~ t, a ~ b) => Lens s t a b
   spacedValue = spaced . spacedValue
 
-instance HasSpaced (Spaced a) a where
+instance HasSpaced (Spaced a) (Spaced b) a b where
   {-# INLINE after #-}
   {-# INLINE before #-}
   {-# INLINE spacedValue #-}

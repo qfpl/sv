@@ -25,7 +25,7 @@ module Data.Sv.Syntax.Field (
 ) where
 
 import Control.DeepSeq (NFData)
-import Control.Lens (Lens, Prism', Traversal', lens, prism)
+import Control.Lens (Lens, Prism', Traversal, lens, prism)
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap))
 import Data.Traversable (Traversable (traverse))
@@ -65,16 +65,16 @@ instance Traversable Field where
 type SpacedField a = Spaced (Field a)
 
 -- | Classy prisms for 'Field'
-class HasFields c s => AsField c s | c -> s where
-  _Field :: Prism' c (Field s)
-  _Unquoted :: Prism' c s
-  _Quoted :: Prism' c (Quote, Unescaped s)
+class (HasFields s s a a) => AsField s a | s -> a where
+  _Field :: Prism' s (Field a)
+  _Unquoted :: Prism' s a
+  _Quoted :: Prism' s (Quote, Unescaped a)
   _Unquoted = _Field . _Unquoted
   {-# INLINE _Unquoted #-}
   _Quoted = _Field . _Quoted
   {-# INLINE _Quoted #-}
 
-instance AsField (Field s) s where
+instance AsField (Field a) a where
   _Field = id
   {-# INLINE _Field #-}
   _Unquoted = prism Unquoted
@@ -91,10 +91,10 @@ instance AsField (Field s) s where
   {-# INLINE _Quoted #-}
 
 -- | Classy 'Traversal'' for things containing 'Field's
-class HasFields c s | c -> s where
-  fields :: Traversal' c (Field s)
+class HasFields c d s t | c -> s, d -> t, c t -> d, d s -> c where
+  fields :: Traversal c d (Field s) (Field t)
 
-instance HasFields (Field s) s where
+instance HasFields (Field s) (Field t) s t where
   fields = id
   {-# INLINE fields #-}
 
@@ -103,14 +103,14 @@ unescapedField :: Quote -> s -> Field s
 unescapedField q s = Quoted q (Unescaped s)
 
 -- | The catamorphism for @Field'@
-foldField :: (s -> b) -> ((Quote, Unescaped s) -> b) -> Field s -> b
+foldField :: (s -> b) -> (Quote -> Unescaped s -> b) -> Field s -> b
 foldField u q fi = case fi of
   Unquoted s -> u s
-  Quoted a b -> q (a,b)
+  Quoted a b -> q a b
 
 -- | Lens into the contents of a Field, regardless of whether it's quoted or unquoted
 fieldContents :: Lens (Field s) (Field t) s t
 fieldContents =
-  lens (foldField id (getRawUnescaped.snd)) $ \f b -> case f of
+  lens (foldField id (const getRawUnescaped)) $ \f b -> case f of
     Unquoted _ -> Unquoted b
     Quoted q _ -> Quoted q (Unescaped b)

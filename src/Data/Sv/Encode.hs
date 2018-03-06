@@ -160,7 +160,7 @@ mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
 mkEncodeWithOpts :: (EncodeOptions -> a -> BS.Builder) -> Encode a
-mkEncodeWithOpts = Encode . (fmap (fmap pure))
+mkEncodeWithOpts = Encode . fmap (fmap pure)
 
 -- | Make an encode from any function that returns a ByteString 'Builder'.
 unsafeBuilder :: (a -> BS.Builder) -> Encode a
@@ -208,8 +208,9 @@ encodeRowBuilder e opts =
   let addSeparators = intersperseSeq (BS.charUtf8 (view separator opts))
       quotep = foldMap (BS.charUtf8 . review quoteChar) (view quote opts)
       addQuotes x = quotep <> x <> quotep
-      bspaces = BS.stringUtf8 . review spacesString . view spacingBefore $ opts
-      aspaces = BS.stringUtf8 . review spacesString . view spacingAfter $ opts
+      mkSpaces optic = BS.stringUtf8 . review spacesString . view optic $ opts
+      bspaces = mkSpaces spacingBefore
+      aspaces = mkSpaces spacingAfter
       addSpaces x = bspaces <> x <> aspaces
   in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
 

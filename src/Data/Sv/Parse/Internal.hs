@@ -138,7 +138,7 @@ record opts =
 records :: CharParsing m => ParseOptions s -> m (Records s)
 records opts =
   let manyV = fmap V.fromList . many
-  in  fmap (fromMaybe EmptyRecords) $
+  in  fromMaybe EmptyRecords <$>
     optional (Records <$> firstRecord opts <*> manyV (subsequentRecord opts))
 
 firstRecord :: CharParsing m => ParseOptions s -> m (Record s)

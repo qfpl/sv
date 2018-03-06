@@ -55,17 +55,17 @@ instance Functor ParseOptions where
   fmap f (ParseOptions s h e enc) = ParseOptions s h e (f . enc)
 
 -- | Classy lenses for 'ParseOptions'
-class (HasSeparator c, HasHeadedness c) => HasParseOptions c d s t | c -> s, d -> t, c t -> d, d s -> c where
-  parseOptions :: Lens c d (ParseOptions s) (ParseOptions t)
-  encodeString :: Lens c d (String -> s) (String -> t)
+class (HasSeparator s, HasHeadedness s) => HasParseOptions s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  parseOptions :: Lens s t (ParseOptions a) (ParseOptions b)
+  encodeString :: Lens s t (String -> a) (String -> b)
   {-# INLINE encodeString #-}
-  endOnBlankLine :: c ~ d => Lens c d Bool Bool
+  endOnBlankLine :: s ~ t => Lens s t Bool Bool
   {-# INLINE endOnBlankLine #-}
   encodeString = parseOptions . encodeString
-  default endOnBlankLine :: (s ~ t, c ~ d) => Lens c d Bool Bool
+  default endOnBlankLine :: (s ~ t, a ~ b) => Lens s t Bool Bool
   endOnBlankLine = parseOptions . endOnBlankLine
 
-instance HasParseOptions (ParseOptions s) (ParseOptions t) s t where
+instance HasParseOptions (ParseOptions a) (ParseOptions b) a b where
   parseOptions = id
   {-# INLINE parseOptions #-}
   encodeString = lens _encodeString (\c s -> c { _encodeString = s })

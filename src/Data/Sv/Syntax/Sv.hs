@@ -1,3 +1,5 @@
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances#-}
@@ -46,7 +48,7 @@ module Data.Sv.Syntax.Sv (
 ) where
 
 import Control.DeepSeq (NFData)
-import Control.Lens (Lens', Traversal')
+import Control.Lens (Lens, Lens', Traversal')
 import Data.Foldable (Foldable (foldMap))
 import Data.Functor (Functor (fmap), (<$>))
 import Data.Monoid ((<>))
@@ -133,16 +135,17 @@ data Header s =
 instance NFData s => NFData (Header s)
 
 -- | Classy lenses for 'Header'
-class HasHeader c s | c -> s where
-  header :: Lens' c (Header s)
-  headerNewline :: Lens' c Newline
+class HasHeader s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  header :: Lens s t (Header a) (Header b)
+  headerNewline :: (s ~ t) => Lens s t Newline Newline
   {-# INLINE headerNewline #-}
-  headerRecord :: Lens' c (Record s)
+  headerRecord :: Lens s t (Record a) (Record b)
   {-# INLINE headerRecord #-}
+  default headerNewline :: (a ~ b) => Lens s t Newline Newline
   headerNewline = header . headerNewline
   headerRecord = header . headerRecord
 
-instance HasHeader (Header s) s where
+instance HasHeader (Header a) (Header b) a b where
   header = id
   {-# INLINE header #-}
   headerNewline f (Header x1 x2)
@@ -152,11 +155,11 @@ instance HasHeader (Header s) s where
     = fmap (\y -> Header y x2) (f x1)
   {-# INLINE headerRecord #-}
 
-instance HasRecord (Header s) s where
+instance HasRecord (Header a) (Header b) a b where
   record = headerRecord
   {-# INLINE record #-}
 
-instance HasFields (Header s) s where
+instance HasFields (Header a) (Header b) a b where
   fields = headerRecord . fields
 
 -- | Used to build 'Sv's that don't have a header
