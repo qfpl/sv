@@ -8,7 +8,7 @@ and many more). It can parse, decode, encode, and print these formats.
 sv uses an Applicative combinator style for decoding and encoding, rather
 than a type class based approach. This means we can have multiple decoders
 for the same type, multiple combinators of the same type, and we never have
-to worry about orphan instances. These decoders can be stiched together from
+to worry about orphan instances. These decoders can be stitched together from
 provided primitives and combinators, or you can build one from a parser
 from your favourite parser combinator library.
 
