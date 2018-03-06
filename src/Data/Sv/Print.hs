@@ -5,6 +5,12 @@ License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
+
+Printing is the process of turning an 'Data.Sv.Syntax.Sv.Sv' into a textual
+representation, such as a 'Data.ByteString.ByteString'.
+
+If you want to turn your data type into a textual representation, you should
+look instead at "Data.Sv.Encode"
 -}
 
 module Data.Sv.Print (

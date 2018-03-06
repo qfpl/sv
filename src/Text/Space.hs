@@ -12,7 +12,7 @@ Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
 
-Large chunks of only space characters, represented efficiently as integers
+A sum type for space characters
 -}
 
 module Text.Space

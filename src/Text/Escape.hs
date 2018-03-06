@@ -12,7 +12,12 @@ Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
 
-Newtypes to keep track of which text is in an escaped form and which is not
+Quote characters can be escaped in CSV documents by using two quote characters
+instead of one. sv's parser will unescape these sequences as it parses them, so
+it wraps them in the newtype 'Unescaped'
+
+Encoding requires you to provide an 'Escaper', which is a function to escape
+strings on the way out.
 -}
 
 module Text.Escape (
@@ -68,11 +73,12 @@ escapeString c = concatMap (doubleChar c) . getRawUnescaped
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given 'Text'
 --
--- Assuming @{- LANGUAGE OverloadedStrings -}@:
+-- @
+-- {- LANGUAGE OverloadedStrings -}
 --
 -- >>> escapeText ''' "hello 'text'"
 -- "hello ''text''"
---
+-- @
 escapeText :: Escaper' Text
 escapeText c =
   let ct = Text.singleton c
@@ -81,11 +87,11 @@ escapeText c =
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given ByteString, which is assumed to be UTF-8 compatible.
 --
--- Assuming @{- LANGUAGE OverloadedStrings -}@:
---
+-- @
+-- {- LANGUAGE OverloadedStrings -}
 -- >>> escapeUtf8 ''' "hello 'bytestring'"
 -- "hello ''bytestring''"
---
+-- @
 escapeUtf8 :: Escaper' B.ByteString
 escapeUtf8 c =
   UTF8.fromString . concatMap (doubleChar c) . UTF8.toString . getRawUnescaped
@@ -93,11 +99,12 @@ escapeUtf8 c =
 -- | Replaces all occurrences of the given character with two occurrences of that
 -- character in the given lazy ByteString, which is assumed to be UTF-8 compatible.
 --
--- Assuming @{- LANGUAGE OverloadedStrings -}@:
+-- @
+-- {- LANGUAGE OverloadedStrings -}
 --
 -- >>> escapeUtf8Lazy ''' "hello 'lazy bytestring'"
 -- "hello ''lazy bytestring''"
---
+-- @
 escapeUtf8Lazy :: Escaper' L.ByteString
 escapeUtf8Lazy c =
   UTF8L.fromString . concatMap (doubleChar c) . UTF8L.toString . getRawUnescaped

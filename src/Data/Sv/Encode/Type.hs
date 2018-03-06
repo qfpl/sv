@@ -8,7 +8,7 @@ Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
 
-The core types for encoding
+The core type for encoding
 -}
 
 module Data.Sv.Encode.Type (
@@ -25,10 +25,11 @@ import Data.Void (absurd)
 
 import Data.Sv.Encode.Options
 
--- | 'Encode' turns an @a@ into a record.
+-- | An 'Encode' converts its argument into one or more textual fields, to be
+-- written out as CSV.
 --
--- It is 'Contravariant', 'Divisible', and 'Decidable', allowing for
--- composition of these values to build bigger Encodes from smaller ones.
+-- It is 'Semigroup', Contravariant', 'Divisible', and 'Decidable', allowing
+-- for composition of these values to build bigger 'Encode's from smaller ones.
 newtype Encode a =
   Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
   deriving (Semigroup, Monoid)

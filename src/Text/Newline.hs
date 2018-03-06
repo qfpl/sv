@@ -14,7 +14,7 @@ A sum type for line endings
 module Text.Newline (
   Newline (CR, LF, CRLF)
   , AsNewline(_Newline, _CR, _LF, _CRLF)
-  , newlineText
+  , newlineToString
   , parseNewline
 ) where
 
@@ -62,12 +62,13 @@ instance AsNewline Newline where
       _    -> Left x
 
 instance AsNewline Text where
-  _Newline = prism' newlineText parseNewline
+  _Newline = prism' newlineToString parseNewline
 
--- | Convert a 'Newline' back to a 'String'. This is overloaded in its choice
--- of string type. It will work with 'String', 'Text', 'ByteString', and others.
-newlineText :: IsString s => Newline -> s
-newlineText n = fromString $
+-- | Convert a 'Newline' to a 'String'. Since this uses 'Data.String.IsString',
+-- it works for other data types, like 'Data.Text.Text' or
+-- 'Data.ByteString.ByteString'.
+newlineToString :: IsString s => Newline -> s
+newlineToString n = fromString $
   case n of
     CR -> "\r"
     LF -> "\n"

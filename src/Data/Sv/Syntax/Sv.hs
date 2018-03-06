@@ -19,7 +19,9 @@ The datatype preserves information such as whitespace so that the original
 text can be recovered.
 
 In the usual workflow, this type is only an intermediate stage between
-parsing and decoding.
+parsing and decoding. You can program against it directly using the provided
+functions and optics if you'd like. For an example of this see
+<https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Requote.hs Requote.hs>
 -}
 
 module Data.Sv.Syntax.Sv (

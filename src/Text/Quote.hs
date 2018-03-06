@@ -65,7 +65,8 @@ quoteChar =
       '"'  -> Just DoubleQuote
       _    -> Nothing)
 
--- | Convert a quote to a 'String'. Works for any stringy type, like 'Text'
--- or 'ByteString'.
+-- | Convert a 'Quote' to a 'String'. Since this uses 'Data.String.IsString',
+-- it works for other data types, like 'Data.Text.Text' or
+-- 'Data.ByteString.ByteString'.
 quoteToString :: IsString a => Quote -> a
 quoteToString = fromString . pure . review quoteChar

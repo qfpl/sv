@@ -164,7 +164,7 @@ header opts = case view headedness opts of
   Unheaded -> pure noHeader
   Headed -> mkHeader <$> record opts <*> newline
 
--- | Parse an Sv
+-- | Parse an 'Sv'
 separatedValues :: CharParsing m => ParseOptions s -> m (Sv s)
 separatedValues opts =
   Sv (view separator opts) <$> header opts <*> records opts <*> ending opts

@@ -77,21 +77,23 @@ validateEither = validateEither' id
 validateEither' :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
 validateEither' f = either (decodeError . f) pure
 
--- | Build a 'DecodeValidation' from a 'Maybe'
+-- | Build a 'DecodeValidation' from a 'Maybe'. You have to supply an error
+-- to use in the 'Nothing' case
 validateMay :: DecodeError e -> Maybe b -> DecodeValidation e b
 validateMay e = maybe (decodeError e) pure
 
 -- | Build a 'DecodeValidation' from a function that returns a 'Maybe'
+-- You have to supply an error to use in the 'Nothing' case
 validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 validateMay' ab e a = validateMay e (ab a)
 
--- | Helper to convert Trifecta results to 'Either'.
+-- | Helper to convert "Text.Trifecta" 'Text.Trifecta.Result' to 'Either'.
 trifectaResultToEither :: Trifecta.Result a -> Either String a
 trifectaResultToEither result = case result of
   Trifecta.Success a -> Right a
   Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
 
--- | Convert a Trifecta 'Result' to a DecodeValidation
+-- | Convert a "Text.Trifecta" 'Text.Trifecta.Result' to a 'DecodeValidation'
 validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
 validateTrifectaResult f = validateEither' f . trifectaResultToEither
 

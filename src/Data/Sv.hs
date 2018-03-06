@@ -5,6 +5,16 @@ License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
+
+This module exports most of the other modules from the package. It is intended
+to be imported unqualified, along with some qualified imports for the
+"Data.Sv.Decode" and "Data.Sv.Encode" modules as needed.
+
+@
+import Data.Sv
+import qualified Data.Sv.Decode as D
+import qualified Data.Sv.Encode as E
+@
 -}
 
 module Data.Sv (
@@ -42,14 +52,17 @@ module Data.Sv (
   , module Data.Sv.Syntax
 
   -- * Re-exports from contravariant and semigroupoids
-  , Alt ((<!>))
-  , module Data.Functor.Contravariant
-  , module Data.Functor.Contravariant.Divisible
-
+  , Alt (..)
+  , Contravariant (..)
+  , Divisible (..)
+  , divided
+  , Decidable (..)
+  , chosen
 ) where
 
-import Data.Functor.Contravariant
-import Data.Functor.Contravariant.Divisible
+import Data.Functor.Alt (Alt (..))
+import Data.Functor.Contravariant (Contravariant (..))
+import Data.Functor.Contravariant.Divisible (Divisible (..), divided, Decidable (..), chosen)
 
 import Data.Sv.Decode
 import Data.Sv.Decode.Type

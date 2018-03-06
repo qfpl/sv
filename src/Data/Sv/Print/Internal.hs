@@ -9,7 +9,7 @@ Portability : non-portable
 This module is considered an implementation detail.
 As the "Internal" module name suggests, this module is exempt from
 the PVP, so depend on it at your own risk!
-These functions exist to be called by 'Data.Sv.Print'.
+These functions exist to be called by "Data.Sv.Print".
 -}
 
 module Data.Sv.Print.Internal (
@@ -37,7 +37,7 @@ import Text.Quote
 
 -- | Convert a 'Newline' to a ByteString 'Builder'
 printNewline :: Newline -> Builder
-printNewline = Builder.lazyByteString . newlineText
+printNewline = Builder.lazyByteString . newlineToString
 
 -- | Convert a 'Field' to a ByteString 'Builder'
 printField :: PrintOptions s -> Field s -> Builder

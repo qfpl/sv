@@ -21,18 +21,17 @@ module Data.Sv.Parse.Options (
 , HasSeparator (..)
 , HasHeadedness (..)
 , defaultParseOptions
-, orDefault
 , defaultHeadedness
 , defaultSeparator
 ) where
 
 import Control.Lens (Lens, lens)
 import Data.ByteString.UTF8 (ByteString, fromString)
-import Data.Maybe (fromMaybe)
 
 import Data.Sv.Syntax.Sv (HasSeparator (separator), HasHeadedness (headedness), Headedness (Headed), Separator, comma)
 
--- | An 'ParseOptions' informs the parser how to parse your file.
+-- | An 'ParseOptions' informs the parser how to parse your file. The type
+-- parameter will be some sort of string; often 'Data.ByteString.ByteString'.
 --
 -- A default is provided as 'defaultParseOptions', seen below.
 data ParseOptions s =
@@ -88,10 +87,6 @@ instance HasHeadedness (ParseOptions s) where
 -- Trifecta as the parsing library. It uses UTF-8 'ByteString's
 defaultParseOptions :: ParseOptions ByteString
 defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness False fromString
-
--- | Use the 'defaultParseOptions' in the case of 'Nothing'
-orDefault :: Maybe (ParseOptions ByteString) -> ParseOptions ByteString
-orDefault = fromMaybe defaultParseOptions
 
 -- | The default separator. Alias for 'comma'.
 defaultSeparator :: Separator

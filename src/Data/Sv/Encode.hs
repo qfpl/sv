@@ -22,14 +22,16 @@ to help you to do so.
 while 'Decidable' is the contravariant form of 'Control.Applicative.Alternative'.
 These type classes will provide useful combinators for working with 'Encode's.
 
-Specialised to 'Encode', the function 'divide' from 'Divisible' has the type:
+Specialised to 'Encode', the function 'Data.Functor.Contravariant.Divisible.divide'
+from 'Divisible' has the type:
 
 @
 divide :: (a -> (b,c)) -> Encode b -> Encode c -> Encode a
 @
 
-which can be read "if 'a' can be split into a 'b' and a 'c', and I can handle
-'b', and I can handle 'c', then I can handle an 'a'".
+which can be read "if 'a' can be split into 'b' and 'c', and I can handle
+'b', and I can handle 'c', then I can handle 'a'".
+
 Here the "I can handle"
 part corresponds to the 'Encode'. If we think of (covariant) functors as
 being "full of" 'a', then we can think of contravariant functors as being
@@ -40,8 +42,8 @@ it into some text,
 handle the 'c' by also converting it to some text, then put each of those
 text fragments into their own field in the CSV.
 
-Similarly, the function 'choose' from 'Decidable', specialsed to 'Encode', has
-the type:
+Similarly, the function 'Data.Functor.Contravariant.Divisible.choose'
+from 'Decidable', specialsed to 'Encode', has the type:
 
 @
 choose :: (a -> Either b c) -> Encode b -> Encode c -> Encode a
@@ -50,24 +52,22 @@ choose :: (a -> Either b c) -> Encode b -> Encode c -> Encode a
 which can be read "if 'a' is either 'b' or 'c', and I can handle 'b',
 and I can handle 'c', then I can handle 'a'".
 
+This works by performing the split, then checking whether 'b' or 'c' resulted,
+then using the appropriate 'Encode'.
+
 For an example of encoding, see
 <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs Encoding.hs>
 -}
 
 module Data.Sv.Encode (
-  Encode (Encode, getEncode)
+  Encode (..)
 
 -- * Convenience constructors
-, mkEncodeWithOpts
 , mkEncodeBS
+, mkEncodeWithOpts
 , unsafeBuilder
 
--- * Options
-, EncodeOptions (..)
-, HasEncodeOptions (..)
-
 -- * Running an Encode
-, defaultEncodeOptions
 , encode
 , encodeToHandle
 , encodeToFile
@@ -76,10 +76,13 @@ module Data.Sv.Encode (
 , encodeRowBuilder
 , encodeSv
 
+-- * Options
+, module Data.Sv.Encode.Options
+
 -- * Primitive encodes
 -- ** Field-based
 , const
-, showEncode
+, show
 , nop
 , empty
 , orEmpty
@@ -119,7 +122,7 @@ module Data.Sv.Encode (
 ) where
 
 import qualified Prelude as P
-import Prelude hiding (const)
+import Prelude hiding (const, show)
 
 import Control.Applicative ((<$>), (<**>))
 import Control.Lens (Getting, preview, review, view)
@@ -147,9 +150,13 @@ import Data.Sv.Syntax.Record (Record (Record), Records (EmptyRecords), emptyReco
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
 import qualified Data.Vector.NonEmpty as V
 import Text.Escape (Escaper, Escaper', Unescaped (Unescaped), escapeChar, escapeString, escapeText, escapeUtf8, escapeUtf8Lazy)
-import Text.Newline (newlineText)
+import Text.Newline (newlineToString)
 import Text.Space (Spaced (Spaced), spacesString)
 import Text.Quote (quoteChar)
+
+-- | Make an 'Encode' from a function that builds one 'Field'.
+mkEncodeBS :: (a -> LBS.ByteString) -> Encode a
+mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
 mkEncodeWithOpts :: (EncodeOptions -> a -> BS.Builder) -> Encode a
@@ -159,10 +166,6 @@ mkEncodeWithOpts = Encode . (fmap (fmap pure))
 unsafeBuilder :: (a -> BS.Builder) -> Encode a
 unsafeBuilder b = Encode (\_ a -> pure (b a))
 {-# INLINE unsafeBuilder #-}
-
--- | Make an 'Encode' from a function that builds one 'Field'.
-mkEncodeBS :: (a -> LBS.ByteString) -> Encode a
-mkEncodeBS = unsafeBuilder . fmap BS.lazyByteString
 
 -- | Encode the given list with the given 'Encode', configured by the given
 -- 'EncodeOptions'.
@@ -189,7 +192,7 @@ encodeToFile enc opts as fp = do
 encodeBuilder :: Encode a -> EncodeOptions -> [a] -> BS.Builder
 encodeBuilder e opts as =
   let enc = encodeRowBuilder e opts
-      nl  = newlineText (_newline opts)
+      nl  = newlineToString (_newline opts)
       terminal = if _terminalNewline opts then nl else mempty
   in  case as of
     [] -> terminal
@@ -240,8 +243,8 @@ const :: Strict.ByteString -> Encode a
 const b = contramap (P.const b) byteString
 
 -- | Build an 'Encode' using a type's 'Show' instance.
-showEncode :: Show a => Encode a
-showEncode = contramap show string
+show :: Show a => Encode a
+show = contramap P.show string
 
 -- | Don't encode anything.
 nop :: Encode a
@@ -394,13 +397,13 @@ encodeOfMay g x = contramap (preview g) x
 unsafeString :: Encode String
 unsafeString = unsafeBuilder BS.stringUtf8
 
--- | Encode 'Text' really quickly.
+-- | Encode 'Data.Text.Text' really quickly.
 -- If the text has quotes in it, they will not be escaped properly, so
 -- the result maybe not be valid CSV
 unsafeText :: Encode T.Text
 unsafeText = unsafeBuilder (BS.byteString . T.encodeUtf8)
 
--- | Encode ByteString 'Builder' really quickly.
+-- | Encode ByteString 'Data.ByteString.Builder.Builder' really quickly.
 -- If the builder builds a string with quotes in it, they will not be escaped
 -- properly, so the result maybe not be valid CSV
 unsafeByteStringBuilder :: Encode BS.Builder
@@ -418,7 +421,7 @@ unsafeByteString = unsafeBuilder BS.byteString
 unsafeLazyByteString :: Encode LBS.ByteString
 unsafeLazyByteString = unsafeBuilder BS.lazyByteString
 
--- | Encode this 'ByteString' really quickly every time, ignoring the input.
+-- | Encode this 'Data.ByteString.ByteString' really quickly every time, ignoring the input.
 -- If the string has quotes in it, they will not be escaped properly, so
 -- the result maybe not be valid CSV
 unsafeConst :: Strict.ByteString -> Encode a

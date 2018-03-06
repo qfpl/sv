@@ -15,7 +15,7 @@ import Hedgehog
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.HUnit (Assertion, assertBool, testCase, (@?=))
-import Text.Newline (Newline (CR, LF, CRLF), newlineText)
+import Text.Newline (Newline (CR, LF, CRLF), newlineToString)
 import Text.Parser.Char (CharParsing)
 import Text.Trifecta (Result (Success, Failure), parseByteString, _errDoc)
 
@@ -157,9 +157,9 @@ separatedValuesTest sep nl newlines =
       mkSv' :: [Record s] -> [Newline] -> Sv s
       mkSv' rs e = mkSv sep Nothing e $ maybe EmptyRecords (mkRecords nl) $ nonEmpty rs
       s = UTF8.fromString [sep]
-      nls = newlineText nl
+      nls = newlineToString nl
       terminator = replicate newlines nl
-      termStr = foldMap newlineText terminator
+      termStr = foldMap newlineToString terminator
   in  testGroup "separatedValues" [
     testCase "empty" $
       ps ["", termStr] @?=/ mkSv' [] terminator

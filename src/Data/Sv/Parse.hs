@@ -71,7 +71,7 @@ parseSvFromFile' svp opts fp =
 --
 -- The parser is written in terms of the @parsers@ library, meaning it can be
 -- instantiated to several different parsing libraries. By default, we use
--- 'trifecta', because 'Text.Trifecta's error messages are so helpful.
+-- 'trifecta', because "Text.Trifecta"s error messages are so helpful.
 -- 'attoparsecByteString' is faster though, if your input is ASCII and
   -- you care a lot about speed.
 --
@@ -89,7 +89,7 @@ data SvParser s = SvParser
   , runSvParserFromFile :: ParseOptions s -> FilePath -> IO (Either String (Sv s))
   }
 
--- | An 'SvParser' that uses Trifecta. Trifecta assumes its input is UTF-8, and
+-- | An 'SvParser' that uses "Text.Trifecta". Trifecta assumes its input is UTF-8, and
 -- provides helpful clang-style error messages.
 trifecta :: SvParser ByteString
 trifecta = SvParser
@@ -97,7 +97,7 @@ trifecta = SvParser
   , runSvParserFromFile = \opts fp -> trifectaResultToEither <$> Tri.parseFromFileEx (separatedValues opts) fp
   }
 
--- | An 'SvParser' that uses @Data.Attoparsec.ByteString@. This is the fastest
+-- | An 'SvParser' that uses "Data.Attoparsec.ByteString". This is the fastest
 -- provided 'SvParser', but it has poorer error messages.
 attoparsecByteString :: SvParser ByteString
 attoparsecByteString = SvParser
@@ -105,7 +105,7 @@ attoparsecByteString = SvParser
   , runSvParserFromFile = \opts fp -> BS.parseOnly (separatedValues opts) <$> BS.readFile fp
   }
 
--- | An 'SvParser' that uses @Data.Attoparsec.Text@. This is helpful if
+-- | An 'SvParser' that uses "Data.Attoparsec.Text". This is helpful if
 -- your input is in the form of 'Text'.
 attoparsecText :: SvParser Text
 attoparsecText = SvParser

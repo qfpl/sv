@@ -54,7 +54,6 @@ module Data.Sv.Decode (
 , decodeEither'
 , mapErrors
 , alterInput
-, alterInputIso
 
 -- * Primitive Decodes
 -- ** Field-based
@@ -72,6 +71,7 @@ module Data.Sv.Decode (
 , float
 , double
 , boolean
+, boolean'
 , ignore
 , replace
 , exactly
@@ -81,8 +81,6 @@ module Data.Sv.Decode (
 , rowWithSpacing
 
 -- * Combinators
-, Alt (..)
-, Applicative (..)
 , choice
 , element
 , optionalField
@@ -132,7 +130,7 @@ module Data.Sv.Decode (
 import Prelude hiding (either)
 import qualified Prelude
 
-import Control.Lens (AnIso, alaf, review, view, withIso)
+import Control.Lens (alaf, view)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
@@ -171,7 +169,7 @@ import Data.Sv.Parse.Options (ParseOptions)
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
 import Data.Sv.Syntax.Record (Record, _fields)
 import Data.Sv.Syntax.Sv (Sv, recordList)
-import Text.Space (AsHorizontalSpace (_HorizontalSpace), Spaced (_value), Spaces, spacedValue)
+import Text.Space (HorizontalSpace, Spaced (_value), spacedValue)
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
 decode :: Decode' s a -> Sv s -> DecodeValidation s [a]
@@ -248,10 +246,9 @@ raw :: Decode e s (SpacedField s)
 raw = mkDecodeWithSpaces pure
 
 -- | Returns the field contents. This keeps the spacing around an unquoted field.
-untrimmed :: (AsHorizontalSpace s, Monoid s) => Decode e s s
-untrimmed =
-  let sp :: (Monoid b, AsHorizontalSpace b) => Spaces -> b
-      sp = foldMap (review _HorizontalSpace)
+untrimmed :: Monoid s => (HorizontalSpace -> s) -> Decode e s s
+untrimmed fromSpace =
+  let sp = foldMap fromSpace
       spaceIfNecessary (Spaced b a f) = case f of
         Unquoted s -> mconcat [sp b, s, sp a]
         Quoted _ _ -> view fieldContents f
@@ -297,7 +294,7 @@ utf8 = contents >>==
 lazyUtf8 :: Decode' ByteString LT.Text
 lazyUtf8 = LT.fromStrict <$> utf8
 
--- | Get the contents of a field as a 'Data.ByteString.Lazy.ByteString'
+-- | Get the contents of a field as a lazy 'Data.ByteString.Lazy.ByteString'
 lazyByteString :: Decode' ByteString LBS.ByteString
 lazyByteString = LBS.fromStrict <$> contents
 
@@ -320,28 +317,34 @@ exactly s = contents >>== \z ->
   then pure s
   else badDecode (sconcat ("'":|[z,"' was not equal to '",s,"'"]))
 
--- | Decode a field as an 'Int'
+-- | Decode a UTF-8 'ByteString' field as an 'Int'
 int :: Decode' ByteString Int
 int = named "int"
 
--- | Decode a field as an 'Integer'
+-- | Decode a UTF-8 'ByteString' field as an 'Integer'
 integer :: Decode' ByteString Integer
 integer = named "integer"
 
--- | Decode a field as a 'Float'
+-- | Decode a UTF-8 'ByteString' field as a 'Float'
 float :: Decode' ByteString Float
 float = named "float"
 
--- | Decode a field as a 'Double'
+-- | Decode a UTF-8 'ByteString' field as a 'Double'
 double :: Decode' ByteString Double
 double = named "double"
 
--- | Decode a field as a 'Boolean'
+-- | Decode a field as a 'Bool'
 --
--- This is quite tolerant to different forms a boolean might take.
+-- This aims to be tolerant to different forms a boolean might take.
 boolean :: (IsString s, Ord s) => Decode' s Bool
 boolean = boolean' fromString
 
+-- | Decode a field as a 'Bool'. This version lets you provide the fromString
+-- function that's right for you, since 'Data.String.IsString' on a
+-- 'Data.ByteString.ByteString' will do the wrong thing in the case of many
+-- encodings such as UTF-16 or UTF-32.
+--
+-- This aims to be tolerant to different forms a boolean might take.
 boolean' :: Ord s => (String -> s) -> Decode' s Bool
 boolean' s =
   categorical' [
@@ -359,11 +362,11 @@ emptyField = contents >>== \c ->
   else
     badDecode ("Expected emptiness but got: " <> c)
 
--- | Choose the leftmost Decode that succeeds. Alias for '<!>'
+-- | Choose the leftmost 'Decode' that succeeds. Alias for '<!>'
 choice :: Decode e s a -> Decode e s a -> Decode e s a
 choice = (<!>)
 
--- | Choose the leftmost Decode that succeeds. Alias for 'asum1'
+-- | Choose the leftmost 'Decode' that succeeds. Alias for 'asum1'
 element :: NonEmpty (Decode e s a) -> Decode e s a
 element = asum1
 
@@ -469,10 +472,6 @@ mapErrors f (Decode (Compose r)) = Decode (Compose (fmap (first (fmap f)) r))
 -- @alterInput :: (s -> t) -> (t -> s) -> Decode' s a -> Decode' t a@
 alterInput :: (e -> x) -> (t -> s) -> Decode e s a -> Decode x t a
 alterInput f g = mapErrors f . lmap g
-
--- | Like @alterInput@, but uses an @Control.Lens.Iso@
-alterInputIso :: AnIso e s x t -> Decode e s a -> Decode x t a
-alterInputIso i = withIso i alterInput
 
 ---- Promoting parsers to 'Decode's
 

@@ -9,7 +9,7 @@ sv uses an Applicative combinator style for decoding and encoding, rather
 than a type class based approach. This means we can have multiple decoders
 for the same type, multiple combinators of the same type, and we never have
 to worry about orphan instances. These decoders can be stiched together from
-provided primitives and combinators, or you can build one out of a parser
+provided primitives and combinators, or you can build one from a parser
 from your favourite parser combinator library.
 
 sv returns values for all errors that occur - not just the first. Errors have
@@ -27,7 +27,7 @@ sv tries not to be opinionated about how your data should look. We intend for
 the user to have a great degree of freedom to build the right decoder for
 their dataset.
 
-sv is intended to be imported as follows
+sv is intended to be imported as follows:
 
 ```hs
 import Data.Sv

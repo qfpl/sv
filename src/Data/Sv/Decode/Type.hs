@@ -42,13 +42,16 @@ import Data.Sv.Syntax.Field (SpacedField)
 
 -- | A 'Decode e s a' is for decoding some fields from a CSV row into our type 'a'.
 --
--- It also knows the string input type 's' (usually 'ByteString' or 'Text') and the
--- type 'e' of error strings. Usually you want 'e' to be the same as 's'
--- (as in 'Decode'')
+-- The second type parameter (@s@) is the input string type
+-- (usually 'ByteString' or 'Text').
+-- The first type parameter (@e@) is the type of strings which occur in errors.
+-- Under most circumstances you want these type paraters to coincide, but they
+-- don't have to. They are two separate type paramters instead of one so that
+-- 'Decode' can have a 'Data.Profunctor.Profunctor' instance.
 --
 -- There are primitive 'Decode's, and combinators for composing or
 -- otherwise manipulating them. In particular, 'Decode' is an
--- 'Applicative' functor and an 'Alt'.
+-- 'Applicative' functor and an 'Alt' from the semigroupoids package.
 --
 -- 'Decode' is not a 'Monad', but we can perform monad-like operations on
 -- it with 'Data.Sv.Decode.Field.>>==' and 'Data.Sv.Decode.bindDecode'
