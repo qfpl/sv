@@ -6,7 +6,7 @@
 }:
 mkDerivation {
   pname = "sv";
-  version = "0.1.0.0";
+  version = "0.1";
   src = ./.;
   libraryHaskellDepends = [
     ansi-wl-pprint attoparsec base bifunctors bytestring charset
@@ -20,6 +20,6 @@ mkDerivation {
     trifecta utf8-string validation vector
   ];
   homepage = "https://github.com/qfpl/sv";
-  description = "Values which are separated, often by commas";
+  description = "Encode and decode separated values (CSV, PSV, ...)";
   license = stdenv.lib.licenses.bsd3;
 }
