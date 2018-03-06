@@ -115,8 +115,8 @@ module Data.Sv.Decode (
 , badDecode
 , validateEither
 , validateEither'
-, validateMay
-, validateMay'
+, validateMaybe
+, validateMaybe'
 
 -- * Implementation details
 , runDecode
@@ -230,7 +230,7 @@ parseDecodeFromFile' svp d opts fp = do
 --
 -- Return the given error if the function returns 'Nothing'.
 decodeMay :: DecodeError e -> (s -> Maybe a) -> Decode e s a
-decodeMay e f = mkDecode (validateMay e . f)
+decodeMay e f = mkDecode (validateMaybe e . f)
 
 -- | Build a 'Decode', given a function that returns 'Either'.
 decodeEither :: (s -> Either (DecodeError e) a) -> Decode e s a
@@ -429,7 +429,7 @@ categorical' as =
         then Just a
         else Nothing
   in  contents >>== \s ->
-    validateMay (UnknownCategoricalValue s (fmap snd as)) $
+    validateMaybe (UnknownCategoricalValue s (fmap snd as)) $
       alaf First foldMap (go s) as'
 
 -- | Use the 'Readable' instance to try to decode the given value.
@@ -461,7 +461,7 @@ named name =
 
 -- | Map over the errors of a 'Decode'
 --
--- To map over the other two paramters, use the 'Data.Profunctor.Profunctor' instance.
+-- To map over the other two parameters, use the 'Data.Profunctor.Profunctor' instance.
 mapErrors :: (e -> x) -> Decode e s a -> Decode x s a
 mapErrors f (Decode (Compose r)) = Decode (Compose (fmap (first (fmap f)) r))
 

@@ -13,9 +13,13 @@ module Data.Vector.NonEmpty (
   NonEmptyVector (NonEmptyVector)
 , fromNel
 , toNel
+, headNev
+, tailNev
 ) where
 
 import Control.DeepSeq (NFData)
+import Control.Lens (Lens', lens)
+import Data.Functor.Apply (Apply((<.>)))
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
@@ -43,6 +47,9 @@ toNel (NonEmptyVector a as) = a :| V.toList as
 instance Functor NonEmptyVector where
   fmap f (NonEmptyVector a as) = NonEmptyVector (f a) (fmap f as)
 
+instance Apply NonEmptyVector where
+  (<.>) = (<*>)
+
 instance Applicative NonEmptyVector where
   pure a = NonEmptyVector a V.empty
   ff <*> fa = fromNel (toNel ff <*> toNel fa)
@@ -62,3 +69,11 @@ instance Traversable1 NonEmptyVector where
 instance Semigroup (NonEmptyVector a) where
   NonEmptyVector a as <> NonEmptyVector b bs =
     NonEmptyVector a (V.concat [as, V.singleton b, bs])
+
+-- | Get or set the head of a 'NonEmptyVector'
+headNev :: Lens' (NonEmptyVector a) a
+headNev = lens (\(NonEmptyVector h _) -> h) (\(NonEmptyVector _ t) h -> NonEmptyVector h t)
+
+-- | Get or set the head of a 'NonEmptyVector'
+tailNev :: Lens' (NonEmptyVector a) (Vector a)
+tailNev = lens (\(NonEmptyVector _ t) -> t) (\(NonEmptyVector h _) t -> NonEmptyVector h t)

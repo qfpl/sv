@@ -37,7 +37,7 @@ data Handicap =
 day :: Decode' ByteString Day
 day =
   D.string >>==
-    validateMay (BadDecode "Invalid time") . parseTimeM True defaultTimeLocale "%Y%0m%0d"
+    validateMaybe (BadDecode "Invalid time") . parseTimeM True defaultTimeLocale "%Y%0m%0d"
 
 handicap :: Decode' ByteString Handicap
 handicap = Handicap <$> day <*> difference <*> D.utf8 <*> D.utf8

@@ -22,8 +22,8 @@ module Data.Sv.Decode.Error (
 -- * Conversions
 , validateEither
 , validateEither'
-, validateMay
-, validateMay'
+, validateMaybe
+, validateMaybe'
 , trifectaResultToEither
 , validateTrifectaResult
 
@@ -79,13 +79,13 @@ validateEither' f = either (decodeError . f) pure
 
 -- | Build a 'DecodeValidation' from a 'Maybe'. You have to supply an error
 -- to use in the 'Nothing' case
-validateMay :: DecodeError e -> Maybe b -> DecodeValidation e b
-validateMay e = maybe (decodeError e) pure
+validateMaybe :: DecodeError e -> Maybe b -> DecodeValidation e b
+validateMaybe e = maybe (decodeError e) pure
 
 -- | Build a 'DecodeValidation' from a function that returns a 'Maybe'
 -- You have to supply an error to use in the 'Nothing' case
-validateMay' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
-validateMay' ab e a = validateMay e (ab a)
+validateMaybe' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
+validateMaybe' ab e a = validateMaybe e (ab a)
 
 -- | Helper to convert "Text.Trifecta" 'Text.Trifecta.Result' to 'Either'.
 trifectaResultToEither :: Trifecta.Result a -> Either String a

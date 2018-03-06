@@ -106,7 +106,7 @@ combining these primitive decoders. Decoders are Applicative and
 Alternative, giving us access to many derived combinators. There are also
 other useful combinators defined in Data.Sv.Decode.
 
-A Decode has three type paramters. The first of these is the string
+A Decode has three type parameters. The first of these is the string
 type to use for errors. Usually one would use Text or Bytestring. The second
 type parameter is the input string type. We recommend these be the same.
 In this case, they're both ByteString. A type alias Decode' is provided,

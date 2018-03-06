@@ -65,7 +65,7 @@ parseSvFromFile = parseSvFromFile' trifecta
 parseSvFromFile' :: MonadIO m => SvParser s -> ParseOptions s -> FilePath -> m (Either s (Sv s))
 parseSvFromFile' svp opts fp =
   let enc = view encodeString opts
-  in  first enc <$> liftIO (runSvParserFromFile svp opts fp)
+  in  liftIO (first enc <$> runSvParserFromFile svp opts fp)
 
 -- | Which parsing library should be used to parse the document?
 --

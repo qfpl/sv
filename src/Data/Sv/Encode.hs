@@ -240,7 +240,7 @@ encodeSv e opts headerStrings as =
 
 -- | Encode this 'Data.ByteString.ByteString' every time, ignoring the input.
 const :: Strict.ByteString -> Encode a
-const b = contramap (P.const b) byteString
+const b = contramap (pure b) byteString
 
 -- | Build an 'Encode' using a type's 'Show' instance.
 show :: Show a => Encode a
@@ -425,10 +425,10 @@ unsafeLazyByteString = unsafeBuilder BS.lazyByteString
 -- If the string has quotes in it, they will not be escaped properly, so
 -- the result maybe not be valid CSV
 unsafeConst :: Strict.ByteString -> Encode a
-unsafeConst b = contramap (P.const b) unsafeByteString
+unsafeConst b = contramap (pure b) unsafeByteString
 
 -- Added in containers 0.5.8, but we duplicate it here to support older GHCs
 intersperseSeq :: a -> Seq a -> Seq a
 intersperseSeq y xs = case viewl xs of
   EmptyL -> S.empty
-  p :< ps -> p <| (ps <**> (P.const y <| S.singleton id))
+  p :< ps -> p <| (ps <**> (pure y <| S.singleton id))

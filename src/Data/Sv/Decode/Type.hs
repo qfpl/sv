@@ -46,7 +46,7 @@ import Data.Sv.Syntax.Field (SpacedField)
 -- (usually 'ByteString' or 'Text').
 -- The first type parameter (@e@) is the type of strings which occur in errors.
 -- Under most circumstances you want these type paraters to coincide, but they
--- don't have to. They are two separate type paramters instead of one so that
+-- don't have to. They are two separate type parameters instead of one so that
 -- 'Decode' can have a 'Data.Profunctor.Profunctor' instance.
 --
 -- There are primitive 'Decode's, and combinators for composing or
