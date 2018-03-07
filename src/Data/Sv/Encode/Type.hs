@@ -28,7 +28,7 @@ import Data.Sv.Encode.Options
 -- | An 'Encode' converts its argument into one or more textual fields, to be
 -- written out as CSV.
 --
--- It is 'Semigroup', Contravariant', 'Divisible', and 'Decidable', allowing
+-- It is 'Semigroup', 'Contravariant', 'Divisible', and 'Decidable', allowing
 -- for composition of these values to build bigger 'Encode's from smaller ones.
 newtype Encode a =
   Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
