@@ -51,26 +51,10 @@ data Example =
 makeLenses ''Example
 
 -- | Here we're defining an encoder for a 'Product' by using the
--- 'divide' combinator.
---
--- 'divide' takes a function to split up a product into a tuple, and an encoder
--- for each side of the tuple, and returns you an 'Encode' for the whole thing.
---
--- So in this case we split the Product into a tuple of its two components,
--- namely a 'Text' and a 'Double', and then provide the primitive encoders for
--- those two.
---
--- @
--- divide :: (a -> (b,c)) -> Encode b -> Encode c -> Encode a
--- @
---
--- or in our case
---
--- @
--- divide :: (Product -> (Text, Int)) -> Encode Text -> Encode Int -> Encode Product
--- @
+-- 'contramap' and '<>' combinators.
 productEnc :: Encode Product
-productEnc = divide (\(Product t d) -> (t,d)) E.text E.doubleFast
+productEnc = contramap _p1 E.text
+             <> contramap _p2 E.doubleFast
 
 -- | Here we're defining an encoder for a 'Sum' using the 'choose' combinator.
 --
@@ -104,23 +88,16 @@ sumEnc = choose split E.int $ chosen E.doubleFast E.text
         Sum2 d -> Right (Left d)
         Sum3 t -> Right (Right t)
 
--- | 'exampleEnc' puts it all together. 'Example' is a large product, so we
--- split it into nested tuples so that it can work with 'divide' and 'divided',
--- then we pass the encoders one-by-one. This is the same pattern we used with
--- 'choose' and 'chosen' above, but we have more components, so we nest deeper.
---
--- @
--- divide  :: (a -> (b,c)) -> Encode b -> Encode c -> Encode a
--- divided :: Encode b -> Encode c -> Encode (b,c)
--- @
---
+-- | 'exampleEnc' puts it all together. 'Example' is a product, so we
+-- use 'contramap' and '<>'.
 exampleEnc :: Encode Example
 exampleEnc =
-  divide (\(Example b t i d p s) -> (b,(t,(i,(d,(p,s)))))) E.byteString $
-    divided E.text $
-    divided E.int $
-    divided E.doubleFast $
-    divided productEnc sumEnc
+  contramap _e1 E.byteString
+  <> contramap _e2 E.text
+  <> contramap _e3 E.int
+  <> contramap _e4 E.doubleFast
+  <> contramap _e5 productEnc
+  <> contramap _e6 sumEnc
 
 examples :: [Example]
 examples =
