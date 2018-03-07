@@ -332,27 +332,27 @@ escaped esc sb tb = mkEncodeWithOpts $ \opts s ->
 escaped' :: Escaper' s -> (s -> BS.Builder) -> Encode s
 escaped' escaper = join (escaped escaper)
 
--- | Encode a 'Bool' as False or True
+-- | Encode a 'Bool' as True or False
 boolTrueFalse :: Encode Bool
 boolTrueFalse = mkEncodeBS $ B.bool "False" "True"
 
--- | Encode a 'Bool' as false or true
+-- | Encode a 'Bool' as true of false
 booltruefalse :: Encode Bool
 booltruefalse = mkEncodeBS $ B.bool "false" "true"
 
--- | Encode a 'Bool' as no or yes
+-- | Encode a 'Bool' as yes or no
 boolyesno :: Encode Bool
 boolyesno = mkEncodeBS $ B.bool "no" "yes"
 
--- | Encode a 'Bool' as No or Yes
+-- | Encode a 'Bool' as Yes or No
 boolYesNo :: Encode Bool
 boolYesNo = mkEncodeBS $ B.bool "No" "Yes"
 
--- | Encode a 'Bool' as N or Y
+-- | Encode a 'Bool' as Y or N
 boolYN :: Encode Bool
 boolYN = mkEncodeBS $ B.bool "N" "Y"
 
--- | Encode a 'Bool' as 0 or 1
+-- | Encode a 'Bool' as 1 or 0
 bool10 :: Encode Bool
 bool10 = mkEncodeBS $ B.bool "0" "1"
 
