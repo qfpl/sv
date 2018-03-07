@@ -40,7 +40,7 @@ import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField)
 
--- | A 'Decode e s a' is for decoding some fields from a CSV row into our type 'a'.
+-- | A @'Decode' e s a@ is for decoding some fields from a CSV row into our type 'a'.
 --
 -- The second type parameter (@s@) is the input string type
 -- (usually 'ByteString' or 'Text').
