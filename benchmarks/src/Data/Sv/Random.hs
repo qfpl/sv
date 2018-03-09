@@ -1,28 +1,41 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveGeneric #-}
 
-module Data.Sv.Random where
+module Data.Sv.Random (
+  Row (..)
+  , BenchData (..)
+  , rowDec
+  , benchData
+) where
 
 import Control.Applicative ((<$>), (<*>), (<|>), empty)
 import Control.DeepSeq (NFData)
-import Control.Lens (makeLenses, makePrisms, traverseOf)
-import Control.Monad ((>=>), replicateM)
+import Control.Lens (makeLenses, makePrisms)
+import Control.Monad (replicateM)
+import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Csv (FromRecord (..), FromField (..), (.!))
-import Data.Semigroup (Semigroup ((<>)))
 import Data.ByteString (ByteString)
-import Data.Functor.Contravariant
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LB
+import Data.Functor.Contravariant (Contravariant (contramap))
+import Data.Functor.Identity (runIdentity)
+import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
+import Hedgehog.Internal.Gen (runGenT)
+import Hedgehog.Internal.Seed (Seed)
+import Hedgehog.Internal.Tree (runTree, nodeValue)
+import qualified Hedgehog.Internal.Seed as Seed
 
 import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
-import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
-import Text.Newline (Newline (LF, CRLF))
-import Text.Quote (Quote (SingleQuote, DoubleQuote))
 
 data Product =
   Product { i :: Int, f :: Float, d :: Double }
@@ -46,8 +59,8 @@ data Row = Long LongRow | Short ShortRow deriving (Show, Generic)
 instance NFData Row
 
 data LongRow = LongRow {
-    _lrB :: ByteString
-  , _lrS :: String
+    _lrB1 :: ByteString
+  , _lrB2 :: ByteString
   , _lrI :: Int
   , _lrG :: Integer
   , _lrF :: Float
@@ -82,10 +95,19 @@ makePrisms ''Coproduct
 makeLenses ''LongRow
 
 utf8Gen :: Gen ByteString
+utf8Gen = fmap BS.pack . replicateM 30 $ Gen.choice
+  [ Gen.word8 (Range.constant 65 90)
+  , Gen.word8 (Range.constant 97 122)
+  , Gen.word8 (Range.constant 48 57)
+  ]
+
+{-
+utf8Gen :: Gen ByteString
 utf8Gen = Gen.utf8 (Range.constantFrom 10 0 100) Gen.alphaNum
+-}
 
 numRange :: Num a => Range.Range a
-numRange = Range.constantFrom 0 (-100000) 10000
+numRange = Range.constantFrom 0 (-100000) 100000
 
 productGen :: Gen Product
 productGen = Product <$> Gen.int numRange <*> Gen.float numRange <*> Gen.double numRange
@@ -102,7 +124,7 @@ longRowGen :: Gen LongRow
 longRowGen =
   LongRow
     <$> utf8Gen
-    <*> Gen.string (Range.constantFrom 10 0 100) Gen.alphaNum
+    <*> utf8Gen
     <*> Gen.int numRange
     <*> Gen.integral numRange
     <*> Gen.float numRange
@@ -138,8 +160,8 @@ coproductEnc =
 
 longRowEnc :: Encode LongRow
 longRowEnc = mconcat [
-    E.encodeOf lrB E.byteString
-  , E.encodeOf lrS E.string
+    E.encodeOf lrB1 E.byteString
+  , E.encodeOf lrB2 E.byteString
   , E.encodeOf lrI E.int
   , E.encodeOf lrG E.integer
   , E.encodeOf lrF E.float
@@ -161,38 +183,48 @@ coproductDec :: Decode' ByteString Coproduct
 coproductDec = I <$> D.int <!> B <$> D.byteString <!> D <$> D.double
 
 longRowDec :: Decode' ByteString LongRow
-longRowDec = LongRow <$> D.byteString <*> D.string <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
+longRowDec = LongRow <$> D.byteString <*> D.byteString <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
 
-samples :: Gen a -> Int -> IO [a]
-samples = flip replicateM . Gen.sample
+rows :: Int -> Gen [Row]
+rows n = replicateM n rowGen
 
-rows :: Int -> IO [Row]
-rows = samples rowGen
+rowsSv :: Int -> Gen (LB.ByteString)
+rowsSv = fmap (E.encode rowEnc defaultEncodeOptions) . rows
 
-rowsSv :: Int -> IO (Sv ByteString)
-rowsSv = fmap (E.encodeSv rowEnc defaultEncodeOptions Nothing) . rows
+data BenchData a =
+  BenchData {
+    f1 :: a
+  , f10 :: a
+  , f100 :: a
+  , f500 :: a
+  , f1000 :: a
+  , f5000 :: a
+  , f10000 :: a
+  , f50000 :: a
+  , f100000 :: a
+  }
+  deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
 
-rowsSv' :: Int -> IO (Sv ByteString)
-rowsSv' =
-  let randomNewline :: Newline -> IO Newline
-      randomNewline = const (Gen.sample (Gen.element [LF, CRLF]))
-      randomQuote :: IO (Maybe Quote)
-      randomQuote = Gen.sample (Gen.element [Nothing, Just SingleQuote, Just DoubleQuote])
-      requote :: Field ByteString -> Maybe Quote -> Field ByteString
-      requote g m = case g of
-        Unquoted a -> case m of
-          Nothing -> Unquoted a
-          Just x  -> Quoted x (Unescaped a)
-        Quoted _ v -> case m of
-          Nothing -> Unquoted (getRawUnescaped v)
-          Just x  -> Quoted x v
-      randomField :: Field ByteString -> IO (Field ByteString)
-      randomField z = fmap (requote z) randomQuote
-      randomNewlines :: Sv s -> IO (Sv s)
-      randomNewlines = traverseOf traverseNewlines randomNewline
-      randomQuotes :: Sv ByteString -> IO (Sv ByteString)
-      randomQuotes = traverseOf (traverseRecords . fields) randomField
-  in  rowsSv >=> randomNewlines >=> randomQuotes
+instance NFData a => NFData (BenchData a) where
 
-randomSv :: Int -> IO ByteString
-randomSv = fmap printSv . rowsSv'
+inds :: BenchData Int
+inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
+
+benchDataGen :: Gen (BenchData ByteString)
+benchDataGen = traverse (fmap LB.toStrict . rowsSv) inds
+
+seed :: Seed
+seed = Seed.from 42
+
+sample :: Gen a -> a
+sample gen = loop (100 :: Int)
+  where
+    loop n =
+      if n <= 0
+      then error "sample: too many discards, could not generate a sample"
+      else case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
+        Nothing -> loop (n - 1)
+        Just x -> nodeValue x
+
+benchData :: BenchData ByteString
+benchData = sample benchDataGen
