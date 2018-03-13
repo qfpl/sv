@@ -1,3 +1,5 @@
+module Main (main) where
+
 import Control.Applicative ((*>))
 import Control.DeepSeq
 import Control.Lens
@@ -12,14 +14,12 @@ import Data.Vector (Vector)
 import System.Exit (exitFailure)
 
 import Data.Sv
+import Data.Sv.Cassava (parseDecodeFromCassava)
 import qualified Data.Sv.Decode as D
 import Data.Sv.Random
 
 opts :: ParseOptions ByteString
 opts = defaultParseOptions & headedness .~ Unheaded
-
-parseDec :: SvParser ByteString -> ByteString -> DecodeValidation ByteString [Row]
-parseDec svp = D.parseDecode' svp rowDec opts
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
@@ -50,11 +50,17 @@ parse svp = parseSv' svp opts
 dec :: Sv ByteString -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
 
+parseDec :: SvParser ByteString -> ByteString -> DecodeValidation ByteString [Row]
+parseDec svp = D.parseDecode' svp rowDec opts
+
 parseCassava :: ByteString -> Either String C.Csv
 parseCassava = A.parseOnly (C.csv C.defaultDecodeOptions)
 
 parseDecCassava :: ByteString -> Either String (Vector Row)
 parseDecCassava = C.decode C.NoHeader . BL.fromStrict
+
+parseCassavaDecSv :: ByteString -> DecodeValidation ByteString [Row]
+parseCassavaDecSv = parseDecodeFromCassava rowDec Unheaded C.defaultDecodeOptions
 
 mkBench :: NFData b => String -> (a -> b) -> BenchData a -> Benchmark
 mkBench nm func bs = bgroup nm [
@@ -83,5 +89,6 @@ main = do
       -- cassava does not seem to have a "decode only" option against which to compare
       , mkBench "Parse and decode (Trifecta)" (parseDec trifecta) benchData
       , mkBench "Parse and decode (Data.Attoparsec.ByteString)" (parseDec attoparsecByteString) benchData
+      , mkBench "Parse with Cassava, decode with sv" parseCassavaDecSv benchData
       , mkBench "Parse and decode Cassava" parseDecCassava benchData
       ]
