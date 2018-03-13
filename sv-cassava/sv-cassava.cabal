@@ -16,7 +16,7 @@ maintainer:          george@wils.online
 copyright:           Copyright (c) 2017-2018, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
 category:            CSV, Text, Web
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  changelog.md
 cabal-version:       >=1.10
 
 library
