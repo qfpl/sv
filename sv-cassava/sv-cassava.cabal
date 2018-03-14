@@ -18,6 +18,11 @@ category:            CSV, Text, Web
 build-type:          Simple
 extra-source-files:  changelog.md
 cabal-version:       >=1.10
+tested-with:
+  GHC == 7.10.3
+  , GHC == 8.0.2
+  , GHC == 8.2.2
+  , GHC == 8.4.1
 
 library
   exposed-modules:
