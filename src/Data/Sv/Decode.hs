@@ -131,6 +131,7 @@ import Prelude hiding (either)
 import qualified Prelude
 
 import Control.Lens (alaf, view)
+import Control.Monad (unless)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
@@ -357,10 +358,7 @@ boolean' s =
 -- The empty string surrounded in quotes or spaces is still the empty string.
 emptyField :: (Eq s, IsString s, Semigroup s) => Decode' s ()
 emptyField = contents >>== \c ->
-  if c == fromString "" then
-    pure ()
-  else
-    badDecode ("Expected emptiness but got: " <> c)
+  unless (c == fromString "") (badDecode ("Expected emptiness but got: " <> c))
 
 -- | Choose the leftmost 'Decode' that succeeds. Alias for '<!>'
 choice :: Decode e s a -> Decode e s a -> Decode e s a
