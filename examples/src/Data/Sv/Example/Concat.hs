@@ -3,7 +3,7 @@ module Data.Sv.Example.Concat where
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
 import Data.Text (Text)
-import Text.Trifecta (TokenParsing, CharParsing, integer, parseFromFile, string)
+import Text.Trifecta (TokenParsing, CharParsing, double, parseFromFile, char)
 import System.Exit (exitFailure)
 
 import Data.Sv
@@ -23,12 +23,11 @@ person :: Decode' ByteString Person
 person = Person <$> D.utf8 <*> D.int
 
 type Stock = Int
--- TODO use a harder type than Integer
-newtype Cost = Cost Integer deriving Show
+newtype Cost = Cost Double deriving Show
 data Item = Item Name Stock Cost deriving Show
 
 cost :: TokenParsing m => m Cost
-cost = string "$" *> fmap Cost integer
+cost = char '$' *> fmap Cost double
 
 item :: Decode' ByteString Item
 item = Item <$> D.utf8 <*> D.int <*> D.withTrifecta cost

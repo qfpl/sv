@@ -4,7 +4,7 @@ Jane Smith,30
 Frank Cooper,45
 
 "item",        "stock", "price"
-"skateboard",  "5",     "$10"
-"fishing rod", "1",     "$500"
-"basket",      "20",    "$20"
+"skateboard",  "5",     "$10.0"
+"fishing rod", "1",     "$500.0"
+"basket",      "20",    "$20.0"
 
