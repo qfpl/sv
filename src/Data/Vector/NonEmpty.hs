@@ -13,19 +13,24 @@ module Data.Vector.NonEmpty (
   NonEmptyVector (NonEmptyVector)
 , fromNel
 , toNel
+, nelNev
 , headNev
 , tailNev
+, toVector
 ) where
 
 import Control.DeepSeq (NFData)
-import Control.Lens (Lens', lens)
+import Control.Lens (Lens', lens, Iso, iso, ( # ), (^.))
 import Data.Functor.Apply (Apply((<.>)))
+import Data.Functor.Bind(Bind((>>-)))
 import Data.Foldable (toList)
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Control.Monad.Fix(MonadFix(mfix))
+import Control.Monad.Zip(MonadZip(mzip))
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Semigroup.Foldable (Foldable1 (foldMap1))
 import Data.Semigroup.Traversable (Traversable1 (traverse1))
-import Data.Vector (Vector)
+import Data.Vector (Vector, cons)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 
@@ -38,11 +43,14 @@ instance NFData a => NFData (NonEmptyVector a) where
 
 -- | Convert a 'NonEmpty' list to a 'NonEmptyVector'
 fromNel :: NonEmpty a -> NonEmptyVector a
-fromNel (a :| as) = NonEmptyVector a (V.fromList as)
+fromNel = (nelNev #)
 
 -- | Convert a 'NonEmptyVector' to a 'NonEmpty' list
 toNel :: NonEmptyVector a -> NonEmpty a
-toNel (NonEmptyVector a as) = a :| V.toList as
+toNel = (^. nelNev)
+
+nelNev :: Iso (NonEmptyVector a) (NonEmptyVector b) (NonEmpty a) (NonEmpty b)
+nelNev = iso (\(NonEmptyVector a as) -> a :| V.toList as) (\(a :| as) -> NonEmptyVector a (V.fromList as))
 
 instance Functor NonEmptyVector where
   fmap f (NonEmptyVector a as) = NonEmptyVector (f a) (fmap f as)
@@ -53,6 +61,22 @@ instance Apply NonEmptyVector where
 instance Applicative NonEmptyVector where
   pure a = NonEmptyVector a V.empty
   ff <*> fa = fromNel (toNel ff <*> toNel fa)
+
+instance Bind NonEmptyVector where
+  ~(NonEmptyVector a as) >>- f = NonEmptyVector b (bs <> bs')
+    where NonEmptyVector b bs = f a
+          bs' = as >>= toVector . f
+
+instance Monad NonEmptyVector where
+  return = pure
+  (>>=) = (>>-)
+
+instance MonadFix NonEmptyVector where
+  mfix f =
+    fromNel (mfix (toNel . f))
+
+instance MonadZip NonEmptyVector where
+  mzip a b = fromNel (mzip (toNel a) (toNel b))
 
 instance Foldable NonEmptyVector where
   foldMap f (NonEmptyVector a as) = f a `mappend` foldMap f as
@@ -77,3 +101,6 @@ headNev = lens (\(NonEmptyVector h _) -> h) (\(NonEmptyVector _ t) h -> NonEmpty
 -- | Get or set the head of a 'NonEmptyVector'
 tailNev :: Lens' (NonEmptyVector a) (Vector a)
 tailNev = lens (\(NonEmptyVector _ t) -> t) (\(NonEmptyVector h _) t -> NonEmptyVector h t)
+
+toVector :: NonEmptyVector a -> Vector a
+toVector (NonEmptyVector a as) = a `cons` as
