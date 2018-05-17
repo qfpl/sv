@@ -34,21 +34,26 @@ failOnLeft = either (\s -> print s *> exitFailure) pure
 
 sanitySv :: SvParser ByteString -> ByteString -> IO (Sv ByteString)
 sanitySv svp bs = do
+  _ <- failOnError (parseDec svp bs)
   s <- failOnLeft (parse svp bs)
   _ <- failOnError (dec s)
   s `seq` pure s
 
-sanityCassava :: ByteString -> IO ()
+sanityCassava :: ByteString -> IO Csv
 sanityCassava bs = do
-  _ <- failOnLeft (parseCassava bs)
+  s <- failOnLeft (parseCassava bs)
+  _ <- failOnLeft (decCassava s)
   _ <- failOnLeft (parseDecCassava bs)
-  pure ()
+  s `seq` pure s
 
 parse :: SvParser ByteString -> ByteString -> Either ByteString (Sv ByteString)
 parse svp = parseSv' svp opts
 
 dec :: Sv ByteString -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
+
+decCassava :: C.Csv -> Either String (Vector Row)
+decCassava = runParser . traverse parseRecord
 
 parseDec :: SvParser ByteString -> ByteString -> DecodeValidation ByteString [Row]
 parseDec svp = D.parseDecode' svp rowDec opts
@@ -77,7 +82,7 @@ mkBench nm func bs = bgroup nm [
 
 main :: IO ()
 main = do
-  traverse_ sanityCassava benchData
+  cassavas <- traverse sanityCassava benchData
   traverse_ (sanitySv trifecta) benchData
   svs <- traverse (sanitySv attoparsecByteString) benchData
 
@@ -86,7 +91,7 @@ main = do
       , mkBench "Parse (Data.Attoparsec.ByteString)" (parse attoparsecByteString) benchData
       , mkBench "Parse Cassava" parseCassava benchData
       , mkBench "Decode" dec svs
-      -- cassava does not seem to have a "decode only" option against which to compare
+      , mkBench "Decode Cassava" decCassava cassavas
       , mkBench "Parse and decode (Trifecta)" (parseDec trifecta) benchData
       , mkBench "Parse and decode (Data.Attoparsec.ByteString)" (parseDec attoparsecByteString) benchData
       , mkBench "Parse with Cassava, decode with sv" parseCassavaDecSv benchData
