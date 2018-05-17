@@ -4,3 +4,5 @@ packages:
   ./examples
   ./sv-cassava
 
+optimization: 2
+
