@@ -17,6 +17,7 @@ module Data.Sv.Parse (
 , module Data.Sv.Parse.Options
 , SvParser (..)
 , trifecta
+, trifectaResultToEither
 , attoparsecByteString
 , attoparsecText
 ) where
@@ -30,10 +31,9 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.Text (Text)
 import qualified Data.Text.IO as Text
-import qualified Text.Trifecta as Tri
+import qualified Text.Trifecta as Trifecta
 
 import Data.Sv.Syntax.Sv (Sv)
-import Data.Sv.Decode.Error (trifectaResultToEither)
 import Data.Sv.Parse.Internal (separatedValues)
 import Data.Sv.Parse.Options
 
@@ -93,8 +93,8 @@ data SvParser s = SvParser
 -- provides helpful clang-style error messages.
 trifecta :: SvParser ByteString
 trifecta = SvParser
-  { runSvParser = \opts bs -> trifectaResultToEither $ Tri.parseByteString (separatedValues opts) mempty bs
-  , runSvParserFromFile = \opts fp -> trifectaResultToEither <$> Tri.parseFromFileEx (separatedValues opts) fp
+  { runSvParser = \opts bs -> trifectaResultToEither $ Trifecta.parseByteString (separatedValues opts) mempty bs
+  , runSvParserFromFile = \opts fp -> trifectaResultToEither <$> Trifecta.parseFromFileEx (separatedValues opts) fp
   }
 
 -- | An 'SvParser' that uses "Data.Attoparsec.ByteString". This is the fastest
@@ -112,3 +112,10 @@ attoparsecText = SvParser
   { runSvParser = \opts t -> Text.parseOnly (separatedValues opts) t
   , runSvParserFromFile = \opts fp -> Text.parseOnly (separatedValues opts) <$> Text.readFile fp
   }
+
+-- | Helper to convert "Text.Trifecta" 'Text.Trifecta.Result' to 'Either'.
+trifectaResultToEither :: Trifecta.Result a -> Either String a
+trifectaResultToEither result = case result of
+  Trifecta.Success a -> Right a
+  Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
+

@@ -33,9 +33,10 @@ module Data.Sv.Decode.Error (
 
 import Data.Validation (Validation (Failure), bindValidation)
 import Data.Vector (Vector)
-import qualified Text.Trifecta as Trifecta (Result (Success, Failure), _errDoc)
+import qualified Text.Trifecta as Trifecta (Result)
 
 import Data.Sv.Decode.Type
+import Data.Sv.Parse (trifectaResultToEither)
 import Data.Sv.Syntax.Field
 
 -- | Build a failing 'DecodeValidation'
@@ -86,12 +87,6 @@ validateMaybe e = maybe (decodeError e) pure
 -- You have to supply an error to use in the 'Nothing' case
 validateMaybe' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
 validateMaybe' ab e a = validateMaybe e (ab a)
-
--- | Helper to convert "Text.Trifecta" 'Text.Trifecta.Result' to 'Either'.
-trifectaResultToEither :: Trifecta.Result a -> Either String a
-trifectaResultToEither result = case result of
-  Trifecta.Success a -> Right a
-  Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
 
 -- | Convert a "Text.Trifecta" 'Text.Trifecta.Result' to a 'DecodeValidation'
 validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a

@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                sv-cassava
-version:             0.1
+version:             0.2
 synopsis:            Integration to use sv with cassava's parser
 description:
   This package provides functions allowing you to use cassava's parser
@@ -32,7 +32,8 @@ library
     , base >=4.8 && <5
     , bytestring >= 0.9.1.10 && < 0.11
     , cassava >= 0.4.1 && < 0.6
-    , sv >= 0.1 && < 0.2
+    , sv >= 0.2 && < 0.3
+    , sv-syntax >= 0.2 && < 0.3
     , utf8-string >= 1 && < 1.1
     , vector >= 0.10 && < 0.13
   hs-source-dirs:
@@ -51,8 +52,9 @@ test-suite hunit
     base >=4.8 && <5
     , bytestring >= 0.9.1.10 && < 0.11
     , cassava >= 0.4.1 && < 0.6
-    , sv >= 0.1 && < 0.2
+    , sv
     , sv-cassava
+    , sv-syntax
     , HUnit >= 1.4 && < 1.7
     , text >= 1.0 && < 1.3
     , validation >= 1 && < 1.1

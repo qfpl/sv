@@ -35,6 +35,7 @@ library
                        , Data.Sv.Example.TableTennis
   build-depends:       base >= 4.8 && < 5
                        , sv
+                       , sv-syntax
                        , bytestring >= 0.9.1.10 && < 0.11
                        , contravariant-extras >= 0.3 && < 0.4
                        , lens >= 4 && < 5
