@@ -32,13 +32,11 @@ import Data.Functor.Apply (Apply)
 import Data.Functor.Bind (Bind ((>>-)))
 import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty
-import Data.Semigroup
+import Data.Semigroup (Semigroup)
 import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (Validation (Success, Failure))
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
-
-import Data.Sv.Syntax.Field (SpacedField)
 
 -- | A @'Decode' e s a@ is for decoding some fields from a CSV row into our type 'a'.
 --
@@ -82,22 +80,22 @@ instance Profunctor (Decode e) where
 -- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
 -- keeps track of our remaining 'Data.Sv.Syntax.Field's.
 newtype DecodeState s a =
-  DecodeState { getDecodeState :: ReaderT (Vector (SpacedField s)) (State Ind) a }
-  deriving (Functor, Apply, Applicative, Monad, MonadReader (Vector (SpacedField s)), MonadState Ind)
+  DecodeState { getDecodeState :: ReaderT (Vector s) (State Ind) a }
+  deriving (Functor, Apply, Applicative, Monad, MonadReader (Vector s), MonadState Ind)
 
 instance Bind (DecodeState s) where
   (>>-) = (>>=)
 
 instance Profunctor DecodeState where
-  lmap f (DecodeState s) = DecodeState (withReaderT (fmap (fmap (fmap f))) s)
+  lmap f (DecodeState s) = DecodeState (withReaderT (fmap f) s)
   rmap = fmap
 
 -- | Convenient constructor for 'Decode' that handles all the newtype noise for you.
-buildDecode :: (Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)) -> Decode e s a
+buildDecode :: (Vector s -> Ind -> (DecodeValidation e a, Ind)) -> Decode e s a
 buildDecode f = Decode . Compose . DecodeState . ReaderT $ \v -> state $ \i -> f v i
 
 -- | Convenient function to run a DecodeState
-runDecodeState :: DecodeState s a -> Vector (SpacedField s) -> Ind -> (a, Ind)
+runDecodeState :: DecodeState s a -> Vector s -> Ind -> (a, Ind)
 runDecodeState = fmap runState . runReaderT . getDecodeState
 
 -- | Newtype for indices into the field vector
@@ -110,7 +108,7 @@ data DecodeError e =
   -- | I was looking for another field, but I am at the end of the row
   UnexpectedEndOfRow
   -- | I should be at the end of the row, but I found extra fields
-  | ExpectedEndOfRow (Vector (SpacedField e))
+  | ExpectedEndOfRow (Vector e)
   -- | This decoder was built using the 'categorical' primitive for categorical data
   | UnknownCategoricalValue e [[e]]
   -- | The parser failed, meaning decoding proper didn't even begin
@@ -122,7 +120,7 @@ data DecodeError e =
 instance Functor DecodeError where
   fmap f d = case d of
     UnexpectedEndOfRow -> UnexpectedEndOfRow
-    ExpectedEndOfRow v -> ExpectedEndOfRow (fmap (fmap (fmap f)) v)
+    ExpectedEndOfRow v -> ExpectedEndOfRow (fmap f v)
     UnknownCategoricalValue e ess -> UnknownCategoricalValue (f e) (fmap (fmap f) ess)
     BadParse e -> BadParse (f e)
     BadDecode e -> BadDecode (f e)

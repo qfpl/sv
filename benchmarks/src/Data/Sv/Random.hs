@@ -33,7 +33,6 @@ import Hedgehog.Internal.Seed (Seed)
 import Hedgehog.Internal.Tree (runTree, nodeValue)
 import qualified Hedgehog.Internal.Seed as Seed
 
-import Data.Sv
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
 

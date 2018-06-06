@@ -24,7 +24,6 @@ module Data.Sv.Decode.Error (
 , validateEither'
 , validateMaybe
 , validateMaybe'
-, trifectaResultToEither
 , validateTrifectaResult
 
 -- * Re-exports from @validation@
@@ -33,11 +32,9 @@ module Data.Sv.Decode.Error (
 
 import Data.Validation (Validation (Failure), bindValidation)
 import Data.Vector (Vector)
-import qualified Text.Trifecta as Trifecta (Result)
+import qualified Text.Trifecta.Result as Trifecta
 
 import Data.Sv.Decode.Type
-import Data.Sv.Parse (trifectaResultToEither)
-import Data.Sv.Syntax.Field
 
 -- | Build a failing 'DecodeValidation'
 decodeError :: DecodeError e -> DecodeValidation e a
@@ -49,7 +46,7 @@ unexpectedEndOfRow = decodeError UnexpectedEndOfRow
 
 -- | Fail with 'ExpectedEndOfRow'. This takes the rest of the row, so that it
 -- can be displayed to the user.
-expectedEndOfRow :: Vector (SpacedField e) -> DecodeValidation e a
+expectedEndOfRow :: Vector e -> DecodeValidation e a
 expectedEndOfRow = decodeError . ExpectedEndOfRow
 
 -- | Fail with 'UnknownCategoricalValue'.
@@ -90,5 +87,9 @@ validateMaybe' ab e a = validateMaybe e (ab a)
 
 -- | Convert a "Text.Trifecta" 'Text.Trifecta.Result' to a 'DecodeValidation'
 validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
-validateTrifectaResult f = validateEither' f . trifectaResultToEither
-
+validateTrifectaResult f =
+  validateEither' f . trifectaResultToEither
+    where
+      trifectaResultToEither r = case r of
+        Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
+        Trifecta.Success a -> Right a

@@ -5,7 +5,6 @@ module Main (main) where
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.Csv as Cassava
-import Data.Sv
 import Data.Sv.Cassava
 import qualified Data.Sv.Decode as D
 import Data.Text (Text)
@@ -15,7 +14,7 @@ import Test.HUnit
 
 data TestRow = TestRow Int Double Text deriving (Eq, Show)
 
-testRowDec :: Decode' ByteString TestRow
+testRowDec :: D.Decode' ByteString TestRow
 testRowDec = TestRow <$> D.int <*> D.double <*> D.utf8
 
 bs1 :: ByteString
@@ -55,10 +54,10 @@ decodeTest = TestLabel "decode" . TestCase $
 parseDecodeTest :: Test
 parseDecodeTest = TestLabel "parse+decode" . TestList $
   [ TestLabel "unheaded" . TestCase $
-      parseDecodeFromCassava testRowDec Unheaded Cassava.defaultDecodeOptions bs1 @?=
+      parseDecodeFromCassava testRowDec D.Unheaded Cassava.defaultDecodeOptions bs1 @?=
         pure decoded1
   , TestLabel "headed" . TestCase $
-      parseDecodeFromCassava testRowDec Headed Cassava.defaultDecodeOptions bs2 @?=
+      parseDecodeFromCassava testRowDec D.Headed Cassava.defaultDecodeOptions bs2 @?=
         pure decoded1
   ]
 

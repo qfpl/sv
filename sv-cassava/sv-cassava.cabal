@@ -35,6 +35,7 @@ library
     , sv >= 0.2 && < 0.3
     , sv-syntax >= 0.2 && < 0.3
     , utf8-string >= 1 && < 1.1
+    , validation
     , vector >= 0.10 && < 0.13
   hs-source-dirs:
     src

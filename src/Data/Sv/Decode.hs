@@ -41,12 +41,18 @@ module Data.Sv.Decode (
 , DecodeError (..)
 , DecodeErrors (..)
 
+, ParseOptions (..)
+, Separator
+, Headedness(..)
+
   -- * Running Decodes
 , decode
 , parseDecode
+{-
 , parseDecode'
 , parseDecodeFromFile
 , parseDecodeFromFile'
+-}
 
 -- * Convenience constructors and functions
 , decodeMay
@@ -58,8 +64,6 @@ module Data.Sv.Decode (
 -- * Primitive Decodes
 -- ** Field-based
 , contents
-, untrimmed
-, raw
 , char
 , byteString
 , utf8
@@ -78,7 +82,6 @@ module Data.Sv.Decode (
 , emptyField
 -- ** Row-based
 , row
-, rowWithSpacing
 
 -- * Combinators
 , choice
@@ -122,9 +125,9 @@ module Data.Sv.Decode (
 , runDecode
 , buildDecode
 , mkDecode
-, mkDecodeWithQuotes
-, mkDecodeWithSpaces
 , promote
+, promoteStrict
+, promoteLazy
 ) where
 
 import Prelude hiding (either)
@@ -132,17 +135,17 @@ import qualified Prelude
 
 import Control.Lens (alaf, view)
 import Control.Monad (unless)
-import Control.Monad.IO.Class (MonadIO)
+--import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
-import Data.Attoparsec.ByteString (parseOnly)
-import qualified Data.Attoparsec.ByteString as A (Parser)
+import qualified Data.Attoparsec.ByteString.Lazy as AL
+import qualified Data.Attoparsec.ByteString as A
 import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
-import Data.Foldable (toList)
+--import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -159,22 +162,59 @@ import qualified Data.Text.Lazy as LT
 import Data.Validation (_Validation)
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
+import HaskellWorks.Data.Dsv.Lazy.Cursor as DSV
+import HaskellWorks.Data.Dsv.Lazy.Cursor.Type
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
 
+import Data.Sv.Alien.Cassava
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
-import qualified Data.Sv.Parse as P
-import Data.Sv.Parse.Options (ParseOptions)
-import Data.Sv.Syntax.Field (Field (Unquoted, Quoted), fieldContents, SpacedField, Spaced (Spaced))
-import Data.Sv.Syntax.Record (Record, _fields)
-import Data.Sv.Syntax.Sv (Sv, recordList)
-import Text.Space (HorizontalSpace, Spaced (_value), spacedValue)
+
+-- | Does the 'Sv' have a 'Header' or not? A header is a row at the beginning
+-- of a file which contains the string names of each of the columns.
+--
+-- If a header is present, it must not be decoded with the rest of the data.
+data Headedness =
+  Unheaded | Headed
+  deriving (Eq, Ord, Show)
+
+-- | By what are your values separated? The answer is often 'comma', but not always.
+--
+-- A 'Separator' is just a 'Char'. It could be a sum type instead, since it
+-- will usually be comma or pipe, but our preference has been to be open here
+-- so that you can use whatever you'd like. There are test cases, for example,
+-- ensuring that you're free to use null-byte separated values if you so desire.
+type Separator = Char
+
+-- | The default separator
+defaultSeparator :: Separator
+defaultSeparator = ','
+
+-- | The default is that a header is present.
+defaultHeadedness :: Headedness
+defaultHeadedness = Headed
+
+-- | A 'ParseOptions' informs the parser how to parse your file.
+--
+-- A default is provided as 'defaultParseOptions', seen below.
+data ParseOptions =
+  ParseOptions {
+  -- | Which separator does the file use? Usually this is 'comma', but it can
+  -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
+    _separator :: Separator
+
+  -- | Whether there is a header row with column names or not.
+  , _headedness :: Headedness
+  }
+
+defaultParseOptions :: ParseOptions
+defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
-decode :: Decode' s a -> Sv s -> DecodeValidation s [a]
-decode f = traverse (promote f) . recordList
+decode :: Decode' ByteString a -> DsvCursor -> DecodeValidation ByteString [a]
+decode f = traverse (promoteLazy f) . DSV.toListVector
 
 -- | Parse a 'ByteString' as an Sv, and then decode it with the given decoder.
 --
@@ -182,11 +222,17 @@ decode f = traverse (promote f) . recordList
 -- be UTF-8 encoded. If you want a different library, use 'parseDecode''.
 parseDecode ::
   Decode' ByteString a
-  -> ParseOptions ByteString
-  -> ByteString
+  -> ParseOptions
+  -> LBS.ByteString
   -> DecodeValidation ByteString [a]
-parseDecode = parseDecode' P.trifecta
+parseDecode f opts bs =
+  let sep = _separator opts
+      cursor = DSV.makeCursor sep bs
+  in  decode f $ case _headedness opts of
+        Unheaded -> cursor
+        Headed   -> nextRow cursor
 
+{-
 -- | Parse text as an Sv, and then decode it with the given decoder.
 --
 -- This version lets you choose which parsing library to use by providing an
@@ -226,6 +272,7 @@ parseDecodeFromFile' ::
 parseDecodeFromFile' svp d opts fp = do
   sv <- P.parseSvFromFile' svp opts fp
   pure (Prelude.either badDecode pure sv `bindValidation` decode d)
+-}
 
 -- | Build a 'Decode', given a function that returns 'Maybe'.
 --
@@ -242,31 +289,13 @@ decodeEither f = mkDecode (validateEither . f)
 decodeEither' :: (e -> DecodeError e') -> (s -> Either e a) -> Decode e' s a
 decodeEither' e f = mkDecode (validateEither' e . f)
 
--- | Succeeds with the whole field structure, including spacing and quoting information
-raw :: Decode e s (SpacedField s)
-raw = mkDecodeWithSpaces pure
-
--- | Returns the field contents. This keeps the spacing around an unquoted field.
-untrimmed :: Monoid s => (HorizontalSpace -> s) -> Decode e s s
-untrimmed fromSpace =
-  let sp = foldMap fromSpace
-      spaceIfNecessary (Spaced b a f) = case f of
-        Unquoted s -> mconcat [sp b, s, sp a]
-        Quoted _ _ -> view fieldContents f
-  in  fmap spaceIfNecessary raw
-
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: Decode e s s
 contents = mkDecode pure
 
 -- | Grab the whole row as a 'Vector'
 row :: Decode e s (Vector s)
-row = (fmap . fmap) (view (spacedValue.fieldContents)) rowWithSpacing
-
--- | Grab the whole row, including all spacing and quoting information,
--- as a 'Vector'
-rowWithSpacing :: Decode e s (Vector (SpacedField s))
-rowWithSpacing =
+row =
   Decode . Compose . DecodeState . ReaderT $ \v ->
     state (const (pure v, Ind (V.length v)))
 
@@ -485,7 +514,7 @@ withAttoparsec :: A.Parser a -> Decode' ByteString a
 withAttoparsec =
   mkParserFunction
     (validateEither' (BadDecode . fromString))
-    parseOnly
+    A.parseOnly
 
 -- | Build a 'Decode' from a Parsec parser
 withParsec :: Parsec ByteString () a -> Decode' ByteString a
@@ -509,7 +538,7 @@ mkParserFunction err run p =
 {-# INLINE mkParserFunction #-}
 
 -- | Convenience to get the underlying function out of a Decode in a useful form
-runDecode :: Decode e s a -> Vector (SpacedField s) -> Ind -> (DecodeValidation e a, Ind)
+runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Ind)
 runDecode = runDecodeState . getCompose . unwrapDecode
 {-# INLINE runDecode #-}
 
@@ -559,22 +588,7 @@ onError d f =
 -- This version gives you just the contents of the field, with no information
 -- about the spacing or quoting around that field.
 mkDecode :: (s -> DecodeValidation e a) -> Decode e s a
-mkDecode f = mkDecodeWithQuotes (f . view fieldContents)
-
--- | Build a 'Decode' from a function.
---
--- This version gives you access to the whole 'Field', which includes
--- information about whether quotes were used, and if so which ones.
-mkDecodeWithQuotes :: (Field s -> DecodeValidation e a) -> Decode e s a
-mkDecodeWithQuotes f = mkDecodeWithSpaces (f . _value)
-
--- | Build a 'Decode' from a function.
---
--- This version gives you access to the whole 'SpacedField', which includes
--- information about spacing both before and after the field, and about quotes
--- if they were used.
-mkDecodeWithSpaces :: (SpacedField s -> DecodeValidation e a) -> Decode e s a
-mkDecodeWithSpaces f =
+mkDecode f =
   Decode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
     if i >= length v
     then (unexpectedEndOfRow, Ind i)
@@ -582,12 +596,22 @@ mkDecodeWithSpaces f =
 
 -- | promotes a Decode to work on a whole 'Record' at once. This does not need
 -- to be called by the user. Instead use 'decode'.
-promote :: Decode' s a -> Record s -> DecodeValidation s a
-promote dec rs =
-  let vec = V.fromList . toList . _fields $ rs
-      len = length vec
-  in  case runDecode dec vec (Ind 0) of
+promote :: forall a bs. (forall x. A.Parser x -> bs -> Either ByteString x) -> Decode' ByteString a -> Vector bs -> DecodeValidation ByteString a
+promote parse dec vecLazy =
+  let len = length vecLazy
+      toField :: bs -> DecodeValidation ByteString ByteString
+      toField = Prelude.either badParse pure . parse (field 44)
+      vecFieldVal :: DecodeValidation ByteString (Vector ByteString)
+      vecFieldVal = traverse toField vecLazy
+  in  bindValidation vecFieldVal $ \vecField ->
+  case runDecode dec vecField (Ind 0) of
     (d, Ind i) ->
       if i >= len
       then d
-      else d *> expectedEndOfRow (V.force (V.drop i vec))
+      else d *> expectedEndOfRow (V.force (V.drop i vecField))
+
+promoteStrict :: Decode' ByteString a -> Vector ByteString -> DecodeValidation ByteString a
+promoteStrict = promote (\p b -> first UTF8.fromString $ A.parseOnly p b)
+
+promoteLazy :: Decode' ByteString a -> Vector LBS.ByteString -> DecodeValidation ByteString a
+promoteLazy = promote (\p b -> first UTF8.fromString $ AL.eitherResult $ AL.parse p b)

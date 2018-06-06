@@ -70,13 +70,13 @@ source-repository    head
   location:          git@github.com/qfpl/sv.git
 
 library
-  exposed-modules:     Data.Sv
-                       , Data.Sv.Decode
+  exposed-modules:     Data.Sv.Decode
                        , Data.Sv.Decode.Error
                        , Data.Sv.Decode.Type
-                       , Data.Sv.Encode
-                       , Data.Sv.Encode.Options
-                       , Data.Sv.Encode.Type
+                       , Data.Sv.Alien.Cassava
+                       --, Data.Sv.Encode
+                       --, Data.Sv.Encode.Options
+                       --, Data.Sv.Encode.Type
   -- other-modules:
   -- other-extensions:    
   build-depends:       attoparsec >= 0.12.1.4 && < 0.14
@@ -86,6 +86,7 @@ library
                        , containers >= 0.4 && < 0.6
                        , contravariant >= 1.2 && < 1.5
                        , deepseq >= 1.1 && < 1.5
+                       , hw-dsv
                        , lens >= 4 && < 5
                        , mtl >= 2.0.1 && < 2.3
                        , parsec >= 3.1 && < 3.2
@@ -93,7 +94,6 @@ library
                        , readable >= 0.3 && < 0.4
                        , semigroupoids >= 5 && <6
                        , semigroups >= 0.18 && < 0.19
-                       , sv-syntax == 0.2
                        , text >= 1.0 && < 1.3
                        , transformers >= 0.2 && < 0.6
                        , trifecta >= 1.5 && < 1.8
@@ -113,8 +113,8 @@ test-suite             tasty
                        tasty.hs
   other-modules:
                        Data.Sv.DecodeTest
-                       , Data.Sv.EncodeTest
-                       , Data.Sv.RoundTripsDecodeEncode
+                       --, Data.Sv.EncodeTest
+                       --, Data.Sv.RoundTripsDecodeEncode
   default-language:
                        Haskell2010
   build-depends:
@@ -127,7 +127,6 @@ test-suite             tasty
                        , semigroupoids >= 5 && <6
                        , semigroups >= 0.18 && < 0.19
                        , sv
-                       , sv-syntax
                        , tasty >= 0.11 && < 1.2
                        , tasty-hedgehog >= 0.1 && < 0.3
                        , tasty-hunit >= 0.9 && < 0.11

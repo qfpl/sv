@@ -6,7 +6,8 @@ import Data.Text (Text)
 import Text.Trifecta (TokenParsing, CharParsing, double, parseFromFile, char)
 import System.Exit (exitFailure)
 
-import Data.Sv
+import Data.Sv.Syntax
+import Data.Sv.Parse
 import qualified Data.Sv.Decode as D
 
 file :: FilePath
@@ -19,7 +20,7 @@ type Name = Text
 type Age = Int
 data Person = Person Name Age deriving Show
 
-person :: Decode' ByteString Person
+person :: D.Decode' ByteString Person
 person = Person <$> D.utf8 <*> D.int
 
 type Stock = Int
@@ -29,7 +30,7 @@ data Item = Item Name Stock Cost deriving Show
 cost :: TokenParsing m => m Cost
 cost = char '$' *> fmap Cost double
 
-item :: Decode' ByteString Item
+item :: D.Decode' ByteString Item
 item = Item <$> D.utf8 <*> D.int <*> D.withTrifecta cost
 
 sv2 :: (CharParsing m) => ParseOptions s -> m (Sv s, Sv s)
@@ -46,9 +47,9 @@ main = do
   case d of
     Nothing -> exitFailure
     Just (s1,s2) -> do
-      let result = PeopleAndItems <$> decode person s1 <*> decode item s2
+      let result = PeopleAndItems <$> D.decode person s1 <*> D.decode item s2
       case result of
-        Failure e -> do
+        D.Failure e -> do
           print e
           exitFailure
-        Success a -> print a
+        D.Success a -> print a
