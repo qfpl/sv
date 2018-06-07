@@ -6,7 +6,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 {-|
-Module      : Text.Space
+Module      : Data.Sv.Text.Space
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -16,7 +16,7 @@ Portability : non-portable
 A sum type for space characters
 -}
 
-module Text.Space
+module Data.Sv.Text.Space
   ( HorizontalSpace (Space, Tab)
   , AsHorizontalSpace (_HorizontalSpace, _Space, _Tab)
   , Spaces

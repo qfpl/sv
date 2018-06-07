@@ -41,11 +41,11 @@ import Data.Sv.Syntax.Sv (Sv (Sv), Header, mkHeader, noHeader, Headedness (Unhea
 import Data.Sv.Syntax.Field (Field (Unquoted, Quoted))
 import Data.Sv.Syntax.Record (Record (Record), Records (Records, EmptyRecords))
 import Data.Sv.Parse.Options (ParseOptions, separator, endOnBlankLine, encodeString)
-import Data.Vector.NonEmpty as V
-import Text.Escape (Unescaped (Unescaped))
-import Text.Newline (Newline (CR, CRLF, LF))
-import Text.Space (HorizontalSpace (Space, Tab), Spaces, Spaced, betwixt)
-import Text.Quote (Quote (SingleQuote, DoubleQuote), quoteChar)
+import Data.Sv.Vector.NonEmpty as V
+import Data.Sv.Text.Escape (Unescaped (Unescaped))
+import Data.Sv.Text.Newline (Newline (CR, CRLF, LF))
+import Data.Sv.Text.Space (HorizontalSpace (Space, Tab), Spaces, Spaced, betwixt)
+import Data.Sv.Text.Quote (Quote (SingleQuote, DoubleQuote), quoteChar)
 
 -- | This function is in newer versions of the parsers package, but in
 -- order to maintain compatibility with older versions I've left it here.

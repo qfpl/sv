@@ -25,9 +25,9 @@ import Data.Sv.Parse.Internal (doubleQuotedField, record, separatedValues, singl
 import Data.Sv.Syntax.Sv (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Separator)
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
-import Text.Escape (Unescaped (Unescaped))
-import Text.Space (Spaced (Spaced), manySpaces, unspaced)
-import Text.Quote (Quote (SingleQuote, DoubleQuote), quoteToString)
+import Data.Sv.Text.Escape (Unescaped (Unescaped))
+import Data.Sv.Text.Space (Spaced (Spaced), manySpaces, unspaced)
+import Data.Sv.Text.Quote (Quote (SingleQuote, DoubleQuote), quoteToString)
 
 test_Parse :: TestTree
 test_Parse =

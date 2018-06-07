@@ -30,10 +30,10 @@ import qualified Hedgehog.Range as Range
 import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header), Headedness, getHeadedness, Separator)
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords, Records), recordNel)
-import Text.Escape (Unescaped (Unescaped))
-import Text.Newline (Newline (CRLF, LF))
-import Text.Space (Spaces, Spaced (Spaced))
-import Text.Quote (Quote (SingleQuote, DoubleQuote))
+import Data.Sv.Text.Escape (Unescaped (Unescaped))
+import Data.Sv.Text.Newline (Newline (CRLF, LF))
+import Data.Sv.Text.Space (Spaces, Spaced (Spaced))
+import Data.Sv.Text.Quote (Quote (SingleQuote, DoubleQuote))
 
 genSv :: Gen Separator -> Gen Spaces -> Gen s -> Gen (Sv s)
 genSv sep spc s =

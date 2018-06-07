@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 {-|
-Module      : Text.Newline
+Module      : Data.Sv.Text.Newline
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -11,7 +11,7 @@ Portability : non-portable
 A sum type for line endings
 -}
 
-module Text.Newline (
+module Data.Sv.Text.Newline (
   Newline (CR, LF, CRLF)
   , AsNewline(_Newline, _CR, _LF, _CRLF)
   , newlineToString

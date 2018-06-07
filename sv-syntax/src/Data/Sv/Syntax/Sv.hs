@@ -57,7 +57,8 @@ import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (HasFields (fields))
 import Data.Sv.Syntax.Record (Record, Records (EmptyRecords), HasRecord (record), HasRecords (records, traverseNewlines, traverseRecords), recordList)
-import Text.Newline (Newline)
+import Data.Sv.Text.Newline (Newline)
+import Data.Sv.Text.Separator (Separator, HasSeparator (separator), comma, pipe, tab)
 
 -- | 'Sv' is a whitespace-preserving data type for separated values.
 --   Often the separator is a comma, but this type does not make that
@@ -185,35 +186,7 @@ class HasHeadedness c where
 instance HasHeadedness Headedness where
   headedness = id
 
--- | By what are your values separated? The answer is often 'comma', but not always.
---
--- A 'Separator' is just a 'Char'. It could be a sum type instead, since it
--- will usually be comma or pipe, but our preference has been to be open here
--- so that you can use whatever you'd like. There are test cases, for example,
--- ensuring that you're free to use null-byte separated values if you so desire.
-type Separator = Char
-
--- | Classy lens for 'Separator'
-class HasSeparator c where
-  separator :: Lens' c Separator
-
-instance HasSeparator Char where
-  separator = id
-  {-# INLINE separator #-}
-
 instance HasSeparator (Sv s) where
   separator f (Sv x1 x2 x3 x4) =
     fmap (\y -> Sv y x2 x3 x4) (f x1)
   {-# INLINE separator #-}
-
--- | The venerable comma separator. Used for CSV documents.
-comma :: Separator
-comma = ','
-
--- | The pipe separator. Used for PSV documents.
-pipe :: Separator
-pipe = '|'
-
--- | Tab is a separator too - why not?
-tab :: Separator
-tab = '\t'

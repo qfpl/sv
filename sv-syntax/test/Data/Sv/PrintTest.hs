@@ -10,7 +10,7 @@ import Data.Sv.Print (printSv)
 import Data.Sv.Syntax.Field (Field (Quoted))
 import Data.Sv.Syntax.Record (Records (EmptyRecords), singleField, singleRecord)
 import Data.Sv.Syntax.Sv (Sv (Sv), noHeader, comma)
-import Text.Quote (Quote (SingleQuote))
+import Data.Sv.Text.Quote (Quote (SingleQuote))
 
 test_Print :: TestTree
 test_Print =

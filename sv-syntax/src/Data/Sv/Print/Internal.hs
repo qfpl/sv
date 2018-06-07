@@ -31,9 +31,9 @@ import Data.Sv.Print.Options
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import Data.Sv.Syntax.Record (Record (Record), Records (Records, EmptyRecords))
 import Data.Sv.Syntax.Sv (Header (Header), Separator)
-import Text.Newline
-import Text.Space (spaceToChar, Spaced (Spaced))
-import Text.Quote
+import Data.Sv.Text.Newline
+import Data.Sv.Text.Space (spaceToChar, Spaced (Spaced))
+import Data.Sv.Text.Quote
 
 -- | Convert a 'Newline' to a ByteString 'Builder'
 printNewline :: Newline -> Builder

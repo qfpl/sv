@@ -5,7 +5,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 {-|
-Module      : Text.Escape
+Module      : Data.Sv.Text.Escape
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -20,7 +20,7 @@ Encoding requires you to provide an 'Escaper', which is a function to escape
 strings on the way out.
 -}
 
-module Text.Escape (
+module Data.Sv.Text.Escape (
   Unescaped (Unescaped, getRawUnescaped)
   , Escaper
   , Escaper'

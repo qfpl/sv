@@ -31,9 +31,9 @@ import Data.Functor (Functor (fmap))
 import Data.Traversable (Traversable (traverse))
 import GHC.Generics (Generic)
 
-import Text.Escape (Unescaped (Unescaped, getRawUnescaped))
-import Text.Quote (Quote)
-import Text.Space (Spaced (Spaced))
+import Data.Sv.Text.Escape (Unescaped (Unescaped, getRawUnescaped))
+import Data.Sv.Text.Quote (Quote)
+import Data.Sv.Text.Space (Spaced (Spaced))
 
 -- | A 'Field' is a single cell from a CSV document.
 --

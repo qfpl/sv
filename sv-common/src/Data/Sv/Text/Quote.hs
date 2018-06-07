@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 {-|
-Module      : Text.Quote
+Module      : Data.Sv.Text.Quote
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -13,7 +13,7 @@ Portability : non-portable
 A sum type for quote characters
 -}
 
-module Text.Quote (
+module Data.Sv.Text.Quote (
   Quote (SingleQuote, DoubleQuote)
   , AsQuote (_Quote, _SingleQuote, _DoubleQuote)
   , quoteChar

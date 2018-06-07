@@ -29,7 +29,7 @@ import qualified Data.ByteString.Builder as Builder
 import Data.Text (Text)
 import qualified Data.Text.Encoding as Text
 
-import Text.Escape (Escaper', escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
+import Data.Sv.Text.Escape (Escaper', escapeUtf8, escapeUtf8Lazy, escapeText, escapeString)
 
 -- | Options to configure the printing process
 data PrintOptions a =

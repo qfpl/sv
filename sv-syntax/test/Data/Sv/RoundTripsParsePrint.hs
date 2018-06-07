@@ -27,7 +27,7 @@ import Data.Sv.Parse (defaultParseOptions, headedness, encodeString, separatedVa
 import Data.Sv.Parse.Internal (spacedField)
 import Data.Sv.Print (defaultPrintOptions, printSvText)
 import Data.Sv.Print.Internal (printSpaced)
-import Text.Space (HorizontalSpace (Space, Tab), Spaces)
+import Data.Sv.Text.Space (HorizontalSpace (Space, Tab), Spaces)
  
 test_Roundtrips :: TestTree
 test_Roundtrips =

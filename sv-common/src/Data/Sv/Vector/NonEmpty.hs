@@ -9,7 +9,7 @@ Stability   : experimental
 Portability : non-portable
 -}
 
-module Data.Vector.NonEmpty (
+module Data.Sv.Vector.NonEmpty (
   NonEmptyVector (NonEmptyVector)
 , fromNel
 , toNel

@@ -40,15 +40,15 @@ import Data.Functor (Functor (fmap))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup)
 import Data.Traversable (Traversable (traverse))
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import GHC.Generics (Generic)
 
 import Data.Sv.Syntax.Field (SpacedField, Field (Unquoted), HasFields (fields))
-import Data.Vector.NonEmpty (NonEmptyVector)
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import qualified Data.Vector.NonEmpty as V
-import Text.Newline (Newline)
-import Text.Space (Spaced, spacedValue)
+import Data.Sv.Vector.NonEmpty (NonEmptyVector)
+import qualified Data.Sv.Vector.NonEmpty as V
+import Data.Sv.Text.Newline (Newline)
+import Data.Sv.Text.Space (Spaced, spacedValue)
 
 -- | A @Record@ is a non-empty collection of Fields, implicitly separated
 -- by a separator (often a comma).
