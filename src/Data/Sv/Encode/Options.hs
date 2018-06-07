@@ -14,19 +14,15 @@ Options to configure encoding
 module Data.Sv.Encode.Options (
   EncodeOptions (EncodeOptions, _encodeSeparator, _quoting, _newline, _terminalNewline)
 , HasEncodeOptions (encodeOptions, quoting, newline, terminalNewline)
+, HasSeparator (separator)
 , Quoting (..)
-, Newline (..)
 , defaultEncodeOptions
 ) where
 
 import Control.Lens (Lens')
-import Data.ByteString (ByteString)
+
+import Data.Sv.Cursor.Newline (Newline, lf)
 import Data.Sv.Text.Separator (Separator, HasSeparator (separator), comma)
-
-newtype Newline = UnsafeMkNewline ByteString
-
-crlf :: Newline
-crlf = UnsafeMkNewline "\r\n"
 
 data Quoting
   = Always
@@ -41,7 +37,7 @@ data EncodeOptions =
     _encodeSeparator :: Separator
     -- | Would you like quotes around your values? If so, double quotes or single? Deafult: Double quotes
   , _quoting :: Quoting
-    -- | What kind of newline would you like? Default: CRLF
+    -- | What kind of newline would you like? Default: LF
   , _newline :: Newline
     -- | Should the file be terminated with a newline? Default: No
   , _terminalNewline :: Bool
@@ -86,7 +82,7 @@ instance HasEncodeOptions EncodeOptions where
 
 -- | The default options for encoding.
 --
--- The default is a CSV file with double-quotes, CRLF lines, no spacing around
+-- The default is a CSV file with double-quotes, LF lines, no spacing around
 -- fields, and no terminating newline.
 defaultEncodeOptions :: EncodeOptions
-defaultEncodeOptions = EncodeOptions comma AsNeeded crlf False
+defaultEncodeOptions = EncodeOptions comma Always lf True

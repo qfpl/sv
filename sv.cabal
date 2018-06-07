@@ -70,13 +70,16 @@ source-repository    head
   location:          git@github.com/qfpl/sv.git
 
 library
-  exposed-modules:     Data.Sv.Decode
+  exposed-modules:     Data.Sv
+                       , Data.Sv.Cursor
+                       , Data.Sv.Decode
                        , Data.Sv.Decode.Error
                        , Data.Sv.Decode.Type
                        , Data.Sv.Alien.Cassava
-                       --, Data.Sv.Encode
-                       --, Data.Sv.Encode.Options
-                       --, Data.Sv.Encode.Type
+                       , Data.Sv.Cursor.Newline
+                       , Data.Sv.Encode
+                       , Data.Sv.Encode.Options
+                       , Data.Sv.Encode.Type
   -- other-modules:
   -- other-extensions:    
   build-depends:       attoparsec >= 0.12.1.4 && < 0.14
@@ -114,8 +117,8 @@ test-suite             tasty
                        tasty.hs
   other-modules:
                        Data.Sv.DecodeTest
-                       --, Data.Sv.EncodeTest
-                       --, Data.Sv.RoundTripsDecodeEncode
+                       , Data.Sv.EncodeTest
+                       , Data.Sv.RoundTripsDecodeEncode
   default-language:
                        Haskell2010
   build-depends:

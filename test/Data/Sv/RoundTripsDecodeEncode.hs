@@ -5,7 +5,7 @@ module Data.Sv.RoundTripsDecodeEncode (test_Roundtrips) where
 
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.UTF8 as UTF8
 import Data.Semigroup ((<>))
 import Test.Tasty (TestName, TestTree, testGroup)
@@ -39,34 +39,40 @@ test_Roundtrips =
   ]
 
 encOpts :: EncodeOptions
-encOpts = defaultEncodeOptions & quote .~ Nothing
+encOpts = defaultEncodeOptions & quoting .~ Never
 
-parOpts :: ParseOptions ByteString
+parOpts :: ParseOptions
 parOpts = defaultParseOptions & headedness .~ Unheaded
+
+lbUtf8 :: LBS.ByteString -> String
+lbUtf8 = UTF8.toString . LBS.toStrict
+
+utf8lb :: String -> LBS.ByteString
+utf8lb = LBS.fromStrict . UTF8.fromString
 
 -- Round-trips an encode/decode pair. This version checks whether the pair
 -- form an isomorphism
-roundTripCodecIso :: (Eq a, Show a) => TestName -> Decode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
+roundTripCodecIso :: (Eq a, Show a) => TestName -> Decode' ByteString a -> Encode a -> [(LBS.ByteString, a)] -> TestTree
 roundTripCodecIso name dec enc bsas = testGroup name . flip foldMap bsas $ \(bs,a) ->
-  [ testCase (UTF8.toString bs <> ": encode . decode") $
-      Success (BL.fromStrict bs) @?= (encode enc encOpts <$> parseDecode dec parOpts bs)
-  , testCase (UTF8.toString bs <> ": decode . encode") $
-      Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ encodeRow enc encOpts a)
+  [ testCase (lbUtf8 bs <> ": encode . decode") $
+      Success bs @?= (encode enc encOpts <$> parseDecode dec parOpts bs)
+  , testCase (lbUtf8 bs <> ": decode . encode") $
+      Success [a] @?= (parseDecode dec parOpts $ encodeRow enc encOpts a)
   ]
 
 -- Round-trips an encode/decode pair. This version checks whether the pair
 -- form a split-idempotent. That is to say, one direction is identity, the other is
 -- idempotent.
-roundTripCodecSplitIdempotent :: (Eq a, Show a) => TestName -> Decode' ByteString a -> Encode a -> [(ByteString, a)] -> TestTree
+roundTripCodecSplitIdempotent :: (Eq a, Show a) => TestName -> Decode' ByteString a -> Encode a -> [(LBS.ByteString, a)] -> TestTree
 roundTripCodecSplitIdempotent name dec enc bsas =
     let deco = parseDecode dec parOpts
         enco = encode enc encOpts
         encdec = fmap enco . deco
     in  testGroup name . flip foldMap bsas $ \(bs,a) ->
-      [ testCase (UTF8.toString bs <> ": decode . encode . decode") $
-          Success (Success [a]) @?= (deco . BL.toStrict <$> encdec bs)
-      , testCase (UTF8.toString bs <> ": decode . encode") $
-          Success [a] @?= (parseDecode dec parOpts $ BL.toStrict $ enco [a])
+      [ testCase (lbUtf8 bs <> ": decode . encode . decode") $
+          Success (Success [a]) @?= (deco <$> encdec bs)
+      , testCase (lbUtf8 bs <> ": decode . encode") $
+          Success [a] @?= (parseDecode dec parOpts $ enco [a])
       ]
 
 byteString :: TestTree
@@ -80,10 +86,10 @@ bool :: TestTree
 bool = roundTripCodecIso "bool" D.boolean E.booltruefalse [("true", True), ("false", False)]
 
 char :: TestTree
-char = roundTripCodecIso "char" D.char E.char [(UTF8.fromString "c", 'c'), (UTF8.fromString "💩", '💩')]
+char = roundTripCodecIso "char" D.char E.char [(utf8lb "c", 'c'), (utf8lb "💩", '💩')]
 
 string :: TestTree
-string = roundTripCodecIso "string" D.string E.string [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+string = roundTripCodecIso "string" D.string E.string [(utf8lb "hello", "hello"), (utf8lb "💩💩💩💩", "💩💩💩💩")]
 
 int :: TestTree
 int = roundTripCodecIso "int" D.int E.int [("5", 5)]
@@ -105,7 +111,7 @@ double :: TestTree
 double = roundTripCodecIso "double" D.double E.double [("5.0", 5)]
 
 text :: TestTree
-text = roundTripCodecIso "text" D.utf8 E.text [(UTF8.fromString "hello", "hello"), (UTF8.fromString "💩💩💩💩", "💩💩💩💩")]
+text = roundTripCodecIso "text" D.utf8 E.text [(utf8lb "hello", "hello"), (utf8lb "💩💩💩💩", "💩💩💩💩")]
 
 boolSI :: TestTree
 boolSI = roundTripCodecSplitIdempotent "bool" D.boolean E.bool10

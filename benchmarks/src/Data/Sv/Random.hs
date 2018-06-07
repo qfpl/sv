@@ -20,7 +20,9 @@ import Data.Csv (FromRecord (..), FromField (..), (.!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LB
+import Data.Functor.Alt ((<!>))
 import Data.Functor.Contravariant (Contravariant (contramap))
+import Data.Functor.Contravariant.Divisible (choose)
 import Data.Functor.Identity (runIdentity)
 import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
@@ -142,22 +144,22 @@ rowGen =
   , (1, Short <$> shortRowGen)
   ]
 
-rowEnc :: Encode Row
+rowEnc :: E.Encode Row
 rowEnc = choose (\x -> case x of {Long r -> Left r ; Short r -> Right r}) longRowEnc shortRowEnc
 
-shortRowEnc :: Encode ShortRow
+shortRowEnc :: E.Encode ShortRow
 shortRowEnc =
   contramap _1 E.byteString <> contramap _2 E.byteString <> contramap _3 E.byteString
 
-productEnc :: Encode Product
+productEnc :: E.Encode Product
 productEnc =
   contramap i E.int <> contramap f E.float <> contramap d E.double
 
-coproductEnc :: Encode Coproduct
+coproductEnc :: E.Encode Coproduct
 coproductEnc =
   E.encodeOf _I  E.int <> E.encodeOf _B E.byteString <> E.encodeOf _D E.double
 
-longRowEnc :: Encode LongRow
+longRowEnc :: E.Encode LongRow
 longRowEnc = mconcat [
     E.encodeOf lrB1 E.byteString
   , E.encodeOf lrB2 E.byteString
@@ -169,26 +171,26 @@ longRowEnc = mconcat [
   , E.encodeOf lrC coproductEnc
   ]
 
-rowDec :: Decode' ByteString Row
+rowDec :: D.Decode' ByteString Row
 rowDec =  Long <$> longRowDec <!> Short <$> shortRowDec
 
-shortRowDec :: Decode' ByteString ShortRow
+shortRowDec :: D.Decode' ByteString ShortRow
 shortRowDec = ShortRow <$> D.byteString <*> D.byteString <*> D.byteString
 
-productDec :: Decode' ByteString Product
+productDec :: D.Decode' ByteString Product
 productDec = Product <$> D.int <*> D.float <*> D.double
 
-coproductDec :: Decode' ByteString Coproduct
+coproductDec :: D.Decode' ByteString Coproduct
 coproductDec = I <$> D.int <!> B <$> D.byteString <!> D <$> D.double
 
-longRowDec :: Decode' ByteString LongRow
+longRowDec :: D.Decode' ByteString LongRow
 longRowDec = LongRow <$> D.byteString <*> D.byteString <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
 
 rows :: Int -> Gen [Row]
 rows n = replicateM n rowGen
 
 rowsSv :: Int -> Gen (LB.ByteString)
-rowsSv = fmap (E.encode rowEnc defaultEncodeOptions) . rows
+rowsSv = fmap (E.encode rowEnc E.defaultEncodeOptions) . rows
 
 data BenchData a =
   BenchData {

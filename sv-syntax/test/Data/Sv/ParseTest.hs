@@ -15,7 +15,6 @@ import Hedgehog
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 import Test.Tasty.HUnit (Assertion, assertBool, testCase, (@?=))
-import Text.Newline (Newline (CR, LF, CRLF), newlineToString)
 import Text.Parser.Char (CharParsing)
 import Text.Trifecta (Result (Success, Failure), parseByteString, _errDoc)
 
@@ -26,6 +25,7 @@ import Data.Sv.Syntax.Sv (Sv, mkSv, comma, pipe, tab, Headedness (Unheaded), Sep
 import Data.Sv.Syntax.Field (Field (Quoted, Unquoted), SpacedField)
 import Data.Sv.Syntax.Record (Record (Record), recordNel, mkRecords, Records (EmptyRecords))
 import Data.Sv.Text.Escape (Unescaped (Unescaped))
+import Data.Sv.Text.Newline (Newline (CR, LF, CRLF), newlineToString)
 import Data.Sv.Text.Space (Spaced (Spaced), manySpaces, unspaced)
 import Data.Sv.Text.Quote (Quote (SingleQuote, DoubleQuote), quoteToString)
 

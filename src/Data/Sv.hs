@@ -21,9 +21,7 @@ module Data.Sv (
   -- * Decoding
     decode
   , parseDecode
-  , parseDecode'
   , parseDecodeFromFile
-  , parseDecodeFromFile'
   , decodeMay
   , decodeEither
   , decodeEither'
@@ -32,24 +30,20 @@ module Data.Sv (
   , module Data.Sv.Decode.Type
   , module Data.Sv.Decode.Error
 
-  -- * Parsing
-  , module Data.Sv.Parse
-
-  -- * Printing
-  , module Data.Sv.Print
-
   -- * Encoding
   , encode
   , encodeToFile
   , encodeToHandle
   , encodeBuilder
   , encodeRow
-  , encodeSv
   , module Data.Sv.Encode.Type
   , module Data.Sv.Encode.Options
 
-  -- * Core data types
-  , module Data.Sv.Syntax
+  -- * Cursor
+  , module Data.Sv.Cursor
+
+  -- * Structure
+  , module Data.Sv.Structure.Headedness
 
   -- * Re-exports from contravariant and semigroupoids
   , Alt (..)
@@ -64,12 +58,11 @@ import Data.Functor.Alt (Alt (..))
 import Data.Functor.Contravariant (Contravariant (..))
 import Data.Functor.Contravariant.Divisible (Divisible (..), divided, Decidable (..), chosen)
 
+import Data.Sv.Cursor
 import Data.Sv.Decode
 import Data.Sv.Decode.Type
 import Data.Sv.Decode.Error
 import Data.Sv.Encode
 import Data.Sv.Encode.Options
 import Data.Sv.Encode.Type
-import Data.Sv.Parse
-import Data.Sv.Print
-import Data.Sv.Syntax
+import Data.Sv.Structure.Headedness

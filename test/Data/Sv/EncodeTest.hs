@@ -73,7 +73,7 @@ encodeTests :: TestTree
 encodeTests =
   testCase "multiple lines" $
     encode (divided intAndString intOrString) opts [(IAS 3 "book", I 4), (IAS 7 "film", S "ok")]
-      @?= "\"3\",\"book\",\"4\"\r\n\"7\",\"film\",\"ok\""
+      @?= "\"3\",\"book\",\"4\"\n\"7\",\"film\",\"ok\"\n"
 
 escapeTests :: TestTree
 escapeTests =

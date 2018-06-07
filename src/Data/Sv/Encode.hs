@@ -74,7 +74,6 @@ module Data.Sv.Encode (
 , encodeBuilder
 , encodeRow
 , encodeRowBuilder
-, encodeSv
 
 -- * Options
 , module Data.Sv.Encode.Options
@@ -124,17 +123,16 @@ module Data.Sv.Encode (
 import qualified Prelude as P
 import Prelude hiding (const, show)
 
-import Control.Applicative ((<$>), (<**>))
-import Control.Lens (Getting, preview, review, view)
+import Control.Applicative ((<**>))
+import Control.Lens (Getting, preview, view)
 import Control.Monad (join)
 import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Foldable (fold, foldMap, toList)
+import Data.Foldable (fold)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (Divisible (conquer), Decidable (choose))
-import Data.List.NonEmpty (NonEmpty, nonEmpty)
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
 import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as Seq
@@ -143,16 +141,10 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
-import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions)
+import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
-import Data.Sv.Syntax.Field (Field (Unquoted), SpacedField, unescapedField)
-import Data.Sv.Syntax.Record (Record (Record), Records (EmptyRecords), emptyRecord, mkRecords, recordNel)
-import Data.Sv.Syntax.Sv (Sv (Sv), Header (Header))
-import qualified Data.Vector.NonEmpty as V
-import Text.Escape (Escaper, Escaper', Unescaped (Unescaped), escapeChar, escapeString, escapeText, escapeUtf8, escapeUtf8Lazy)
-import Text.Newline (newlineToString)
-import Text.Space (Spaced (Spaced), spacesString)
-import Text.Quote (quoteChar)
+import Data.Sv.Text.Escape (Escaper, Escaper', Unescaped (Unescaped), escapeChar, escapeString, escapeText, escapeUtf8, escapeUtf8Lazy)
+import Data.Sv.Cursor.Newline (newlineToBuilder)
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
 mkEncodeBS :: (a -> LBS.ByteString) -> Encode a
@@ -192,7 +184,7 @@ encodeToFile enc opts as fp = do
 encodeBuilder :: Encode a -> EncodeOptions -> [a] -> BS.Builder
 encodeBuilder e opts as =
   let enc = encodeRowBuilder e opts
-      nl  = newlineToString (_newline opts)
+      nl  = newlineToBuilder (_newline opts)
       terminal = if _terminalNewline opts then nl else mempty
   in  case as of
     [] -> terminal
@@ -206,38 +198,12 @@ encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
 encodeRowBuilder :: Encode a -> EncodeOptions -> a -> BS.Builder
 encodeRowBuilder e opts =
   let addSeparators = intersperseSeq (BS.charUtf8 (view separator opts))
-      quotep = foldMap (BS.charUtf8 . review quoteChar) (view quote opts)
+      quotep = case _quoting opts of
+                 Never -> mempty
+                 AsNeeded -> mempty -- TODO
+                 Always -> BS.char7 '"'
       addQuotes x = quotep <> x <> quotep
-      mkSpaces optic = BS.stringUtf8 . review spacesString . view optic $ opts
-      bspaces = mkSpaces spacingBefore
-      aspaces = mkSpaces spacingAfter
-      addSpaces x = bspaces <> x <> aspaces
-  in  fold . addSeparators . fmap (addSpaces . addQuotes) . getEncode e opts
-
--- | Build an 'Sv' rather than going straight to 'ByteString'. This allows you
--- to query the Sv or run sanity checks.
-encodeSv :: Encode a -> EncodeOptions -> Maybe (NonEmpty Strict.ByteString) -> [a] -> Sv Strict.ByteString
-encodeSv e opts headerStrings as =
-  let encoded :: [Seq BS.Builder]
-      encoded = getEncode e opts <$> as
-      nl = view newline opts
-      sep = view separator opts
-      mkSpaced = Spaced (_spacingBefore opts) (_spacingAfter opts)
-      mkField = maybe Unquoted unescapedField (_quote opts)
-      mkHeader r = Header r nl
-      mkRecord :: NonEmpty z -> Record z
-      mkRecord = recordNel . fmap (mkSpaced . mkField)
-      header :: Maybe (Header Strict.ByteString)
-      header = mkHeader . mkRecord <$> headerStrings
-      rs :: Records Strict.ByteString
-      rs = l2rs (b2r <$> encoded)
-      l2rs = maybe EmptyRecords (mkRecords nl) . nonEmpty -- Records . fmap (skrinple nl) . nonEmpty
-      terminal = if _terminalNewline opts then [nl] else []
-      b2f :: BS.Builder -> SpacedField Strict.ByteString
-      b2f = mkSpaced . mkField . LBS.toStrict . BS.toLazyByteString
-      b2r :: Seq BS.Builder -> Record Strict.ByteString
-      b2r = maybe emptyRecord (Record . V.fromNel) . nonEmpty . toList . fmap b2f
-  in  Sv sep header rs terminal
+  in  fold . addSeparators . fmap addQuotes . getEncode e opts
 
 -- | Encode this 'Data.ByteString.ByteString' every time, ignoring the input.
 const :: Strict.ByteString -> Encode a
@@ -325,9 +291,12 @@ lazyByteString = escaped' escapeUtf8Lazy BS.lazyByteString
 
 escaped :: Escaper s t -> (s -> BS.Builder) -> (t -> BS.Builder) -> Encode s
 escaped esc sb tb = mkEncodeWithOpts $ \opts s ->
-  case _quote opts of
-    Nothing -> sb s
-    Just q -> tb $ esc (review quoteChar q) (Unescaped s)
+  case _quoting opts of
+    Never -> sb s
+    Always -> tb $ esc '"' (Unescaped s)
+    AsNeeded -> tb $ esc '"' (Unescaped s) -- TODO
+    --Nothing -> sb s
+    --Just q -> tb $ esc (review quoteChar q) (Unescaped s)
 
 escaped' :: Escaper' s -> (s -> BS.Builder) -> Encode s
 escaped' escaper = join (escaped escaper)

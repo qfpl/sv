@@ -13,8 +13,8 @@ import Data.Foldable (traverse_)
 import Data.Vector (Vector)
 import System.Exit (exitFailure)
 
-import Data.Sv
 import Data.Sv.Cassava (parseDecodeFromCassava)
+import Data.Sv (DecodeValidation)
 import qualified Data.Sv.Decode as D
 import Data.Sv.Random
 

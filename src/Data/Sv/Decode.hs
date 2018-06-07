@@ -48,11 +48,7 @@ module Data.Sv.Decode (
   -- * Running Decodes
 , decode
 , parseDecode
-{-
-, parseDecode'
 , parseDecodeFromFile
-, parseDecodeFromFile'
--}
 
 -- * Convenience constructors and functions
 , decodeMay
@@ -135,7 +131,7 @@ import qualified Prelude
 
 import Control.Lens (alaf, view)
 import Control.Monad (unless)
---import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT (ReaderT))
 import Control.Monad.State (state)
 import qualified Data.Attoparsec.ByteString.Lazy as AL
@@ -145,7 +141,6 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as LBS
 import Data.Char (toUpper)
---import Data.Foldable (toList)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -169,110 +164,38 @@ import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
 
 import Data.Sv.Alien.Cassava
+import Data.Sv.Cursor
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
-
--- | Does the 'Sv' have a 'Header' or not? A header is a row at the beginning
--- of a file which contains the string names of each of the columns.
---
--- If a header is present, it must not be decoded with the rest of the data.
-data Headedness =
-  Unheaded | Headed
-  deriving (Eq, Ord, Show)
-
--- | By what are your values separated? The answer is often 'comma', but not always.
---
--- A 'Separator' is just a 'Char'. It could be a sum type instead, since it
--- will usually be comma or pipe, but our preference has been to be open here
--- so that you can use whatever you'd like. There are test cases, for example,
--- ensuring that you're free to use null-byte separated values if you so desire.
-type Separator = Char
-
--- | The default separator
-defaultSeparator :: Separator
-defaultSeparator = ','
-
--- | The default is that a header is present.
-defaultHeadedness :: Headedness
-defaultHeadedness = Headed
-
--- | A 'ParseOptions' informs the parser how to parse your file.
---
--- A default is provided as 'defaultParseOptions', seen below.
-data ParseOptions =
-  ParseOptions {
-  -- | Which separator does the file use? Usually this is 'comma', but it can
-  -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
-    _separator :: Separator
-
-  -- | Whether there is a header row with column names or not.
-  , _headedness :: Headedness
-  }
-
-defaultParseOptions :: ParseOptions
-defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness
+import Data.Sv.Structure.Headedness
+import Data.Sv.Text.Separator
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
 decode :: Decode' ByteString a -> DsvCursor -> DecodeValidation ByteString [a]
-decode f = traverse (promoteLazy f) . DSV.toListVector
+decode d = traverse (promoteLazy d) . DSV.toListVector
 
 -- | Parse a 'ByteString' as an Sv, and then decode it with the given decoder.
---
--- This version uses 'Text.Trifecta.Trifecta' to parse the 'ByteString', which is assumed to
--- be UTF-8 encoded. If you want a different library, use 'parseDecode''.
 parseDecode ::
   Decode' ByteString a
   -> ParseOptions
   -> LBS.ByteString
   -> DecodeValidation ByteString [a]
-parseDecode f opts bs =
+parseDecode d opts bs =
   let sep = _separator opts
       cursor = DSV.makeCursor sep bs
-  in  decode f $ case _headedness opts of
+  in  decode d $ case _headedness opts of
         Unheaded -> cursor
         Headed   -> nextRow cursor
 
-{-
--- | Parse text as an Sv, and then decode it with the given decoder.
---
--- This version lets you choose which parsing library to use by providing an
--- 'P.SvParser'. Common selections are 'P.trifecta' and 'P.attoparsecByteString'.
-parseDecode' ::
-  P.SvParser s
-  -> Decode' s a
-  -> ParseOptions s
-  -> s
-  -> DecodeValidation s [a]
-parseDecode' svp d opts s =
-  Prelude.either badDecode pure (P.parseSv' svp opts s) `bindValidation` decode d
-
 -- | Load a file, parse it, and decode it.
---
--- This version uses Trifecta to parse the file, which is assumed to be UTF-8
--- encoded.
 parseDecodeFromFile ::
   MonadIO m
   => Decode' ByteString a
-  -> ParseOptions ByteString
+  -> ParseOptions
   -> FilePath
   -> m (DecodeValidation ByteString [a])
-parseDecodeFromFile = parseDecodeFromFile' P.trifecta
-
--- | Load a file, parse it, and decode it.
---
--- This version lets you choose which parsing library to use by providing an
--- 'P.SvParser'. Common selections are 'P.trifecta' and 'P.attoparsecByteString'.
-parseDecodeFromFile' ::
-  MonadIO m
-  => P.SvParser s
-  -> Decode' s a
-  -> ParseOptions s
-  -> FilePath
-  -> m (DecodeValidation s [a])
-parseDecodeFromFile' svp d opts fp = do
-  sv <- P.parseSvFromFile' svp opts fp
-  pure (Prelude.either badDecode pure sv `bindValidation` decode d)
--}
+parseDecodeFromFile d opts fp =
+  parseDecode d opts <$> liftIO (LBS.readFile fp)
 
 -- | Build a 'Decode', given a function that returns 'Maybe'.
 --
