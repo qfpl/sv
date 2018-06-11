@@ -42,27 +42,11 @@ The parser needs some configuration to parse our file. For example, it
 needs to know which separator character we're using - in our case: comma.
 It's useful to start from the default options and modify them using lens, but
 you could just as easily modify them with record syntax, or build a config from
-scratch using the types and values defined in Data.Sv.Parse.Options
-
-Next we're choosing which parsing library should be used to parse the file.
-Most users can use the default by calling parseDecode rather than parseDecode'
-as we will. The default parsing library used is Trifecta because of its very
-helpful clang-style error messages.
-However Trifecta requires UTF-8 compatible input and, as mentioned above, our
-file is encoded as Windows-1252.
-Hence we're using Attoparsec, which has less helpful error messages but
-can handle this encoding.
-
-Benchmarking has shown that our parser is faster with attoparsec than with
-trifecta, so if this is a concern to you, you might like to choose attoparsec
-anyway.
+scratch using the types and values defined in Data.Sv.Cursor.Options
 
 \begin{code}
-opts :: ParseOptions ByteString
+opts :: ParseOptions
 opts = defaultParseOptions
-
-parser :: SvParser ByteString
-parser = attoparsecByteString
 \end{code}
 
 This is the type we've made for our rows. It was designed by observing
@@ -249,7 +233,7 @@ passing our parse options in.
 
 \begin{code}
 species :: IO (DecodeValidation ByteString [Species])
-species = parseDecodeFromFile' parser speciesDecoder opts file
+species = parseDecodeFromFile speciesDecoder opts file
 \end{code}
 
 And that's it! We've defined a data type for our rows, built a Decode for

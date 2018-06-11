@@ -4,7 +4,7 @@
 module Data.Sv.Example.Encoding where
 
 import Contravariant.Extras.Contrazip (contrazip6)
-import Control.Lens (makeLenses, makePrisms)
+import Control.Lens ((.~), (&), makeLenses, makePrisms)
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
@@ -130,7 +130,7 @@ examples =
   ]
 
 opts :: EncodeOptions
-opts = defaultEncodeOptions
+opts = defaultEncodeOptions & terminalNewline .~ False
 
 main :: IO ()
 main = do

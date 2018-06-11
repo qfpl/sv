@@ -185,7 +185,7 @@ parseDecode d opts bs =
       cursor = DSV.makeCursor sep bs
   in  decode d $ case _headedness opts of
         Unheaded -> cursor
-        Headed   -> nextRow cursor
+        Headed   -> nextPosition (nextRow cursor)
 
 -- | Load a file, parse it, and decode it.
 parseDecodeFromFile ::
@@ -523,7 +523,7 @@ promote :: forall a bs. (forall x. A.Parser x -> bs -> Either ByteString x) -> D
 promote parse dec vecLazy =
   let len = length vecLazy
       toField :: bs -> DecodeValidation ByteString ByteString
-      toField = Prelude.either badParse pure . parse (field 44)
+      toField = Prelude.either badParse pure . parse (field 44) -- TODO
       vecFieldVal :: DecodeValidation ByteString (Vector ByteString)
       vecFieldVal = traverse toField vecLazy
   in  bindValidation vecFieldVal $ \vecField ->

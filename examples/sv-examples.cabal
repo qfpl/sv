@@ -1,5 +1,5 @@
 name:                sv-examples
-version:             0.1.0.0
+version:             0.2
 synopsis:            Examples of sv usage
 description:         Examples of sv usage. This can be run as a test-suite
 homepage:            https://github.com/qfpl/sv
@@ -35,6 +35,7 @@ library
                        , Data.Sv.Example.TableTennis
   build-depends:       base >= 4.8 && < 5
                        , sv
+                       , sv-common
                        , sv-syntax
                        , bytestring >= 0.9.1.10 && < 0.11
                        , contravariant-extras >= 0.3 && < 0.4

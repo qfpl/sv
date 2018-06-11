@@ -65,6 +65,7 @@ infixl 4 <$!>
 -- non-escaped format. The return value is unescaped.
 field :: Word8 -> AL.Parser Field
 field !delim = do
+    _ <- A.skipWhile (== 32) -- space
     mb <- A.peekWord8
     -- We purposely don't use <|> as we want to commit to the first
     -- choice if we see a double quote.

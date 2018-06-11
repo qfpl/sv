@@ -47,7 +47,7 @@ csv1 = LBS.intercalate "\n" [
     "\"3\",\"4\",\"5\""
   , "\"quoted text\",unquoted text,100"
   , "7,unquoted text,5"
-  ] <> "\n"
+  ]
 
 csv1' :: [V3 IntOrString]
 csv1' =
@@ -71,7 +71,7 @@ varyingLength = LBS.intercalate "\r\n" [
   , "one,two,three"
   , "one,two,three,four"
   , "one,two,three,four,five"
-  ] <> "\n"
+  ]
 
 str2 :: D.Decode' ByteString (ByteString, ByteString)
 str2 = liftA2 (,) D.contents D.contents
