@@ -10,7 +10,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Functor.Alt ((<!>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
-import Data.Semigroup ((<>))
+import Data.Semigroup (Semigroup)
 import qualified Data.Vector as V
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
