@@ -63,15 +63,15 @@ infixl 4 <$!>
 
 -- | Parse a field. The field may be in either the escaped or
 -- non-escaped format. The return value is unescaped.
-field :: Word8 -> AL.Parser Field
-field !delim = do
+field :: AL.Parser Field
+field = do
     _ <- A.skipWhile (== 32) -- space
     mb <- A.peekWord8
     -- We purposely don't use <|> as we want to commit to the first
     -- choice if we see a double quote.
     case mb of
         Just b | b == doubleQuote -> escapedField
-        _                         -> unescapedField delim
+        _                         -> unescapedField
 {-# INLINE field #-}
 
 escapedField :: AL.Parser S.ByteString
@@ -89,10 +89,9 @@ escapedField = do
             Left err -> fail err
         else return s
 
-unescapedField :: Word8 -> AL.Parser S.ByteString
-unescapedField !delim = A.takeWhile (\ c -> c /= doubleQuote &&
+unescapedField :: AL.Parser S.ByteString
+unescapedField = A.takeWhile (\ c -> c /= doubleQuote &&
                                             c /= newline &&
-                                            c /= delim &&
                                             c /= cr)
 
 dquote :: AL.Parser Char

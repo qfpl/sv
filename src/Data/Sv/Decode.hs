@@ -523,7 +523,7 @@ promote :: forall a bs. (forall x. A.Parser x -> bs -> Either ByteString x) -> D
 promote parse dec vecLazy =
   let len = length vecLazy
       toField :: bs -> DecodeValidation ByteString ByteString
-      toField = Prelude.either badParse pure . parse (field 44) -- TODO
+      toField = Prelude.either badParse pure . parse field
       vecFieldVal :: DecodeValidation ByteString (Vector ByteString)
       vecFieldVal = traverse toField vecLazy
   in  bindValidation vecFieldVal $ \vecField ->
