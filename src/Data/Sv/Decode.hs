@@ -157,6 +157,7 @@ import qualified Data.Text.Lazy as LT
 import Data.Validation (_Validation)
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
+import GHC.Base (unsafeChr)
 import HaskellWorks.Data.Dsv.Lazy.Cursor as DSV
 import HaskellWorks.Data.Dsv.Lazy.Cursor.Type
 import Text.Parsec (Parsec)
@@ -168,7 +169,7 @@ import Data.Sv.Cursor
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
 import Data.Sv.Structure.Headedness
-import Data.Sv.Text.Separator
+import Data.Sv.Cursor.Separator
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
 decode :: Decode' ByteString a -> DsvCursor -> DecodeValidation ByteString [a]
@@ -182,7 +183,7 @@ parseDecode ::
   -> DecodeValidation ByteString [a]
 parseDecode d opts bs =
   let sep = _separator opts
-      cursor = DSV.makeCursor sep bs
+      cursor = DSV.makeCursor (unsafeChr (fromIntegral sep)) bs -- TODO Char conversion
   in  decode d $ case _headedness opts of
         Unheaded -> cursor
         Headed   -> nextPosition (nextRow cursor)

@@ -197,7 +197,7 @@ encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
 -- | Encode one row only, as a ByteString 'Builder'
 encodeRowBuilder :: Encode a -> EncodeOptions -> a -> BS.Builder
 encodeRowBuilder e opts =
-  let addSeparators = intersperseSeq (BS.charUtf8 (view separator opts))
+  let addSeparators = intersperseSeq (BS.word8 (view separator opts))
       quotep = case _quoting opts of
                  Never -> mempty
                  AsNeeded -> mempty -- TODO

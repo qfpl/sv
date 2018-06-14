@@ -22,7 +22,7 @@ module Data.Sv.Encode.Options (
 import Control.Lens (Lens')
 
 import Data.Sv.Cursor.Newline (Newline, lf)
-import Data.Sv.Text.Separator (Separator, HasSeparator (separator), comma)
+import Data.Sv.Cursor.Separator (Separator, HasSeparator (separator), comma)
 
 data Quoting
   = Always

@@ -1,11 +1,11 @@
 module Data.Sv.Cursor where
 
-import Data.Sv.Text.Separator (Separator, HasSeparator (separator))
+import Data.Sv.Cursor.Separator (Separator, HasSeparator (separator), comma)
 import Data.Sv.Structure.Headedness (Headedness (Headed), HasHeadedness (headedness))
 
 -- | The default separator
 defaultSeparator :: Separator
-defaultSeparator = ','
+defaultSeparator = comma
 
 -- | The default is that a header is present.
 defaultHeadedness :: Headedness
