@@ -40,8 +40,8 @@ let
     hw-dsv = pkgs.fetchFromGitHub {
       owner  = "haskell-works";
       repo   = "hw-dsv";
-      rev    = "v0.2";
-      sha256 = "07r9d2hxl1wfwnxlg2sffh1kw13xh8xcfb3ml7cyys4rahhzg56v";
+      rev    = "v0.2.1";
+      sha256 = "16a2c6hxp3lvdsqcpmarfwmz778vfb0cxw3ycgdb3whb0ycx8cd0";
     };
 
     hw-hspec-hedgehog = pkgs.fetchFromGitHub {

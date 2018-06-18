@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Control.Applicative ((*>))
-import Control.DeepSeq
+import Control.DeepSeq (NFData)
 import Control.Lens
 import Criterion.Main
 import qualified Data.Attoparsec.ByteString as A
@@ -9,33 +9,33 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Csv as C
 import Data.Csv.Parser as C
-import Data.Foldable (traverse_)
 import Data.Vector (Vector)
+import HaskellWorks.Data.Dsv.Lazy.Cursor (DsvCursor (..), makeCursor)
 import System.Exit (exitFailure)
 
+import Data.Sv (DecodeValidation, defaultParseOptions, headedness, Headedness (Unheaded), comma)
 import Data.Sv.Cassava (parseDecodeFromCassava)
-import Data.Sv (DecodeValidation)
 import qualified Data.Sv.Decode as D
 import Data.Sv.Random
 
-opts :: ParseOptions ByteString
+opts :: D.ParseOptions
 opts = defaultParseOptions & headedness .~ Unheaded
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
-  Failure e -> do
+  D.Failure e -> do
       putStr "Sanity check failed: "
       print e
       exitFailure
-  Success s -> pure s
+  D.Success s -> pure s
 
 failOnLeft :: Show s => Either s a -> IO a
 failOnLeft = either (\s -> print s *> exitFailure) pure
 
-sanitySv :: SvParser ByteString -> ByteString -> IO (Sv ByteString)
-sanitySv svp bs = do
-  _ <- failOnError (parseDec svp bs)
-  s <- failOnLeft (parse svp bs)
+sanitySv :: ByteString -> IO DsvCursor
+sanitySv bs = do
+  _ <- failOnError (parseDec bs)
+  let s = parse bs
   _ <- failOnError (dec s)
   s `seq` pure s
 
@@ -46,17 +46,17 @@ sanityCassava bs = do
   _ <- failOnLeft (parseDecCassava bs)
   s `seq` pure s
 
-parse :: SvParser ByteString -> ByteString -> Either ByteString (Sv ByteString)
-parse svp = parseSv' svp opts
+parse :: ByteString -> DsvCursor
+parse = makeCursor comma . BL.fromStrict
 
-dec :: Sv ByteString -> DecodeValidation ByteString [Row]
+dec :: DsvCursor -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
 
 decCassava :: C.Csv -> Either String (Vector Row)
 decCassava = runParser . traverse parseRecord
 
-parseDec :: SvParser ByteString -> ByteString -> DecodeValidation ByteString [Row]
-parseDec svp = D.parseDecode' svp rowDec opts
+parseDec :: ByteString -> DecodeValidation ByteString [Row]
+parseDec = D.parseDecode rowDec opts . BL.fromStrict
 
 parseCassava :: ByteString -> Either String C.Csv
 parseCassava = A.parseOnly (C.csv C.defaultDecodeOptions)
@@ -83,17 +83,14 @@ mkBench nm func bs = bgroup nm [
 main :: IO ()
 main = do
   cassavas <- traverse sanityCassava benchData
-  traverse_ (sanitySv trifecta) benchData
-  svs <- traverse (sanitySv attoparsecByteString) benchData
+  svs <- traverse sanitySv benchData
 
   defaultMain
-      [ mkBench "Parse (Trifecta)" (parse trifecta) benchData
-      , mkBench "Parse (Data.Attoparsec.ByteString)" (parse attoparsecByteString) benchData
+      [ mkBench "Parse hw-dsv" parse benchData
       , mkBench "Parse Cassava" parseCassava benchData
-      , mkBench "Decode" dec svs
+      , mkBench "Decode sv" dec svs
       , mkBench "Decode Cassava" decCassava cassavas
-      , mkBench "Parse and decode (Trifecta)" (parseDec trifecta) benchData
-      , mkBench "Parse and decode (Data.Attoparsec.ByteString)" (parseDec attoparsecByteString) benchData
+      , mkBench "Parse and decode sv" parseDec benchData
       , mkBench "Parse with Cassava, decode with sv" parseCassavaDecSv benchData
       , mkBench "Parse and decode Cassava" parseDecCassava benchData
       ]
