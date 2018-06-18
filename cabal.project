@@ -3,7 +3,6 @@ packages:
   ./benchmarks
   ./examples
   ./sv-cassava
-  ./sv-common
   ./sv-syntax
 
 optimization: 2
