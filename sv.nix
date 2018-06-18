@@ -1,8 +1,8 @@
 { mkDerivation, attoparsec, base, bifunctors, bytestring
 , containers, contravariant, deepseq, hedgehog, hw-dsv, lens, mtl
 , parsec, parsers, profunctors, readable, semigroupoids, semigroups
-, stdenv, sv-common, tasty, tasty-hedgehog, tasty-hunit, text
-, transformers, trifecta, utf8-string, validation, vector, void
+, stdenv, tasty, tasty-hedgehog, tasty-hunit, text, transformers
+, trifecta, utf8-string, validation, vector, void
 }:
 mkDerivation {
   pname = "sv";
@@ -11,8 +11,8 @@ mkDerivation {
   libraryHaskellDepends = [
     attoparsec base bifunctors bytestring containers contravariant
     deepseq hw-dsv lens mtl parsec profunctors readable semigroupoids
-    semigroups sv-common text transformers trifecta utf8-string
-    validation vector void
+    semigroups text transformers trifecta utf8-string validation vector
+    void
   ];
   testHaskellDepends = [
     base bytestring contravariant hedgehog lens parsers semigroupoids

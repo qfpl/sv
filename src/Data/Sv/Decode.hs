@@ -166,7 +166,7 @@ import Data.Sv.Alien.Cassava
 import Data.Sv.Cursor
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
-import Data.Sv.Structure.Headedness
+import Data.Sv.Cursor.Headedness
 import Data.Sv.Cursor.Separator
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'

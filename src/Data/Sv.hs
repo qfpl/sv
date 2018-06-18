@@ -44,7 +44,7 @@ module Data.Sv (
   , module Data.Sv.Cursor.Separator
 
   -- * Structure
-  , module Data.Sv.Structure.Headedness
+  , module Data.Sv.Cursor.Headedness
 
   -- * Re-exports from contravariant and semigroupoids
   , Alt (..)
@@ -60,6 +60,7 @@ import Data.Functor.Contravariant (Contravariant (..))
 import Data.Functor.Contravariant.Divisible (Divisible (..), divided, Decidable (..), chosen)
 
 import Data.Sv.Cursor
+import Data.Sv.Cursor.Headedness
 import Data.Sv.Cursor.Separator
 import Data.Sv.Decode
 import Data.Sv.Decode.Type
@@ -67,4 +68,3 @@ import Data.Sv.Decode.Error
 import Data.Sv.Encode
 import Data.Sv.Encode.Options
 import Data.Sv.Encode.Type
-import Data.Sv.Structure.Headedness

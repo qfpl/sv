@@ -1,7 +1,7 @@
 module Data.Sv.Cursor where
 
 import Data.Sv.Cursor.Separator (Separator, HasSeparator (separator), comma)
-import Data.Sv.Structure.Headedness (Headedness (Headed), HasHeadedness (headedness))
+import Data.Sv.Cursor.Headedness (Headedness (Headed), HasHeadedness (headedness))
 
 -- | The default separator
 defaultSeparator :: Separator
