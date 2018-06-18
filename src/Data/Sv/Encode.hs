@@ -139,11 +139,11 @@ import qualified Data.Sequence as Seq
 import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import GHC.Word (Word8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
-import Data.Sv.Text.Escape (Escaper, Escaper', Unescaped (Unescaped), escapeChar, escapeString, escapeText, escapeUtf8, escapeUtf8Lazy)
 import Data.Sv.Cursor.Newline (newlineToBuilder)
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
@@ -198,12 +198,7 @@ encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
 encodeRowBuilder :: Encode a -> EncodeOptions -> a -> BS.Builder
 encodeRowBuilder e opts =
   let addSeparators = intersperseSeq (BS.word8 (view separator opts))
-      quotep = case _quoting opts of
-                 Never -> mempty
-                 AsNeeded -> mempty -- TODO
-                 Always -> BS.char7 '"'
-      addQuotes x = quotep <> x <> quotep
-  in  fold . addSeparators . fmap addQuotes . getEncode e opts
+  in  fold . addSeparators . getEncode e opts
 
 -- | Encode this 'Data.ByteString.ByteString' every time, ignoring the input.
 const :: Strict.ByteString -> Encode a
@@ -255,7 +250,32 @@ row enc = Encode $ \opts list -> join $ Seq.fromList $ fmap (getEncode enc opts)
 
 -- | Encode a single 'Char'
 char :: Encode Char
-char = escaped escapeChar BS.charUtf8 BS.stringUtf8
+char = escaped BS.charUtf8
+
+quotingIsNecessary :: EncodeOptions -> LBS.ByteString -> Bool
+quotingIsNecessary opts bs =
+  LBS.any p bs
+    where
+      sep = _encodeSeparator opts
+      p :: Word8 -> Bool
+      p w =
+        w == sep ||
+        w == 10  || -- lf
+        w == 13  || -- cr
+        w == 34     -- double quote
+
+quote :: LBS.ByteString -> BS.Builder
+quote bs =
+  let q = BS.charUtf8 '"'
+      bs' = BS.lazyByteString (escapeQuotes bs)
+  in  q <> bs' <> q
+
+escapeQuotes :: LBS.ByteString -> LBS.ByteString
+escapeQuotes = LBS.concatMap duplicateQuote
+  where
+    duplicateQuote :: Word8 -> LBS.ByteString
+    duplicateQuote 34 = LBS.pack [34,34] -- 34 = quote
+    duplicateQuote c  = LBS.singleton c
 
 -- | Encode an 'Int'
 int :: Encode Int
@@ -275,31 +295,34 @@ double = unsafeBuilder BS.doubleDec
 
 -- | Encode a 'String'
 string :: Encode String
-string = escaped' escapeString BS.stringUtf8
+string = escaped BS.stringUtf8
 
 -- | Encode a 'Data.Text.Text'
 text :: Encode T.Text
-text = escaped' escapeText (BS.byteString . T.encodeUtf8)
+text = escaped (BS.byteString . T.encodeUtf8)
 
 -- | Encode a strict 'Data.ByteString.ByteString'
 byteString :: Encode Strict.ByteString
-byteString = escaped' escapeUtf8 BS.byteString
+byteString = escaped BS.byteString
 
 -- | Encode a lazy 'Data.ByteString.Lazy.ByteString'
 lazyByteString :: Encode LBS.ByteString
-lazyByteString = escaped' escapeUtf8Lazy BS.lazyByteString
+lazyByteString = escaped BS.lazyByteString
 
-escaped :: Escaper s t -> (s -> BS.Builder) -> (t -> BS.Builder) -> Encode s
-escaped esc sb tb = mkEncodeWithOpts $ \opts s ->
-  case _quoting opts of
-    Never -> sb s
-    Always -> tb $ esc '"' (Unescaped s)
-    AsNeeded -> tb $ esc '"' (Unescaped s) -- TODO
-    --Nothing -> sb s
-    --Just q -> tb $ esc (review quoteChar q) (Unescaped s)
-
-escaped' :: Escaper' s -> (s -> BS.Builder) -> Encode s
-escaped' escaper = join (escaped escaper)
+escaped :: (s -> BS.Builder) -> Encode s
+escaped build =
+  mkEncodeWithOpts $ \opts s ->
+    let s' = build s
+        lbs = BS.toLazyByteString s'
+        quoted = quote lbs
+    in  case _quoting opts of
+          Never ->
+            s'
+          AsNeeded ->
+            if quotingIsNecessary opts lbs
+            then quoted
+            else s'
+          Always -> quoted
 
 -- | Encode a 'Bool' as True or False
 boolTrueFalse :: Encode Bool

@@ -126,7 +126,7 @@ examples :: [Example]
 examples =
   [ Example "Hello" "Goodbye" 5 5.1 (Product "text" 0.5) (Sum1 20)
   , Example "Yes" "no" 200 (-4.5) (Product "" 22) (Sum2 19.3)
-  , Example "a" "b" 0 0 (Product "words words words" 15) (Sum3 "More words")
+  , Example "a" "b" 0 0 (Product "words \"words\" words" 15) (Sum3 "More words")
   ]
 
 opts :: EncodeOptions

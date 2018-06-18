@@ -157,9 +157,7 @@ import qualified Data.Text.Lazy as LT
 import Data.Validation (_Validation)
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
-import GHC.Base (unsafeChr)
 import HaskellWorks.Data.Dsv.Lazy.Cursor as DSV
-import HaskellWorks.Data.Dsv.Lazy.Cursor.Type
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
@@ -183,7 +181,7 @@ parseDecode ::
   -> DecodeValidation ByteString [a]
 parseDecode d opts bs =
   let sep = _separator opts
-      cursor = DSV.makeCursor (unsafeChr (fromIntegral sep)) bs -- TODO Char conversion
+      cursor = DSV.makeCursor sep bs
   in  decode d $ case _headedness opts of
         Unheaded -> cursor
         Headed   -> nextPosition (nextRow cursor)

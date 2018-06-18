@@ -82,7 +82,7 @@ instance HasEncodeOptions EncodeOptions where
 
 -- | The default options for encoding.
 --
--- The default is a CSV file with double-quotes, LF lines, no spacing around
--- fields, and no terminating newline.
+-- The default is a CSV file with quotes when necessary, LF lines,
+-- and no terminating newline.
 defaultEncodeOptions :: EncodeOptions
-defaultEncodeOptions = EncodeOptions comma Always lf False
+defaultEncodeOptions = EncodeOptions comma AsNeeded lf False

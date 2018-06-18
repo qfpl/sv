@@ -40,8 +40,8 @@ let
     hw-dsv = pkgs.fetchFromGitHub {
       owner  = "haskell-works";
       repo   = "hw-dsv";
-      rev    = "7c3606379bcd7b371542d938b9847a7c753fdf11";
-      sha256 = "1447p30mclwd083p3r701nsvhv0mg75nr278nrxi14ymh8g298xr";
+      rev    = "v0.2";
+      sha256 = "07r9d2hxl1wfwnxlg2sffh1kw13xh8xcfb3ml7cyys4rahhzg56v";
     };
 
     hw-hspec-hedgehog = pkgs.fetchFromGitHub {
@@ -75,8 +75,8 @@ let
     bits-extra = pkgs.fetchFromGitHub {
       owner  = "haskell-works";
       repo   = "bits-extra";
-      rev    = "897d61bb5ae629bf7480b84222c2e9a71c03121b";
-      sha256 = "0l6zs9pv6hnsfsinf8zhayjcygdqc0l73zsmbhy23jp20hdr2i1n";
+      rev    = "v0.0.1.3";
+      sha256 = "0fwhsvx8rj4pj8f6nwv9q34r247j7j9ccwkqlk0009ayvcfrz34v";
     };
   };
 

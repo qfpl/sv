@@ -30,11 +30,9 @@ import Data.ByteString (ByteString)
 import Data.ByteString.UTF8 as UTF8
 import qualified Data.Csv as Cassava
 import qualified Data.Csv.Parser as Cassava
-import Data.Maybe (mapMaybe)
-import Data.Sv.Decode (Decode, Decode', DecodeValidation, Headedness (..))
+import Data.Sv.Decode (Decode', DecodeValidation, Headedness (..))
 import qualified Data.Sv.Decode as D
 import Data.Validation (bindValidation)
-import Data.Vector (Vector, (!?))
 import qualified Data.Vector as V
 
 -- | Use an sv 'Decode' to decode from cassava's 'Cassava.Csv' type.

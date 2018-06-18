@@ -49,9 +49,9 @@ decidableTests :: TestTree
 decidableTests =
   testGroup "decidable" [
     testCase "encode an Int" $
-      encodeRow intOrString opts i @?= "\"5\""
+      encodeRow intOrString opts i @?= "5"
   , testCase "encode a String" $
-      encodeRow intOrString opts s @?= "\"hello\""
+      encodeRow intOrString opts s @?= "hello"
   ]
 
 intEmptyAndString :: Encode IntAndString
@@ -64,16 +64,16 @@ divisibleTests :: TestTree
 divisibleTests =
   testGroup "divisible" [
     testCase "encode an IntAndString" $
-      encodeRow intAndString opts ias @?= "\"10\",\"goodbye\""
+      encodeRow intAndString opts ias @?= "10,goodbye"
   , testCase "encode an IntAndString with an empty between" $
-      encodeRow intEmptyAndString opts ias @?= "\"10\",\"\",\"goodbye\""
+      encodeRow intEmptyAndString opts ias @?= "10,,goodbye"
   ]
 
 encodeTests :: TestTree
 encodeTests =
   testCase "multiple lines" $
     encode (divided intAndString intOrString) opts [(IAS 3 "book", I 4), (IAS 7 "film", S "ok")]
-      @?= "\"3\",\"book\",\"4\"\n\"7\",\"film\",\"ok\""
+      @?= "3,book,4\n7,film,ok"
 
 escapeTests :: TestTree
 escapeTests =
