@@ -31,8 +31,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-{-# LANGUAGE BangPatterns #-}
-
 module Data.Sv.Alien.Cassava where
 
 import Data.ByteString.Builder (byteString, toLazyByteString, charUtf8)
@@ -79,10 +77,10 @@ escapedField = do
     _ <- dquote
     -- The scan state is 'True' if the previous character was a double
     -- quote.  We need to drop a trailing double quote left by scan.
-    s <- S.init <$> (A.scan False $ \s c -> if c == doubleQuote
-                                            then Just (not s)
-                                            else if s then Nothing
-                                                 else Just False)
+    s <- S.init <$> A.scan False (\s c -> if c == doubleQuote
+                                          then Just (not s)
+                                          else if s then Nothing
+                                               else Just False)
     if doubleQuote `S.elem` s
         then case Z.parse unescape s of
             Right r  -> return r

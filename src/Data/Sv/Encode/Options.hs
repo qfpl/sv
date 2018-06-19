@@ -9,8 +9,6 @@ Portability : non-portable
 Options to configure encoding
 -}
 
-{-# LANGUAGE OverloadedStrings #-}
-
 module Data.Sv.Encode.Options (
   EncodeOptions (EncodeOptions, _encodeSeparator, _quoting, _newline, _terminalNewline)
 , HasEncodeOptions (encodeOptions, quoting, newline, terminalNewline)
@@ -24,6 +22,13 @@ import Control.Lens (Lens')
 import Data.Sv.Cursor.Newline (Newline, lf)
 import Data.Sv.Cursor.Separator (Separator, HasSeparator (separator), comma)
 
+-- | Should the output file have quotes around every value, or only when they
+-- are required?
+--
+-- Beware the 'Never' constructor. It can construct malformed CSV files if
+-- there are fields containing quotes, newlines, or separators. It is the
+-- fastest option though, so you might like to use it if you're sure none
+-- of your encoded data will include those characters.
 data Quoting
   = Always
   | AsNeeded
@@ -77,7 +82,7 @@ instance HasEncodeOptions EncodeOptions where
     fmap (\ y -> EncodeOptions x1 x2 y x4) (f x3)
   {-# INLINE newline #-}
   terminalNewline f (EncodeOptions x1 x2 x3 x4) =
-    fmap (\ y -> EncodeOptions x1 x2 x3 y) (f x4)
+    fmap (EncodeOptions x1 x2 x3) (f x4)
   {-# INLINE terminalNewline #-}
 
 -- | The default options for encoding.
