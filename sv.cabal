@@ -71,14 +71,15 @@ source-repository    head
 
 library
   exposed-modules:     Data.Sv
+                       , Data.Sv.Alien.Cassava
                        , Data.Sv.Cursor
+                       , Data.Sv.Cursor.Headedness
+                       , Data.Sv.Cursor.Newline
+                       , Data.Sv.Cursor.Options
+                       , Data.Sv.Cursor.Separator
                        , Data.Sv.Decode
                        , Data.Sv.Decode.Error
                        , Data.Sv.Decode.Type
-                       , Data.Sv.Alien.Cassava
-                       , Data.Sv.Cursor.Headedness
-                       , Data.Sv.Cursor.Newline
-                       , Data.Sv.Cursor.Separator
                        , Data.Sv.Encode
                        , Data.Sv.Encode.Options
                        , Data.Sv.Encode.Type

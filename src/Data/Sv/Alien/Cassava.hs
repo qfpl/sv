@@ -31,7 +31,9 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -}
 
-module Data.Sv.Alien.Cassava where
+module Data.Sv.Alien.Cassava (
+  field
+) where
 
 import Data.ByteString.Builder (byteString, toLazyByteString, charUtf8)
 import Data.Attoparsec.ByteString.Char8 (char)

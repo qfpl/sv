@@ -21,6 +21,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Builder (Builder, byteString)
 import qualified Data.ByteString.UTF8 as UTF8
 
+-- | 'Newline' is a newtype around 'ByteString'
 newtype Newline
   = UnsafeMkNewline { toByteString :: ByteString }
     deriving (Eq, Ord)
@@ -28,11 +29,17 @@ newtype Newline
 instance Show Newline where
   showsPrec _ = showString . UTF8.toString . toByteString
 
+-- | Convert a 'Newline' to a ByteString 'Builder'. This is used by
+-- encoding.
 newlineToBuilder :: Newline -> Builder
 newlineToBuilder = byteString . toByteString
 
+-- | Unix/Linux newlines: a line feed character
+lf :: Newline
+lf = UnsafeMkNewline "\n"
+
+-- | DOS newlines: a carriage return character followed by a
+-- line feed character
 crlf :: Newline
 crlf = UnsafeMkNewline "\r\n"
 
-lf :: Newline
-lf = UnsafeMkNewline "\n"

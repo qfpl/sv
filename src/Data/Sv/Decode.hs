@@ -45,7 +45,7 @@ module Data.Sv.Decode (
 , Separator
 , Headedness(..)
 
-  -- * Running Decodes
+-- * Running Decodes
 , decode
 , parseDecode
 , parseDecodeFromFile
@@ -162,12 +162,10 @@ import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
 
-import Data.Sv.Alien.Cassava
 import Data.Sv.Cursor
+import Data.Sv.Alien.Cassava
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
-import Data.Sv.Cursor.Headedness
-import Data.Sv.Cursor.Separator
 
 -- | Decodes a sv into a list of its values using the provided 'Decode'
 decode :: Decode' ByteString a -> DsvCursor -> DecodeValidation ByteString [a]
@@ -516,8 +514,11 @@ mkDecode f =
     then (unexpectedEndOfRow, Ind i)
     else (f (v ! i), Ind (i+1))
 
--- | promotes a Decode to work on a whole 'Record' at once. This does not need
--- to be called by the user. Instead use 'decode'.
+-- | Promotes a 'Decode' to work on a whole 'Record' at once.
+-- This does not need to be called by the user. Instead use 'decode'.
+--
+-- This version is polymorhpic in the flavour of string used
+-- (see 'promoteStrict' and 'promoteLazy')
 promote :: forall a bs. (forall x. A.Parser x -> bs -> Either ByteString x) -> Decode' ByteString a -> Vector bs -> DecodeValidation ByteString a
 promote parse dec vecLazy =
   let len = length vecLazy
@@ -532,8 +533,12 @@ promote parse dec vecLazy =
       then d
       else d *> expectedEndOfRow (V.force (V.drop i vecField))
 
+-- | Promotes a 'Decode' to work on a whole 'Record' of strict ByteStrings at once.
+-- This does not need to be called by the user. Instead use 'decode'.
 promoteStrict :: Decode' ByteString a -> Vector ByteString -> DecodeValidation ByteString a
 promoteStrict = promote (\p b -> first UTF8.fromString $ A.parseOnly p b)
 
+-- | Promotes a 'Decode' to work on a whole 'Record' of lazy ByteStrings at once.
+-- This does not need to be called by the user. Instead use 'decode'.
 promoteLazy :: Decode' ByteString a -> Vector LBS.ByteString -> DecodeValidation ByteString a
 promoteLazy = promote (\p b -> first UTF8.fromString $ AL.eitherResult $ AL.parse p b)
