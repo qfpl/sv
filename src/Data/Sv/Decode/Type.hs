@@ -52,7 +52,7 @@ import GHC.Generics (Generic)
 -- 'Applicative' functor and an 'Alt' from the semigroupoids package.
 --
 -- 'Decode' is not a 'Monad', but we can perform monad-like operations on
--- it with 'Data.Sv.Decode.Field.>>==' and 'Data.Sv.Decode.bindDecode'
+-- it with 'Data.Sv.Decode.>>==' 'Data.Sv.Decode.bindDecode'
 newtype Decode e s a =
   Decode { unwrapDecode :: Compose (DecodeState s) (DecodeValidation e) a }
   deriving (Functor, Apply, Applicative)
@@ -77,8 +77,8 @@ instance Profunctor (Decode e) where
   lmap f (Decode (Compose dec)) = Decode (Compose (lmap f dec))
   rmap = fmap
 
--- | As we decode a row of data, we walk through its 'Data.Sv.Syntax.Field's. This 'Monad'
--- keeps track of our remaining 'Data.Sv.Syntax.Field's.
+-- | As we decode a row of data, we walk through its fields. This 'Monad'
+-- keeps track of our position.
 newtype DecodeState s a =
   DecodeState { getDecodeState :: ReaderT (Vector s) (State Ind) a }
   deriving (Functor, Apply, Applicative, Monad, MonadReader (Vector s), MonadState Ind)

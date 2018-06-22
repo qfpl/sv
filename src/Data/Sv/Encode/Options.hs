@@ -53,7 +53,7 @@ data EncodeOptions =
 -- @
 -- import Control.Lens
 --
--- defaultEncodeOptinons & quote .~ Just DoubleQuote & newline .~ LF
+-- defaultEncodeOptions & newline .~ crlf & quoting .~ Always
 -- @
 class HasSeparator c => HasEncodeOptions c where
   encodeOptions :: Lens' c EncodeOptions

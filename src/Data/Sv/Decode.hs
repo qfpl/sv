@@ -11,7 +11,7 @@ Stability   : experimental
 Portability : non-portable
 
 This module contains data structures, combinators, and primitives for
-decoding an 'Sv' into a list of your Haskell datatype.
+decoding a CSV into a list of your Haskell datatype.
 
 A file can be read with 'parseDecodeFromFile'. If you already have the text
 data in memory, it can be decoded with 'parseDecode'.

@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 {-|
 Module      : Data.Sv.Cursor.Newline
 Copyright   : (C) CSIRO 2017-2018
@@ -7,8 +5,9 @@ License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
 Portability : non-portable
+-}
 
-|-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Sv.Cursor.Newline (
   Newline (UnsafeMkNewline, toByteString)
