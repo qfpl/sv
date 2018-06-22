@@ -23,7 +23,7 @@ module Data.Sv.Print.Options (
 
 import Control.Lens
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Builder as Builder
 import Data.Text (Text)
@@ -68,7 +68,7 @@ utf8PrintOptions :: PrintOptions BS.ByteString
 utf8PrintOptions = PrintOptions Builder.byteString escapeUtf8
 
 -- | Print options for 'Sv's containing UTF-8 lazy bytestrings
-utf8LazyPrintOptions :: PrintOptions BL.ByteString
+utf8LazyPrintOptions :: PrintOptions LBS.ByteString
 utf8LazyPrintOptions = PrintOptions Builder.lazyByteString escapeUtf8Lazy
 
 -- | Print options for 'Sv's containing 'Text'

@@ -16,7 +16,7 @@ module Data.Sv.Encode.Type (
 ) where
 
 import Data.Bifoldable (bifoldMap)
-import qualified Data.ByteString.Builder as BS
+import Data.ByteString.Builder (Builder)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose))
 import Data.Semigroup (Semigroup)
@@ -31,7 +31,7 @@ import Data.Sv.Encode.Options
 -- It is 'Semigroup', 'Contravariant', 'Divisible', and 'Decidable', allowing
 -- for composition of these values to build bigger 'Encode's from smaller ones.
 newtype Encode a =
-  Encode { getEncode :: EncodeOptions -> a -> Seq BS.Builder }
+  Encode { getEncode :: EncodeOptions -> a -> Seq Builder }
   deriving (Semigroup, Monoid)
 
 instance Contravariant Encode where

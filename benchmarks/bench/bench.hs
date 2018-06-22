@@ -6,7 +6,7 @@ import Control.Lens
 import Criterion.Main
 import qualified Data.Attoparsec.ByteString as A
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy as LBS
 import Data.Csv as C
 import Data.Csv.Parser as C
 import Data.Vector (Vector)
@@ -47,7 +47,7 @@ sanityCassava bs = do
   s `seq` pure s
 
 parse :: ByteString -> DsvCursor
-parse = makeCursor comma . BL.fromStrict
+parse = makeCursor comma . LBS.fromStrict
 
 dec :: DsvCursor -> DecodeValidation ByteString [Row]
 dec = D.decode rowDec
@@ -56,13 +56,13 @@ decCassava :: C.Csv -> Either String (Vector Row)
 decCassava = runParser . traverse parseRecord
 
 parseDec :: ByteString -> DecodeValidation ByteString [Row]
-parseDec = D.parseDecode rowDec opts . BL.fromStrict
+parseDec = D.parseDecode rowDec opts . LBS.fromStrict
 
 parseCassava :: ByteString -> Either String C.Csv
 parseCassava = A.parseOnly (C.csv C.defaultDecodeOptions)
 
 parseDecCassava :: ByteString -> Either String (Vector Row)
-parseDecCassava = C.decode C.NoHeader . BL.fromStrict
+parseDecCassava = C.decode C.NoHeader . LBS.fromStrict
 
 parseCassavaDecSv :: ByteString -> DecodeValidation ByteString [Row]
 parseCassavaDecSv = parseDecodeFromCassava rowDec Unheaded C.defaultDecodeOptions

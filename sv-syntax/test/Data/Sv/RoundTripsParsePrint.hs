@@ -5,8 +5,8 @@ module Data.Sv.RoundTripsParsePrint (test_Roundtrips) where
 
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Builder as Builder
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Builder as BSB
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.UTF8 as UTF8
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -47,7 +47,7 @@ fieldRoundTrip =
       test =
         printAfterParseRoundTrip
         (spacedField sep UTF8.fromString :: CharParsing m => m (SpacedField ByteString))
-        (BL.toStrict . Builder.toLazyByteString . printSpaced defaultPrintOptions)
+        (LBS.toStrict . BSB.toLazyByteString . printSpaced defaultPrintOptions)
   in  testGroup "field" [
     test "empty" ""
   , test "unquoted" "wobble"

@@ -32,8 +32,8 @@ module Data.Sv.Text.Escape (
 ) where
 
 import Control.DeepSeq (NFData)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy.UTF8 as UTF8L
 import Data.Foldable (Foldable)
@@ -92,7 +92,7 @@ escapeText c =
 -- >>> escapeUtf8 ''' "hello 'bytestring'"
 -- "hello ''bytestring''"
 -- @
-escapeUtf8 :: Escaper' B.ByteString
+escapeUtf8 :: Escaper' BS.ByteString
 escapeUtf8 c =
   UTF8.fromString . concatMap (doubleChar c) . UTF8.toString . getRawUnescaped
 
@@ -105,7 +105,7 @@ escapeUtf8 c =
 -- >>> escapeUtf8Lazy ''' "hello 'lazy bytestring'"
 -- "hello ''lazy bytestring''"
 -- @
-escapeUtf8Lazy :: Escaper' L.ByteString
+escapeUtf8Lazy :: Escaper' LBS.ByteString
 escapeUtf8Lazy c =
   UTF8L.fromString . concatMap (doubleChar c) . UTF8L.toString . getRawUnescaped
 

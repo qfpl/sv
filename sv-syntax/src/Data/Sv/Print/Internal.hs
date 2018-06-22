@@ -23,7 +23,7 @@ module Data.Sv.Print.Internal (
 
 import Control.Lens (review, view)
 import Data.Bifoldable (bifoldMap)
-import Data.ByteString.Builder as Builder
+import Data.ByteString.Builder as BSB
 import Data.Semigroup ((<>))
 import Data.Semigroup.Foldable (intercalate1)
 
@@ -37,7 +37,7 @@ import Data.Sv.Text.Quote
 
 -- | Convert a 'Newline' to a ByteString 'Builder'
 printNewline :: Newline -> Builder
-printNewline = Builder.lazyByteString . newlineToString
+printNewline = BSB.lazyByteString . newlineToString
 
 -- | Convert a 'Field' to a ByteString 'Builder'
 printField :: PrintOptions s -> Field s -> Builder
@@ -53,13 +53,13 @@ printField opts f =
 -- | Convert a 'SpacedField' to a ByteString 'Builder'
 printSpaced :: PrintOptions s -> SpacedField s -> Builder
 printSpaced opts (Spaced b t a) =
-  let spc = foldMap (Builder.charUtf8 . spaceToChar)
+  let spc = foldMap (BSB.charUtf8 . spaceToChar)
   in  spc b <> printField opts a <> spc t
 
 -- | Convert a 'Record' to a ByteString 'Builder'
 printRecord :: PrintOptions s -> Separator -> Record s -> Builder
 printRecord opts sep (Record fs) =
-  intercalate1 (Builder.charUtf8 sep) (fmap (printSpaced opts) fs)
+  intercalate1 (BSB.charUtf8 sep) (fmap (printSpaced opts) fs)
 
 -- | Convert 'Records' to a ByteString 'Builder'.
 printRecords :: PrintOptions s -> Separator -> Records s -> Builder

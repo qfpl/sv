@@ -29,7 +29,7 @@ module Data.Sv.Print (
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
-import Data.ByteString.Builder as Builder
+import Data.ByteString.Builder as BSB
 import Data.Semigroup ((<>))
 import Data.Text (Text)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))

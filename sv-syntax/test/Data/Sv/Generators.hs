@@ -19,7 +19,7 @@ import Control.Applicative ((<$>), liftA2, liftA3)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.ByteString.Builder (Builder)
-import qualified Data.ByteString.Builder as Builder
+import qualified Data.ByteString.Builder as BSB
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
@@ -100,11 +100,11 @@ genCsvString =
       intercalate' _ (x:|[]) = x
       intercalate' m (x:|y:zs) = x <> m <> intercalate' m (y:|zs)
       genNewlineString :: Gen Builder
-      genNewlineString = Gen.element (fmap Builder.string7 ["\n", "\r", "\r\n"])
+      genNewlineString = Gen.element (fmap BSB.string7 ["\n", "\r", "\r\n"])
       genCsvRowString = intercalate' "," <$> Gen.nonEmpty (Range.linear 1 100) genCsvField
       enquote c s = fmap (\z -> c <> z <> c) s
       genCsvFieldString :: Gen Builder
-      genCsvFieldString = Builder.byteString <$>
+      genCsvFieldString = BSB.byteString <$>
         Gen.utf8 (Range.linear 1 50) (Gen.filter (`notElem` [',','"','\'','\n','\r']) Gen.unicode)
       genCsvField =
         Gen.choice [
@@ -112,4 +112,4 @@ genCsvString =
         , enquote "'" genCsvFieldString
         , genCsvFieldString
         ]
-  in  fmap (LBS.toStrict . Builder.toLazyByteString) $ intercalate' <$> genNewlineString <*> Gen.nonEmpty (Range.linear 0 100) genCsvRowString
+  in  fmap (LBS.toStrict . BSB.toLazyByteString) $ intercalate' <$> genNewlineString <*> Gen.nonEmpty (Range.linear 0 100) genCsvRowString

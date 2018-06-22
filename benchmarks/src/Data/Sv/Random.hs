@@ -19,7 +19,7 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Csv (FromRecord (..), FromField (..), (.!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy as LBS
 import Data.Functor.Alt ((<!>))
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (choose)
@@ -189,7 +189,7 @@ longRowDec = LongRow <$> D.byteString <*> D.byteString <*> D.int <*> D.integer <
 rows :: Int -> Gen [Row]
 rows n = replicateM n rowGen
 
-rowsSv :: Int -> Gen (LB.ByteString)
+rowsSv :: Int -> Gen (LBS.ByteString)
 rowsSv = fmap (E.encode rowEnc E.defaultEncodeOptions) . rows
 
 data BenchData a =
@@ -212,7 +212,7 @@ inds :: BenchData Int
 inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
 benchDataGen :: Gen (BenchData ByteString)
-benchDataGen = traverse (fmap LB.toStrict . rowsSv) inds
+benchDataGen = traverse (fmap LBS.toStrict . rowsSv) inds
 
 seed :: Seed
 seed = Seed.from 42

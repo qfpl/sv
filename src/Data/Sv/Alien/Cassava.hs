@@ -40,12 +40,13 @@ import Data.Attoparsec.ByteString.Char8 (char)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.Lazy as AL
 import qualified Data.Attoparsec.Zepto as Z
-import qualified Data.ByteString as S
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as BS
 import Data.ByteString.Lazy (toStrict)
-import qualified Data.ByteString.Unsafe as S
+import qualified Data.ByteString.Unsafe as BS
 import GHC.Word (Word8)
 
-type Field = S.ByteString
+type Field = ByteString
 
 doubleQuote, newline, cr :: Word8
 doubleQuote = 34
@@ -74,22 +75,22 @@ field = do
         _                         -> unescapedField
 {-# INLINE field #-}
 
-escapedField :: AL.Parser S.ByteString
+escapedField :: AL.Parser ByteString
 escapedField = do
     _ <- dquote
     -- The scan state is 'True' if the previous character was a double
     -- quote.  We need to drop a trailing double quote left by scan.
-    s <- S.init <$> A.scan False (\s c -> if c == doubleQuote
-                                          then Just (not s)
-                                          else if s then Nothing
-                                               else Just False)
-    if doubleQuote `S.elem` s
+    s <- BS.init <$> A.scan False (\s c -> if c == doubleQuote
+                                           then Just (not s)
+                                           else if s then Nothing
+                                                else Just False)
+    if doubleQuote `BS.elem` s
         then case Z.parse unescape s of
             Right r  -> return r
             Left err -> fail err
         else return s
 
-unescapedField :: AL.Parser S.ByteString
+unescapedField :: AL.Parser ByteString
 unescapedField = A.takeWhile (\ c -> c /= doubleQuote &&
                                             c /= newline &&
                                             c /= cr)
@@ -97,14 +98,14 @@ unescapedField = A.takeWhile (\ c -> c /= doubleQuote &&
 dquote :: AL.Parser Char
 dquote = char '"'
 
-unescape :: Z.Parser S.ByteString
+unescape :: Z.Parser ByteString
 unescape = (toStrict . toLazyByteString) <$!> go mempty where
   go acc = do
     h <- Z.takeWhile (/= doubleQuote)
     let rest = do
           start <- Z.take 2
-          if (S.unsafeHead start == doubleQuote &&
-              S.unsafeIndex start 1 == doubleQuote)
+          if (BS.unsafeHead start == doubleQuote &&
+              BS.unsafeIndex start 1 == doubleQuote)
               then go (acc `mappend` byteString h `mappend` charUtf8 '"')
               else fail "invalid CSV escape sequence"
     done <- Z.atEnd
