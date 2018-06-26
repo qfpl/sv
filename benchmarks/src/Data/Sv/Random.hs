@@ -15,7 +15,6 @@ import Control.Applicative ((<$>), (<*>), (<|>), empty)
 import Control.DeepSeq (NFData)
 import Control.Lens (makeLenses, makePrisms)
 import Control.Monad (replicateM)
-import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Csv (FromRecord (..), FromField (..), (.!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
@@ -23,18 +22,15 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Functor.Alt ((<!>))
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (choose)
-import Data.Functor.Identity (runIdentity)
 import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Hedgehog.Internal.Gen (runGenT)
-import Hedgehog.Internal.Seed (Seed)
-import Hedgehog.Internal.Tree (runTree, nodeValue)
 import qualified Hedgehog.Internal.Seed as Seed
 
+import Data.Sv.Alien.Hedgehog (sample)
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
 
@@ -217,15 +213,5 @@ benchDataGen = traverse (fmap LBS.toStrict . rowsSv) inds
 seed :: Seed
 seed = Seed.from 42
 
-sample :: Gen a -> a
-sample gen = loop (100 :: Int)
-  where
-    loop n =
-      if n <= 0
-      then error "sample: too many discards, could not generate a sample"
-      else case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
-        Nothing -> loop (n - 1)
-        Just x -> nodeValue x
-
 benchData :: BenchData ByteString
-benchData = sample benchDataGen
+benchData = sample seed benchDataGen

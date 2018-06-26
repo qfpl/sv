@@ -24,7 +24,7 @@ tested-with:
 
 library
   exposed-modules:     Data.Sv.Random
-  -- other-modules:       
+  other-modules:       Data.Sv.Alien.Hedgehog
   -- other-extensions:    
   build-depends:       base >= 4.8 && < 5
                        , bytestring >= 0.9.1.10 && < 0.11
