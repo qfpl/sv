@@ -123,7 +123,6 @@ module Data.Sv.Encode (
 import qualified Prelude as P
 import Prelude hiding (const, show)
 
-import Control.Applicative ((<**>))
 import Control.Lens (Getting, preview, view)
 import Control.Monad (join)
 import qualified Data.Bool as B (bool)
@@ -134,14 +133,13 @@ import Data.Foldable (fold)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Divisible (Divisible (conquer), Decidable (choose))
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
-import Data.Sequence (Seq, ViewL (EmptyL, (:<)), viewl, (<|))
 import qualified Data.Sequence as Seq
-import qualified Data.Sequence as S (singleton, empty)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import GHC.Word (Word8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
+import Data.Sv.Alien.Containers (intersperseSeq)
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
 import Data.Sv.Cursor.Newline (newlineToBuilder)
@@ -419,9 +417,3 @@ unsafeLazyByteString = unsafeBuilder BS.lazyByteString
 -- the result maybe not be valid CSV
 unsafeConst :: Strict.ByteString -> Encode a
 unsafeConst b = contramap (pure b) unsafeByteString
-
--- Added in containers 0.5.8, but we duplicate it here to support older GHCs
-intersperseSeq :: a -> Seq a -> Seq a
-intersperseSeq y xs = case viewl xs of
-  EmptyL -> S.empty
-  p :< ps -> p <| (ps <**> (pure y <| S.singleton id))

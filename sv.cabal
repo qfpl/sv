@@ -83,7 +83,7 @@ library
                        , Data.Sv.Encode
                        , Data.Sv.Encode.Options
                        , Data.Sv.Encode.Type
-  -- other-modules:
+  other-modules:       Data.Sv.Alien.Containers
   -- other-extensions:    
   build-depends:       attoparsec >= 0.12.1.4 && < 0.14
                        , base >=4.8 && <5
