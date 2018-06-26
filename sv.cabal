@@ -71,7 +71,6 @@ source-repository    head
 
 library
   exposed-modules:     Data.Sv
-                       , Data.Sv.Alien.Cassava
                        , Data.Sv.Cursor
                        , Data.Sv.Cursor.Headedness
                        , Data.Sv.Cursor.Newline
@@ -83,7 +82,8 @@ library
                        , Data.Sv.Encode
                        , Data.Sv.Encode.Options
                        , Data.Sv.Encode.Type
-  other-modules:       Data.Sv.Alien.Containers
+  other-modules:       Data.Sv.Alien.Cassava
+                       , Data.Sv.Alien.Containers
   -- other-extensions:    
   build-depends:       attoparsec >= 0.12.1.4 && < 0.14
                        , base >=4.8 && <5
