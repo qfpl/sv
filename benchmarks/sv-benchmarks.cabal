@@ -31,6 +31,7 @@ library
                        , cassava >= 0.4.1 && < 0.6
                        , contravariant >= 1.2 && < 1.5
                        , deepseq >= 1.1 && < 1.5
+                       , directory >= 1.2.1 && < 1.4
                        , hedgehog >= 0.5 && < 0.7
                        , lens >= 4 && < 5
                        , semigroups >= 0.18 && < 0.19

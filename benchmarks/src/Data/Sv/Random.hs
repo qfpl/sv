@@ -8,7 +8,7 @@ module Data.Sv.Random (
   Row (..)
   , BenchData (..)
   , rowDec
-  , benchData
+  , loadOrCreateTestFiles
 ) where
 
 import Control.Applicative ((<$>), (<*>), (<|>), empty)
@@ -29,6 +29,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Hedgehog.Internal.Seed as Seed
+import System.Directory (createDirectoryIfMissing, doesFileExist)
 
 import Data.Sv.Alien.Hedgehog (sample)
 import qualified Data.Sv.Decode as D
@@ -204,14 +205,46 @@ data BenchData a =
 
 instance NFData a => NFData (BenchData a) where
 
+instance Applicative BenchData where
+  pure x = BenchData x x x x x x x x x
+  BenchData g1 g2 g3 g4 g5 g6 g7 g8 g9
+    <*> BenchData a1 a2 a3 a4 a5 a6 a7 a8 a9 =
+      BenchData (g1 a1) (g2 a2) (g3 a3) (g4 a4) (g5 a5) (g6 a6) (g7 a7) (g8 a8) (g9 a9)
+
 inds :: BenchData Int
 inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
-benchDataGen :: Gen (BenchData ByteString)
-benchDataGen = traverse (fmap LBS.toStrict . rowsSv) inds
+benchDataGen :: Gen (BenchData LBS.ByteString)
+benchDataGen = traverse rowsSv inds
 
 seed :: Seed
 seed = Seed.from 42
 
-benchData :: BenchData ByteString
+benchData :: BenchData LBS.ByteString
 benchData = sample seed benchDataGen
+
+filenames :: BenchData FilePath
+filenames =
+  ("benchmarks/data/" <>) <$> BenchData
+    "1.csv"
+    "10.csv"
+    "100.csv"
+    "500.csv"
+    "1000.csv"
+    "5000.csv"
+    "10000.csv"
+    "50000.csv"
+    "100000.csv"
+
+loadOrCreateTestFiles :: IO (BenchData ByteString)
+loadOrCreateTestFiles = do
+  createDirectoryIfMissing True "benchmarks/data"
+  b <- and <$> traverse doesFileExist filenames
+  if   b
+  then do
+    putStrLn "Data files found. Loading..."
+    traverse BS.readFile filenames
+  else do
+    putStrLn "Data files not found. Creating..."
+    _ <- sequenceA (LBS.writeFile <$> filenames <*> benchData)
+    traverse BS.readFile filenames

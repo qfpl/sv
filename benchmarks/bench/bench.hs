@@ -82,6 +82,7 @@ mkBench nm func bs = bgroup nm [
 
 main :: IO ()
 main = do
+  benchData <- loadOrCreateTestFiles
   cassavas <- traverse sanityCassava benchData
   svs <- traverse sanitySv benchData
 
