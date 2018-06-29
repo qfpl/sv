@@ -22,9 +22,8 @@ text can be recovered.
 
 You can program against it using the provided functions and optics.
 For an example of this see
-<https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Requote.hs Requote.hs>
+<https://github.com/qfpl/svfactor/blob/master/examples/src/Data/Svfactor/Example/Requote.hs Requote.hs>
 -}
--- TODO Replace that link ^
 
 module Data.Svfactor.Syntax.Sv (
   Sv (Sv, _separatorSv, _maybeHeader, _records, _finalNewlines)

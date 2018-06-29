@@ -26,6 +26,10 @@ description:
   svfactor's parser is exposed so you can use it independently and printing is similarly standalone.
   .
   Please note that there are __known performance problems with svfactor__.
+  .
+  Examples:
+  * Handling multiple logical documents in one file: <https://github.com/qfpl/svfactor/blob/master/examples/src/Data/Svfactor/Example/Concat.hs Concat.hs>
+  * Fixing inconsistent formatting with lenses: <https://github.com/qfpl/svfactor/blob/master/examples/src/Data/Svfactor/Example/Requote.hs Requote.hs>
 
 homepage:            https://github.com/qfpl/sv
 bug-reports:         https://github.com/qfpl/sv/issues

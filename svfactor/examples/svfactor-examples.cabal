@@ -2,7 +2,7 @@ name:                svfactor-examples
 version:             0.1
 synopsis:            Examples of svfactor usage
 description:         Examples of svfactor usage. This can be run as a test-suite
-homepage:            https://github.com/qfpl/sv -- TODO update
+homepage:            https://github.com/qfpl/svfactor
 license:             BSD3
 license-file:        LICENCE
 author:              George Wilson
