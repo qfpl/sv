@@ -2,8 +2,7 @@
 
 <img src="http://i.imgur.com/0h9dFhl.png" width="300px"/>
 
-sv is a swiss army knife for CSV and similar formats (such as PSV, TSV,
-and many more). It can parse, decode, encode, and print these formats.
+sv (separated values) is a library for parsing, decoding, encoding, and printing CSV and similar formats (such as PSV, TSV, and many more)
 
 sv uses an Applicative combinator style for decoding and encoding, rather
 than a type class based approach. This means we can have multiple decoders
@@ -27,7 +26,7 @@ sv tries not to be opinionated about how your data should look. We intend for
 the user to have a great degree of freedom to build the right decoder for
 their dataset.
 
-sv is intended to be imported as follows:
+Parts of sv are intended to be imported as follows:
 
 ```hs
 import Data.Sv
@@ -41,6 +40,4 @@ import qualified Data.Sv.Encode as E
 * Encoding data to a CSV: [Encoding.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs)
 * Handling "NULL" and "Unknown" occuring in a column of numbers: [Numbers.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs)
 * Dealing with non-rectangular data: [Ragged.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs)
-* Handling multiple logical documents in one file: [Concat.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Concat.hs)
 * Integrating with an existing attoparsec parser to read date stamps: [TableTennis.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/TableTennis.hs)
-* Fixing inconsistent formatting with lenses: [Requote.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Requote.hs)
