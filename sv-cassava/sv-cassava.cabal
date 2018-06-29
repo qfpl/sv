@@ -33,7 +33,6 @@ library
     , bytestring >= 0.9.1.10 && < 0.11
     , cassava >= 0.4.1 && < 0.6
     , sv >= 0.2 && < 0.3
-    , sv-syntax >= 0.2 && < 0.3
     , utf8-string >= 1 && < 1.1
     , validation
     , vector >= 0.10 && < 0.13
@@ -55,7 +54,6 @@ test-suite hunit
     , cassava >= 0.4.1 && < 0.6
     , sv
     , sv-cassava
-    , sv-syntax
     , HUnit >= 1.4 && < 1.7
     , text >= 1.0 && < 1.3
     , validation >= 1 && < 1.1

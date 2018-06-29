@@ -5,8 +5,8 @@ import Data.ByteString (ByteString)
 import Text.Trifecta (CharParsing, parseFromFile)
 import System.Exit (exitFailure)
 
-import Data.Sv.Syntax
-import Data.Sv.Parse
+import Data.Svfactor.Syntax
+import Data.Svfactor.Parse
 
 file :: FilePath
 file = "csv/concat.csv"

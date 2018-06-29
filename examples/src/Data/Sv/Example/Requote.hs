@@ -5,11 +5,11 @@ import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import System.Exit (exitFailure)
 
-import Data.Sv.Parse (ParseOptions, defaultParseOptions, parseSvFromFile)
-import Data.Sv.Print (writeSvToFile)
-import Data.Sv.Syntax
-import Data.Sv.Text.Escape (Unescaped (Unescaped))
-import Data.Sv.Text.Quote (Quote (DoubleQuote))
+import Data.Svfactor.Parse (ParseOptions, defaultParseOptions, parseSvFromFile)
+import Data.Svfactor.Print (writeSvToFile)
+import Data.Svfactor.Syntax
+import Data.Svfactor.Text.Escape (Unescaped (Unescaped))
+import Data.Svfactor.Text.Quote (Quote (DoubleQuote))
 
 -- Manipulates the syntax directly with optics without decoding to data types
 -- Rewrites a file with inconsistent quoting to consistently use double quotes

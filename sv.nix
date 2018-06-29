@@ -1,8 +1,8 @@
-{ mkDerivation, attoparsec, base, bifunctors, bytestring
+{ mkDerivation, attoparsec, base, bifunctors, bytestring, cassava
 , containers, contravariant, deepseq, hedgehog, hw-dsv, lens, mtl
-, parsec, parsers, profunctors, readable, semigroupoids, semigroups
-, stdenv, tasty, tasty-hedgehog, tasty-hunit, text, transformers
-, trifecta, utf8-string, validation, vector, void
+, Only, parsec, parsers, profunctors, readable, semigroupoids
+, semigroups, stdenv, tasty, tasty-hedgehog, tasty-hunit, text
+, transformers, trifecta, utf8-string, validation, vector, void
 }:
 mkDerivation {
   pname = "sv";
@@ -15,9 +15,9 @@ mkDerivation {
     void
   ];
   testHaskellDepends = [
-    base bytestring contravariant hedgehog lens parsers semigroupoids
-    semigroups tasty tasty-hedgehog tasty-hunit text trifecta
-    utf8-string validation vector
+    base bytestring cassava contravariant hedgehog lens Only parsers
+    semigroupoids semigroups tasty tasty-hedgehog tasty-hunit text
+    trifecta utf8-string validation vector
   ];
   homepage = "https://github.com/qfpl/sv";
   description = "Encode and decode separated values (CSV, PSV, ...)";
