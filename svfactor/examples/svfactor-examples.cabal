@@ -1,8 +1,8 @@
-name:                sv-examples
-version:             0.2
-synopsis:            Examples of sv usage
-description:         Examples of sv usage. This can be run as a test-suite
-homepage:            https://github.com/qfpl/sv
+name:                svfactor-examples
+version:             0.1
+synopsis:            Examples of svfactor usage
+description:         Examples of svfactor usage. This can be run as a test-suite
+homepage:            https://github.com/qfpl/sv -- TODO update
 license:             BSD3
 license-file:        LICENCE
 author:              George Wilson
@@ -11,11 +11,9 @@ copyright:           Copyright (c) 2017-2018, Commonwealth Scientific and Indust
 category:            Example
 build-type:          Simple
 extra-source-files:  changelog.md
-                     , csv/encoding.expected.csv
-                     , csv/numbers.csv
-                     , csv/ragged.csv
-                     , csv/species.csv
-                     , csv/tt-handicap.csv
+                     , csv/concat.csv
+                     , csv/requote.csv
+                     , csv/requote.golden.csv
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3
                      , GHC == 8.0.2
@@ -23,13 +21,11 @@ tested-with:         GHC == 7.10.3
                      , GHC == 8.4.3
 
 library
-  exposed-modules:     Data.Sv.Example.Encoding
-                       , Data.Sv.Example.Numbers
-                       , Data.Sv.Example.Ragged
-                       , Data.Sv.Example.Species
-                       , Data.Sv.Example.TableTennis
+  exposed-modules:     Data.Svfactor.Example.Concat
+                       , Data.Svfactor.Example.Requote
   build-depends:       base >= 4.8 && < 5
                        , sv
+                       , svfactor
                        , bytestring >= 0.9.1.10 && < 0.11
                        , contravariant-extras >= 0.3 && < 0.4
                        , lens >= 4 && < 5
@@ -49,4 +45,4 @@ test-suite test
   hs-source-dirs:      test
   main-is:             test.hs
   build-depends:       base >= 4.8 && < 5
-                       , sv-examples
+                       , svfactor-examples

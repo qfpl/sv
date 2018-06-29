@@ -1,4 +1,4 @@
-module Data.Sv.Example.Concat where
+module Data.Svfactor.Example.Concat where
 
 import Control.Lens ((&), (.~))
 import Data.ByteString (ByteString)

@@ -1,4 +1,4 @@
-module Data.Sv.Example.Requote where
+module Data.Svfactor.Example.Requote where
 
 import Control.Lens
 import Control.Monad (unless)

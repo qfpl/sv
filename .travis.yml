@@ -64,7 +64,7 @@ install:
   - "sed -i.bak 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config"
   - rm -fv cabal.project cabal.project.local
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\" \"./sv-cassava\" \"./svfactor\"\\n' > cabal.project"
+  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\" \"./sv-cassava\"\\n' > cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
@@ -81,13 +81,10 @@ install:
   - if [ -f "./sv-cassava/configure.ac" ]; then
       (cd "./sv-cassava" && autoreconf -i);
     fi
-  - if [ -f "./svfactor/configure.ac" ]; then
-      (cd "./svfactor" && autoreconf -i);
-    fi
   - rm -f cabal.project.freeze
   - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
-  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist "./svfactor"/dist
+  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -98,11 +95,10 @@ script:
   - (cd "./benchmarks" && cabal sdist)
   - (cd "./examples" && cabal sdist)
   - (cd "./sv-cassava" && cabal sdist)
-  - (cd "./svfactor" && cabal sdist)
-  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz "./svfactor"/dist/svfactor-*.tar.gz ${DISTDIR}/
+  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal sv-cassava-*/*.cabal svfactor-*/*.cabal\\n' > cabal.project"
+  - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal sv-cassava-*/*.cabal\\n' > cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
@@ -119,7 +115,6 @@ script:
   - (cd sv-benchmarks-* && cabal check)
   - (cd sv-examples-* && cabal check)
   - (cd sv-cassava-* && cabal check)
-  - (cd svfactor-* && cabal check)
 
   # haddock
   - rm -rf ./dist-newstyle
