@@ -9,13 +9,6 @@ let
                        else pkgs.haskell.packages.${compiler};
 
   sources = {
-    separated = pkgs.fetchFromGitHub {
-      owner = "qfpl";
-      repo = "separated";
-      rev = "0.3.2.1-nix";
-      sha256 = "07f3nh1b4jvqq7lfyxp3ndgzap4dj31lbdjlgrjazrcd2h4zwdln";
-    };
-
     validation = pkgs.fetchFromGitHub {
       owner = "qfpl";
       repo = "validation";
@@ -83,7 +76,6 @@ let
   modifiedHaskellPackages = haskellPackages.override {
     overrides = self: super: {
       parsers = pkgs.haskell.lib.dontCheck super.parsers;
-      separated = pkgs.haskell.lib.dontCheck (import sources.separated { inherit nixpkgs compiler; });
       validation= import sources.validation { inherit nixpkgs compiler; };
       hedgehog = super.callCabal2nix "hedgehog" "${sources.hedgehog}/hedgehog" {};
       tasty-hedgehog = super.callCabal2nix "tasty-hedgehog" "${sources.tasty-hedgehog}" {};
