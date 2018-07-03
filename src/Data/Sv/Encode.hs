@@ -65,7 +65,6 @@ module Data.Sv.Encode (
 -- * Convenience constructors
 , mkEncodeBS
 , mkEncodeWithOpts
-, unsafeBuilder
 
 -- * Running an Encode
 , encode
@@ -112,6 +111,7 @@ module Data.Sv.Encode (
 , encodeOfMay
 
 -- * Unsafe encodes
+, unsafeBuilder
 , unsafeString
 , unsafeText
 , unsafeByteString
@@ -167,7 +167,7 @@ encodeToHandle :: Encode a -> EncodeOptions -> [a] -> Handle -> IO ()
 encodeToHandle enc opts as h =
   BS.hPutBuilder h (encodeBuilder enc opts as)
 
--- | Encode, writing to a file. This is way is more efficient than encoding to
+-- | Encode, writing to a file. This way is more efficient than encoding to
 -- a 'ByteString' and then writing to file.
 encodeToFile :: Encode a -> EncodeOptions -> [a] -> FilePath -> IO ()
 encodeToFile enc opts as fp = do
