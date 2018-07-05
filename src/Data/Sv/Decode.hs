@@ -36,7 +36,6 @@ module Data.Sv.Decode (
   -- * The types
   Decode (..)
 , Decode'
-, Validation (..)
 , DecodeValidation
 , DecodeError (..)
 , DecodeErrors (..)
@@ -113,9 +112,8 @@ module Data.Sv.Decode (
 , badParse
 , badDecode
 , validateEither
-, validateEither'
+, validateEitherWith
 , validateMaybe
-, validateMaybe'
 
 -- * Implementation details
 , runDecode
@@ -207,7 +205,7 @@ decodeEither f = mkDecode (validateEither . f)
 -- | Build a 'Decode', given a function that returns 'Either', and a function to
 -- build the error.
 decodeEither' :: (e -> DecodeError e') -> (s -> Either e a) -> Decode e' s a
-decodeEither' e f = mkDecode (validateEither' e . f)
+decodeEither' e f = mkDecode (validateEitherWith e . f)
 
 -- | Get the contents of a field without doing any decoding. This never fails.
 contents :: Decode e s s
@@ -433,7 +431,7 @@ withTrifecta =
 withAttoparsec :: A.Parser a -> Decode' ByteString a
 withAttoparsec =
   mkParserFunction
-    (validateEither' (BadDecode . fromString))
+    (validateEitherWith (BadDecode . fromString))
     A.parseOnly
 
 -- | Build a 'Decode' from a Parsec parser
@@ -443,7 +441,7 @@ withParsec =
   -- since it won't correspond obviously to a position in their source file.
   let dropPos = drop 1 . dropWhile (/= ':')
   in  mkParserFunction
-    (validateEither' (BadDecode . UTF8.fromString . dropPos . show))
+    (validateEitherWith (BadDecode . UTF8.fromString . dropPos . show))
     (\p s -> P.parse p mempty s)
 
 mkParserFunction ::

@@ -21,9 +21,8 @@ module Data.Sv.Decode.Error (
 
 -- * Conversions
 , validateEither
-, validateEither'
+, validateEitherWith
 , validateMaybe
-, validateMaybe'
 , validateTrifectaResult
 
 -- * Re-exports from @validation@
@@ -69,26 +68,21 @@ badDecode = decodeError . BadDecode
 
 -- | Build a 'DecodeValidation' from an 'Either'
 validateEither :: Either (DecodeError e) a -> DecodeValidation e a
-validateEither = validateEither' id
+validateEither = validateEitherWith id
 
 -- | Build a 'DecodeValidation' from an 'Either', given a function to build the error.
-validateEither' :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
-validateEither' f = either (decodeError . f) pure
+validateEitherWith :: (e -> DecodeError e') -> Either e a -> DecodeValidation e' a
+validateEitherWith f = either (decodeError . f) pure
 
 -- | Build a 'DecodeValidation' from a 'Maybe'. You have to supply an error
 -- to use in the 'Nothing' case
 validateMaybe :: DecodeError e -> Maybe b -> DecodeValidation e b
 validateMaybe e = maybe (decodeError e) pure
 
--- | Build a 'DecodeValidation' from a function that returns a 'Maybe'
--- You have to supply an error to use in the 'Nothing' case
-validateMaybe' :: (a -> Maybe b) -> DecodeError e -> a -> DecodeValidation e b
-validateMaybe' ab e a = validateMaybe e (ab a)
-
 -- | Convert a "Text.Trifecta" 'Text.Trifecta.Result' to a 'DecodeValidation'
 validateTrifectaResult :: (String -> DecodeError e) -> Trifecta.Result a -> DecodeValidation e a
 validateTrifectaResult f =
-  validateEither' f . trifectaResultToEither
+  validateEitherWith f . trifectaResultToEither
     where
       trifectaResultToEither r = case r of
         Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e

@@ -13,7 +13,7 @@ import Data.Vector (Vector)
 import HaskellWorks.Data.Dsv.Lazy.Cursor (DsvCursor (..), makeCursor)
 import System.Exit (exitFailure)
 
-import Data.Sv (DecodeValidation, defaultParseOptions, headedness, Headedness (Unheaded), comma)
+import Data.Sv (Validation (Failure, Success), DecodeValidation, defaultParseOptions, headedness, Headedness (Unheaded), comma)
 import Data.Sv.Cassava (parseDecodeFromCassava)
 import qualified Data.Sv.Decode as D
 import Data.Sv.Random
@@ -23,11 +23,11 @@ opts = defaultParseOptions & headedness .~ Unheaded
 
 failOnError :: Show e => DecodeValidation e a -> IO a
 failOnError v = case v of
-  D.Failure e -> do
+  Failure e -> do
       putStr "Sanity check failed: "
       print e
       exitFailure
-  D.Success s -> pure s
+  Success s -> pure s
 
 failOnLeft :: Show s => Either s a -> IO a
 failOnLeft = either (\s -> print s *> exitFailure) pure

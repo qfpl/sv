@@ -15,7 +15,7 @@ import qualified Data.Vector as V
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
---import Data.Sv
+import Data.Sv
 import qualified Data.Sv.Decode as D
 import Data.Sv.Cursor.Separator (comma)
 
@@ -80,9 +80,9 @@ str2 = liftA2 (,) D.contents D.contents
 varyingLengthTest :: TestTree
 varyingLengthTest =
   testCase "varyingLength has all the right errors" $
-    D.parseDecode str2 opts varyingLength @?=
-      D.Failure (D.DecodeErrors (D.UnexpectedEndOfRow :| [
-        D.ExpectedEndOfRow (V.fromList ["three"])
-      , D.ExpectedEndOfRow (V.fromList ["three", "four"])
-      , D.ExpectedEndOfRow (V.fromList ["three", "four", "five"])
+    parseDecode str2 opts varyingLength @?=
+      Failure (DecodeErrors (UnexpectedEndOfRow :| [
+        ExpectedEndOfRow (V.fromList ["three"])
+      , ExpectedEndOfRow (V.fromList ["three", "four"])
+      , ExpectedEndOfRow (V.fromList ["three", "four", "five"])
       ]))

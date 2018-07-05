@@ -30,6 +30,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.UTF8 as UTF8
 import qualified Data.Csv as Cassava
 import qualified Data.Csv.Parser as Cassava
+import Data.Sv (validateEitherWith)
 import Data.Sv.Decode (Decode', DecodeValidation, Headedness (..))
 import qualified Data.Sv.Decode as D
 import Data.Validation (bindValidation)
@@ -46,7 +47,7 @@ decodeFromCassava d =
 -- with the rest of sv.
 parseCassava :: Cassava.DecodeOptions -> ByteString -> DecodeValidation ByteString Cassava.Csv
 parseCassava opts =
-  D.validateEither' (D.BadParse . UTF8.fromString) . parseOnly (Cassava.csv opts)
+  validateEitherWith (D.BadParse . UTF8.fromString) . parseOnly (Cassava.csv opts)
 
 -- | Parse a 'Cassava.Csv' from a 'ByteString' using cassava's parser, then
 -- decode it using the given 'Decode'.

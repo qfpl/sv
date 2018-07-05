@@ -8,9 +8,17 @@ Portability : non-portable
 -}
 
 module Data.Sv.Cursor (
-  module Data.Sv.Cursor.Separator
-, module Data.Sv.Cursor.Headedness
-, module Data.Sv.Cursor.Options
+  ParseOptions (..)
+, defaultParseOptions
+, defaultSeparator
+, defaultHeadedness
+, Separator
+, comma
+, pipe
+, tab
+, HasSeparator (separator)
+, Headedness (..)
+, HasHeadedness (..)
 ) where
 
 import Data.Sv.Cursor.Headedness

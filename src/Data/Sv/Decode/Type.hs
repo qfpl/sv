@@ -49,10 +49,11 @@ import GHC.Generics (Generic)
 --
 -- There are primitive 'Decode's, and combinators for composing or
 -- otherwise manipulating them. In particular, 'Decode' is an
--- 'Applicative' functor and an 'Alt' from the semigroupoids package.
+-- 'Applicative' functor and an 'Alt' from the semigroupoids package, also known
+-- as a @SemiApplicative@.
 --
 -- 'Decode' is not a 'Monad', but we can perform monad-like operations on
--- it with 'Data.Sv.Decode.>>==' 'Data.Sv.Decode.bindDecode'
+-- it with 'Data.Sv.Decode.>>==' or 'Data.Sv.Decode.bindDecode'
 newtype Decode e s a =
   Decode { unwrapDecode :: Compose (DecodeState s) (DecodeValidation e) a }
   deriving (Functor, Apply, Applicative)

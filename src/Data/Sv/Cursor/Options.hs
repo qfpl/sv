@@ -23,7 +23,7 @@ import Data.Sv.Cursor.Headedness
 data ParseOptions =
   ParseOptions {
   -- | Which separator does the file use? Usually this is 'comma', but it can
-  -- also be 'pipe', or any other 'Char' ('Separator' = 'Char')
+  -- also be 'pipe', or any other 'Word8' ('Separator' = 'Word8')
     _separator :: Separator
 
   -- | Whether there is a header row with column names or not.
@@ -42,7 +42,7 @@ instance HasSeparator ParseOptions where
 defaultParseOptions :: ParseOptions
 defaultParseOptions = ParseOptions defaultSeparator defaultHeadedness
 
--- | The default separator
+-- | The default separator is comma.
 defaultSeparator :: Separator
 defaultSeparator = comma
 
