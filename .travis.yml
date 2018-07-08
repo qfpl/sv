@@ -60,7 +60,7 @@ before_install:
 install:
   - cabal --version
   - echo "$(${HC} --version) [$(${HC} --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - BENCH=${BENCH---disable-benchmarks}
+  - BENCH=${BENCH---enable-benchmarks}
   - TEST=${TEST---enable-tests}
   - HADDOCK=${HADDOCK-true}
   - UNCONSTRAINED=${UNCONSTRAINED-true}
@@ -88,9 +88,9 @@ install:
       cabal new-update head.hackage -v
     fi
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\" \"./sv-cassava\"\\n' > cabal.project"
+  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\" \"./sv-cassava\" \"./weigh\"\\n' > cabal.project"
   - touch cabal.project.local
-  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- sv | grep -vw -- sv-benchmarks | grep -vw -- sv-examples | grep -vw -- sv-cassava | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- sv | grep -vw -- sv-benchmarks | grep -vw -- sv-examples | grep -vw -- sv-cassava | grep -vw -- sv-weigh | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true
   - if [ -f "./configure.ac" ]; then
@@ -105,10 +105,13 @@ install:
   - if [ -f "./sv-cassava/configure.ac" ]; then
       (cd "./sv-cassava" && autoreconf -i);
     fi
+  - if [ -f "./weigh/configure.ac" ]; then
+      (cd "./weigh" && autoreconf -i);
+    fi
   - rm -f cabal.project.freeze
   - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
-  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist
+  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist "./weigh"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
@@ -119,12 +122,13 @@ script:
   - (cd "./benchmarks" && cabal sdist)
   - (cd "./examples" && cabal sdist)
   - (cd "./sv-cassava" && cabal sdist)
-  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz ${DISTDIR}/
+  - (cd "./weigh" && cabal sdist)
+  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz "./weigh"/dist/sv-weigh-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal sv-cassava-*/*.cabal\\n' > cabal.project"
+  - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal sv-cassava-*/*.cabal sv-weigh-*/*.cabal\\n' > cabal.project"
   - touch cabal.project.local
-  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- sv | grep -vw -- sv-benchmarks | grep -vw -- sv-examples | grep -vw -- sv-cassava | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
+  - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- sv | grep -vw -- sv-benchmarks | grep -vw -- sv-examples | grep -vw -- sv-cassava | grep -vw -- sv-weigh | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true
   # this builds all libraries and executables (without tests/benchmarks)
@@ -139,6 +143,7 @@ script:
   - (cd sv-benchmarks-* && cabal check)
   - (cd sv-examples-* && cabal check)
   - (cd sv-cassava-* && cabal check)
+  - (cd sv-weigh-* && cabal check)
 
   # haddock
   - rm -rf ./dist-newstyle
