@@ -17,7 +17,7 @@ import Test.Tasty.HUnit (testCase, (@?=))
 
 import Data.Sv
 import qualified Data.Sv.Decode as D
-import Data.Sv.Cursor.Separator (comma)
+import Data.Sv.Cursor (comma)
 
 test_Decode :: TestTree
 test_Decode =
@@ -63,7 +63,7 @@ opts = D.ParseOptions comma D.Unheaded
 intOrStringTest :: TestTree
 intOrStringTest =
     testCase "parse successfully" $
-      D.parseDecode v3ios opts csv1 @?= pure csv1'
+      parseDecode v3ios opts csv1 @?= pure csv1'
 
 varyingLength :: LBS.ByteString
 varyingLength = LBS.intercalate "\r\n" [

@@ -6,7 +6,7 @@ import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.Csv as Cassava
 import Data.Sv.Cassava
-import qualified Data.Sv.Decode as D
+import qualified Data.Sv.Decode.Core as D
 import Data.Text (Text)
 import qualified Data.Vector as V
 import System.Exit (exitFailure)

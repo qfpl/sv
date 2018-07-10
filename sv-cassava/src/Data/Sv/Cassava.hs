@@ -30,16 +30,15 @@ import Data.ByteString (ByteString)
 import Data.ByteString.UTF8 as UTF8
 import qualified Data.Csv as Cassava
 import qualified Data.Csv.Parser as Cassava
-import Data.Sv (validateEitherWith)
-import Data.Sv.Decode (Decode', DecodeValidation, Headedness (..))
-import qualified Data.Sv.Decode as D
+import Data.Sv.Decode.Core (Decode', DecodeValidation, Headedness (..), validateEitherWith)
+import qualified Data.Sv.Decode.Core as D
 import Data.Validation (bindValidation)
 import qualified Data.Vector as V
 
 -- | Use an sv 'Decode' to decode from cassava's 'Cassava.Csv' type.
 decodeFromCassava :: Decode' ByteString a -> Cassava.Csv -> DecodeValidation ByteString [a]
 decodeFromCassava d =
-  traverse (D.promoteStrict d) . V.toList
+  traverse (D.promote d) . V.toList
 
 -- | Parse a 'Cassava.Csv' from a 'ByteString' using cassava's parser
 --

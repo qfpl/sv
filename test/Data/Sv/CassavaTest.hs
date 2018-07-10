@@ -4,7 +4,9 @@ module Data.Sv.CassavaTest (test_CassavaAgreement) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Csv as Csv
-import Data.Sv (Decode', Validation (Failure, Success), Headedness (Unheaded), defaultParseOptions)
+import Data.Sv (Validation (Failure, Success), Headedness (Unheaded), defaultParseOptions)
+import qualified Data.Sv as Sv (parseDecode)
+import Data.Sv.Decode (Decode')
 import qualified Data.Sv.Decode as Sv
 import Data.Vector as V
 import Data.Tuple.Only (Only (Only, fromOnly))

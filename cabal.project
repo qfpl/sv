@@ -3,6 +3,7 @@ packages:
   ./benchmarks
   ./examples
   ./sv-cassava
+  ./sv-core
   ./weigh
 
 optimization: 2
