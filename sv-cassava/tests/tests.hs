@@ -6,6 +6,7 @@ import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.Csv as Cassava
 import Data.Sv.Cassava
+import Data.Sv.Structure.Core (Headedness (Headed, Unheaded))
 import qualified Data.Sv.Decode.Core as D
 import Data.Text (Text)
 import qualified Data.Vector as V
@@ -54,10 +55,10 @@ decodeTest = TestLabel "decode" . TestCase $
 parseDecodeTest :: Test
 parseDecodeTest = TestLabel "parse+decode" . TestList $
   [ TestLabel "unheaded" . TestCase $
-      parseDecodeFromCassava testRowDec D.Unheaded Cassava.defaultDecodeOptions bs1 @?=
+      parseDecodeFromCassava testRowDec Unheaded Cassava.defaultDecodeOptions bs1 @?=
         pure decoded1
   , TestLabel "headed" . TestCase $
-      parseDecodeFromCassava testRowDec D.Headed Cassava.defaultDecodeOptions bs2 @?=
+      parseDecodeFromCassava testRowDec Headed Cassava.defaultDecodeOptions bs2 @?=
         pure decoded1
   ]
 

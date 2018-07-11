@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Sv.Cursor.Options
+Module      : Data.Sv.Parse
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -7,15 +7,15 @@ Stability   : experimental
 Portability : non-portable
 -}
 
-module Data.Sv.Cursor.Options (
+module Data.Sv.Parse (
   ParseOptions (..)
 , defaultParseOptions
 , defaultSeparator
 , defaultHeadedness
 ) where
 
-import Data.Sv.Cursor.Separator
-import Data.Sv.Cursor.Headedness
+import Data.Sv.Structure.Separator (Separator, HasSeparator (separator), comma)
+import Data.Sv.Structure.Headedness (Headedness (Headed), HasHeadedness (headedness))
 
 -- | A 'ParseOptions' informs the parser how to parse your file.
 --

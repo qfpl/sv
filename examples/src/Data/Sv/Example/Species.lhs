@@ -42,7 +42,7 @@ The parser needs some configuration to parse our file. For example, it
 needs to know which separator character we're using - in our case: comma.
 It's useful to start from the default options and modify them using lens, but
 you could just as easily modify them with record syntax, or build a config from
-scratch using the types and values defined in Data.Sv.Cursor.Options
+scratch using the types and values defined in Data.Sv.Parse
 
 \begin{code}
 opts :: ParseOptions

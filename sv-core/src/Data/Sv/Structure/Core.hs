@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Sv.Cursor.Core
+Module      : Data.Sv.Structure.Core
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -7,12 +7,8 @@ Stability   : experimental
 Portability : non-portable
 -}
 
-module Data.Sv.Cursor.Core (
-  ParseOptions (..)
-, defaultParseOptions
-, defaultSeparator
-, defaultHeadedness
-, Separator
+module Data.Sv.Structure.Core (
+  Separator
 , comma
 , pipe
 , tab
@@ -21,6 +17,5 @@ module Data.Sv.Cursor.Core (
 , HasHeadedness (..)
 ) where
 
-import Data.Sv.Cursor.Headedness
-import Data.Sv.Cursor.Options
-import Data.Sv.Cursor.Separator
+import Data.Sv.Structure.Headedness
+import Data.Sv.Structure.Separator

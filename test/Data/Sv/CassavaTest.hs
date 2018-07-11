@@ -4,7 +4,7 @@ module Data.Sv.CassavaTest (test_CassavaAgreement) where
 
 import qualified Data.ByteString as BS
 import qualified Data.Csv as Csv
-import Data.Sv (Validation (Failure, Success), Headedness (Unheaded), defaultParseOptions)
+import Data.Sv (Validation (Failure, Success), Headedness (Unheaded), ParseOptions (_headedness), defaultParseOptions)
 import qualified Data.Sv as Sv (parseDecode)
 import Data.Sv.Decode (Decode')
 import qualified Data.Sv.Decode as Sv
@@ -28,8 +28,8 @@ test_CassavaAgreement =
     , cassavaAgreement "double" Sv.double (Gen.double (Range.exponentialFloat (-10000000) 10000000))
     ]
 
-opts :: Sv.ParseOptions
-opts = defaultParseOptions { Sv._headedness = Unheaded }
+opts :: ParseOptions
+opts = defaultParseOptions { _headedness = Unheaded }
 
 -- | Test that decoding with sv gets the same result as decoding with cassava
 cassavaAgreement :: forall a . (Csv.FromField a, Csv.ToField a, Show a, Eq a) => TestName -> Decode' BS.ByteString a -> Gen a -> TestTree

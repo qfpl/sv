@@ -142,7 +142,7 @@ import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, h
 import Data.Sv.Alien.Containers (intersperseSeq)
 import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
 import Data.Sv.Encode.Type (Encode (Encode, getEncode))
-import Data.Sv.Cursor.Newline (newlineToBuilder)
+import Data.Sv.Structure.Newline (newlineToBuilder)
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
 mkEncodeBS :: (a -> LBS.ByteString) -> Encode a

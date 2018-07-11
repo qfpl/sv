@@ -17,7 +17,6 @@ import Test.Tasty.HUnit (testCase, (@?=))
 
 import Data.Sv
 import qualified Data.Sv.Decode as D
-import Data.Sv.Cursor (comma)
 
 test_Decode :: TestTree
 test_Decode =
@@ -57,8 +56,8 @@ csv1' =
   , V3 (I 7) (S "unquoted text") (I 5)
   ]
 
-opts :: D.ParseOptions
-opts = D.ParseOptions comma D.Unheaded
+opts :: ParseOptions
+opts = ParseOptions comma Unheaded
 
 intOrStringTest :: TestTree
 intOrStringTest =

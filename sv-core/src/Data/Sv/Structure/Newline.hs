@@ -1,5 +1,5 @@
 {-|
-Module      : Data.Sv.Cursor.Newline
+Module      : Data.Sv.Structure.Newline
 Copyright   : (C) CSIRO 2017-2018
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
@@ -9,7 +9,7 @@ Portability : non-portable
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Sv.Cursor.Newline (
+module Data.Sv.Structure.Newline (
   Newline (UnsafeMkNewline, toByteString)
 , newlineToBuilder
 , crlf

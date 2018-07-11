@@ -19,8 +19,8 @@ module Data.Sv.Encode.Options (
 
 import Control.Lens (Lens')
 
-import Data.Sv.Cursor.Newline (Newline, lf)
-import Data.Sv.Cursor.Separator (Separator, HasSeparator (separator), comma)
+import Data.Sv.Structure.Newline (Newline, lf)
+import Data.Sv.Structure.Separator (Separator, HasSeparator (separator), comma)
 
 -- | Should the output file have quotes around every value, or only when they
 -- are required?

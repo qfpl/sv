@@ -13,12 +13,11 @@ import Data.Vector (Vector)
 import HaskellWorks.Data.Dsv.Lazy.Cursor (DsvCursor (..), makeCursor)
 import System.Exit (exitFailure)
 
-import Data.Sv (Validation (Failure, Success), DecodeValidation, defaultParseOptions, headedness, Headedness (Unheaded), comma)
+import Data.Sv (Validation (Failure, Success), DecodeValidation, ParseOptions, defaultParseOptions, headedness, Headedness (Unheaded), comma, parseDecode, parseDecodeFromDsvCursor)
 import Data.Sv.Cassava (parseDecodeFromCassava)
-import qualified Data.Sv.Decode as D
 import Data.Sv.Random
 
-opts :: D.ParseOptions
+opts :: ParseOptions
 opts = defaultParseOptions & headedness .~ Unheaded
 
 failOnError :: Show e => DecodeValidation e a -> IO a
@@ -50,13 +49,13 @@ parse :: ByteString -> DsvCursor
 parse = makeCursor comma . LBS.fromStrict
 
 dec :: DsvCursor -> DecodeValidation ByteString [Row]
-dec = D.decode rowDec
+dec = parseDecodeFromDsvCursor rowDec opts
 
 decCassava :: C.Csv -> Either String (Vector Row)
 decCassava = runParser . traverse parseRecord
 
 parseDec :: ByteString -> DecodeValidation ByteString [Row]
-parseDec = D.parseDecode rowDec opts . LBS.fromStrict
+parseDec = parseDecode rowDec opts . LBS.fromStrict
 
 parseCassava :: ByteString -> Either String C.Csv
 parseCassava = A.parseOnly (C.csv C.defaultDecodeOptions)

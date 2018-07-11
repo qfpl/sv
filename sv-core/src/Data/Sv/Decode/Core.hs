@@ -36,10 +36,6 @@ module Data.Sv.Decode.Core (
 , DecodeError (..)
 , DecodeErrors (..)
 
-, ParseOptions (..)
-, Separator
-, Headedness(..)
-
 -- * Running Decodes
 , decode
 
@@ -149,7 +145,6 @@ import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import qualified Text.Trifecta as Tri
 
-import Data.Sv.Cursor.Core
 import Data.Sv.Decode.Error
 import Data.Sv.Decode.Type
 
