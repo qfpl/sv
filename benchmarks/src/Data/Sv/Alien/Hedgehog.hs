@@ -39,11 +39,7 @@ import Hedgehog.Internal.Seed (Seed)
 import Hedgehog.Internal.Tree (runTree, nodeValue)
 
 sample :: Seed -> Gen a -> a
-sample seed gen = loop (100 :: Int)
-  where
-    loop n =
-      if n <= 0
-      then error "sample: too many discards, could not generate a sample"
-      else case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
-        Nothing -> loop (n - 1)
-        Just x -> nodeValue x
+sample seed gen =
+  case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
+    Nothing -> error "could not generate a sample"
+    Just x -> nodeValue x
