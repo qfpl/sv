@@ -110,6 +110,7 @@ module Data.Sv.Decode.Core (
 , buildDecode
 , mkDecode
 , promote
+, promote'
 ) where
 
 import Prelude hiding (either)
@@ -474,14 +475,20 @@ mkDecode f =
 
 -- | Promotes a 'Decode' to work on a whole 'Record' at once.
 -- This does not need to be called by the user. Instead use 'decode'.
+promote :: Decode' s a -> Vector s -> DecodeValidation s a
+promote = promote' id
+{-# INLINE promote #-}
+
+-- | Promotes a 'Decode' to work on a whole 'Record' at once.
+-- This does not need to be called by the user. Instead use 'decode'.
 --
--- This version is polymorhpic in the flavour of string used
--- (see 'promoteStrict' and 'promoteLazy')
-promote :: Decode' ByteString a -> Vector ByteString -> DecodeValidation ByteString a
-promote dec vecField =
+-- This version lets the error string and input string type pararms
+-- differ, but needs a function to convert between them.
+promote' :: (s -> e) -> Decode e s a -> Vector s -> DecodeValidation e a
+promote' se dec vecField =
   let len = length vecField
   in  case runDecode dec vecField (Ind 0) of
     (d, Ind i) ->
       if i >= len
       then d
-      else d *> expectedEndOfRow (V.force (V.drop i vecField))
+      else d *> expectedEndOfRow (V.force (fmap se (V.drop i vecField)))

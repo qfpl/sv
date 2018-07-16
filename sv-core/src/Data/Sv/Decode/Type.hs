@@ -24,6 +24,9 @@ module Data.Sv.Decode.Type (
 , Validation (..)
 ) where
 
+import Prelude hiding ((.), id)
+
+import Control.Category (Category ((.), id))
 import Control.DeepSeq (NFData)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
 import Control.Monad.State (State, runState, state, MonadState)
@@ -33,9 +36,10 @@ import Data.Functor.Bind (Bind ((>>-)))
 import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty
 import Data.Semigroup (Semigroup)
+import Data.Semigroupoid (Semigroupoid (o))
 import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (Validation (Success, Failure))
-import Data.Vector (Vector)
+import Data.Vector (Vector, (!?))
 import GHC.Generics (Generic)
 
 -- | A @'Decode' e s a@ is for decoding some fields from a CSV row into our type 'a'.
@@ -77,6 +81,26 @@ instance Alt (Decode e s) where
 instance Profunctor (Decode e) where
   lmap f (Decode (Compose dec)) = Decode (Compose (lmap f dec))
   rmap = fmap
+
+instance Semigroupoid (Decode e) where
+  r `o` s = case r of
+    Decode (Compose (DecodeState (ReaderT r'))) -> case s of
+      Decode (Compose (DecodeState (ReaderT s'))) ->
+        buildDecode $ \vec ind -> case runState (s' vec) ind of
+            (v,ind') -> case v of
+              Failure e -> (Failure e, ind')
+              Success x ->
+                (fst (runState (r' (pure x)) (Ind 0)), ind')
+
+instance Category (Decode e) where
+  (.) = o
+  id =
+    buildDecode $ \vec ind -> case ind of
+      Ind i -> case vec !? i of
+        Nothing ->
+          let err = Failure . DecodeErrors $ pure UnexpectedEndOfRow
+          in  (err, ind)
+        Just a  -> (pure a, ind)
 
 -- | As we decode a row of data, we walk through its fields. This 'Monad'
 -- keeps track of our position.
