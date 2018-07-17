@@ -24,9 +24,6 @@ module Data.Sv.Decode.Type (
 , Validation (..)
 ) where
 
-import Prelude hiding ((.), id)
-
-import Control.Category (Category ((.), id))
 import Control.DeepSeq (NFData)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
 import Control.Monad.State (State, runState, state, MonadState)
@@ -39,7 +36,7 @@ import Data.Semigroup (Semigroup)
 import Data.Semigroupoid (Semigroupoid (o))
 import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (Validation (Success, Failure))
-import Data.Vector (Vector, (!?))
+import Data.Vector (Vector)
 import GHC.Generics (Generic)
 
 -- | A @'Decode' e s a@ is for decoding some fields from a CSV row into our type 'a'.
@@ -92,16 +89,6 @@ instance Semigroupoid (Decode e) where
               Success x ->
                 (fst (runState (r' (pure x)) (Ind 0)), ind')
 
-instance Category (Decode e) where
-  (.) = o
-  id =
-    buildDecode $ \vec ind -> case ind of
-      Ind i -> case vec !? i of
-        Nothing ->
-          let err = Failure . DecodeErrors $ pure UnexpectedEndOfRow
-          in  (err, ind)
-        Just a  -> (pure a, ind)
-
 -- | As we decode a row of data, we walk through its fields. This 'Monad'
 -- keeps track of our position.
 newtype DecodeState s a =
@@ -124,7 +111,7 @@ runDecodeState :: DecodeState s a -> Vector s -> Ind -> (a, Ind)
 runDecodeState = fmap runState . runReaderT . getDecodeState
 
 -- | Newtype for indices into the field vector
-newtype Ind = Ind Int
+newtype Ind = Ind Int deriving (Eq, Ord, Show)
 
 -- | 'DecodeError' is a value indicating what went wrong during a parse or
 -- decode. Its constructor indictates the type of error which occured, and
