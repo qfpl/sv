@@ -15,8 +15,8 @@ import Data.Vector (Vector, fromList, toList)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.QuickCheck (Arbitrary (arbitrary), CoArbitrary (coarbitrary), Gen, testProperty, oneof, listOf)
 
-import Data.Sv
-import qualified Data.Sv.Decode as D
+import Data.Sv.Decode.Type
+import qualified Data.Sv.Decode.Core as D
 
 test_Laws :: TestTree
 test_Laws =
