@@ -3,7 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Data.Sv.Laws (test_Laws) where
+module Data.Sv.Core.Laws (test_Laws) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS

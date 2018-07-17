@@ -80,7 +80,7 @@ test-suite             tasty
   main-is:
                        tasty.hs
   other-modules:
-                       Data.Sv.Laws
+                       Data.Sv.Core.Laws
   default-language:
                        Haskell2010
   build-depends:
