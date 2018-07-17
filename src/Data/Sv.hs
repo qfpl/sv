@@ -97,6 +97,7 @@ parseDecodeFromFile ::
 parseDecodeFromFile d opts fp =
   parseDecode d opts <$> liftIO (LBS.readFile fp)
 
+-- | Decode from a 'DsvCursor'
 parseDecodeFromDsvCursor :: Decode' ByteString a -> ParseOptions -> DsvCursor -> DecodeValidation ByteString [a]
 parseDecodeFromDsvCursor d opts cursor =
   let toField = Prelude.either badParse pure . parse
