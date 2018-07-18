@@ -8,12 +8,16 @@ module Data.Sv.DecodeTest (test_Decode) where
 import Control.Applicative (liftA2)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Char8 as BS8
 import Data.Functor.Alt ((<!>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Text.Read (readMaybe)
 import Data.Semigroup (Semigroup)
+import Data.Semigroupoid (Semigroupoid (o))
 import qualified Data.Vector as V
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
+import Data.Text
 
 import Data.Sv
 import qualified Data.Sv.Decode as D
@@ -23,6 +27,7 @@ test_Decode =
   testGroup "Decode" [
     intOrStringTest
   , varyingLengthTest
+  , semigroupoidTest
   ]
 
 data IntOrString =
@@ -85,3 +90,34 @@ varyingLengthTest =
       , ExpectedEndOfRow (V.fromList ["three", "four"])
       , ExpectedEndOfRow (V.fromList ["three", "four", "five"])
       ]))
+
+semiTestString1 :: LBS.ByteString
+semiTestString1 = "hello,5,6.6,goodbye"
+
+semiTestString2 :: LBS.ByteString
+semiTestString2 = "hello,no,6.6,goodbye"
+
+semiTestString3 :: LBS.ByteString
+semiTestString3 = "hello,5,false,goodbye"
+
+parseDecoder :: D.Decode' ByteString Int
+parseDecoder = D.contents D.>>==
+  \bs -> validateMaybe (D.BadDecode bs) . readMaybe . BS8.unpack $ bs
+
+data Semi = Semi Text Int Double Text deriving (Eq, Show)
+
+semiD :: D.Decode' ByteString Semi
+semiD = Semi <$> D.utf8 <*> (parseDecoder `o` D.contents) <*> D.double <*> D.utf8
+
+semigroupoidTest :: TestTree
+semigroupoidTest = testGroup "Semigroupoid Decode"
+  [ testCase "Does the right thing in the case of success" $
+      parseDecode semiD opts semiTestString1 @?=
+        pure [Semi "hello" 5 6.6 "goodbye"]
+  , testCase "Does the right thing in the case of left failure" $
+      parseDecode semiD opts semiTestString2 @?=
+        Failure (DecodeErrors (pure (BadDecode "no")))
+  , testCase "Does the right thing in the case of right failure" $
+      parseDecode semiD opts semiTestString3 @?=
+        Failure (DecodeErrors (pure (BadDecode "Couldn't parse \"false\" as a double")))
+  ]
