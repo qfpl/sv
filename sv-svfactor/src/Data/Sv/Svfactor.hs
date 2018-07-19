@@ -46,7 +46,7 @@ parseDecode =
 -- This version lets you control which parser is used.
 parseDecode' :: SvParser s -> D.Decode s (SpacedField s) a -> ParseOptions s -> s -> D.DecodeValidation s [a]
 parseDecode' svp dec opts = 
-  flip bindValidation (decodeSvfactor dec) . D.validateEitherWith D.BadParse . parse' svp opts
+  flip bindValidation (decodeSvfactor dec) . D.validateEitherWith D.BadParse . parseSv' svp opts
 
 -- | Decode from an 'Sv' using the given decoder
 decodeSvfactor :: D.Decode s (SpacedField s) a -> Sv s -> D.DecodeValidation s [a]
