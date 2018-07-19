@@ -6,8 +6,7 @@ version:             0.2
 synopsis:            Integration to use sv with cassava's parser
 description:
   This package provides functions allowing you to use cassava's parser
-  together with sv's decoding. You might prefer this to using sv's own
-  parser if speed is a significant concern.
+  together with sv-core's decoding.
 homepage:            https://github.com/qfpl/sv
 license:             BSD3
 license-file:        LICENCE
@@ -24,6 +23,10 @@ tested-with:
   , GHC == 8.2.2
   , GHC == 8.4.3
   , GHC == 8.6.1
+
+source-repository    head
+  type:              git
+  location:          git@github.com/qfpl/sv.git
 
 library
   exposed-modules:
