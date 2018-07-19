@@ -3,6 +3,20 @@ packages:
   ./benchmarks
   ./examples
   ./sv-cassava
+  ./sv-core
+  ./sv-svfactor
+  ./weigh
 
 optimization: 2
 
+package bits-extra
+  flags: +bmi2
+
+package hw-rankselect
+  flags: +bmi2
+
+package hw-rankselect-base
+  flags: +bmi2
+
+package hw-dsv
+  flags: +bmi2

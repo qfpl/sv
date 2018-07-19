@@ -21,7 +21,7 @@ import qualified Data.Sv.Decode as D
 file :: FilePath
 file = "csv/tt-handicap.csv"
 
-opts :: ParseOptions ByteString
+opts :: ParseOptions
 opts = defaultParseOptions & headedness .~ Unheaded
 
 type Name = Text

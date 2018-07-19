@@ -8,32 +8,30 @@ module Data.Sv.Random (
   Row (..)
   , BenchData (..)
   , rowDec
-  , benchData
+  , loadOrCreateTestFiles
 ) where
 
 import Control.Applicative ((<$>), (<*>), (<|>), empty)
 import Control.DeepSeq (NFData)
 import Control.Lens (makeLenses, makePrisms)
 import Control.Monad (replicateM)
-import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Csv (FromRecord (..), FromField (..), (.!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy as LBS
+import Data.Functor.Alt ((<!>))
 import Data.Functor.Contravariant (Contravariant (contramap))
-import Data.Functor.Identity (runIdentity)
+import Data.Functor.Contravariant.Divisible (choose)
 import Data.Semigroup (Semigroup ((<>)))
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Hedgehog.Internal.Gen (runGenT)
-import Hedgehog.Internal.Seed (Seed)
-import Hedgehog.Internal.Tree (runTree, nodeValue)
 import qualified Hedgehog.Internal.Seed as Seed
+import System.Directory (createDirectoryIfMissing, doesFileExist)
 
-import Data.Sv
+import Data.Sv.Alien.Hedgehog (sample)
 import qualified Data.Sv.Decode as D
 import qualified Data.Sv.Encode as E
 
@@ -143,22 +141,22 @@ rowGen =
   , (1, Short <$> shortRowGen)
   ]
 
-rowEnc :: Encode Row
+rowEnc :: E.Encode Row
 rowEnc = choose (\x -> case x of {Long r -> Left r ; Short r -> Right r}) longRowEnc shortRowEnc
 
-shortRowEnc :: Encode ShortRow
+shortRowEnc :: E.Encode ShortRow
 shortRowEnc =
   contramap _1 E.byteString <> contramap _2 E.byteString <> contramap _3 E.byteString
 
-productEnc :: Encode Product
+productEnc :: E.Encode Product
 productEnc =
   contramap i E.int <> contramap f E.float <> contramap d E.double
 
-coproductEnc :: Encode Coproduct
+coproductEnc :: E.Encode Coproduct
 coproductEnc =
   E.encodeOf _I  E.int <> E.encodeOf _B E.byteString <> E.encodeOf _D E.double
 
-longRowEnc :: Encode LongRow
+longRowEnc :: E.Encode LongRow
 longRowEnc = mconcat [
     E.encodeOf lrB1 E.byteString
   , E.encodeOf lrB2 E.byteString
@@ -170,26 +168,26 @@ longRowEnc = mconcat [
   , E.encodeOf lrC coproductEnc
   ]
 
-rowDec :: Decode' ByteString Row
+rowDec :: D.Decode' ByteString Row
 rowDec =  Long <$> longRowDec <!> Short <$> shortRowDec
 
-shortRowDec :: Decode' ByteString ShortRow
+shortRowDec :: D.Decode' ByteString ShortRow
 shortRowDec = ShortRow <$> D.byteString <*> D.byteString <*> D.byteString
 
-productDec :: Decode' ByteString Product
+productDec :: D.Decode' ByteString Product
 productDec = Product <$> D.int <*> D.float <*> D.double
 
-coproductDec :: Decode' ByteString Coproduct
+coproductDec :: D.Decode' ByteString Coproduct
 coproductDec = I <$> D.int <!> B <$> D.byteString <!> D <$> D.double
 
-longRowDec :: Decode' ByteString LongRow
+longRowDec :: D.Decode' ByteString LongRow
 longRowDec = LongRow <$> D.byteString <*> D.byteString <*> D.int <*> D.integer <*> D.float <*> D.double <*> productDec <*> coproductDec
 
 rows :: Int -> Gen [Row]
 rows n = replicateM n rowGen
 
-rowsSv :: Int -> Gen (LB.ByteString)
-rowsSv = fmap (E.encode rowEnc defaultEncodeOptions) . rows
+rowsSv :: Int -> Gen (LBS.ByteString)
+rowsSv = fmap (E.encode rowEnc E.defaultEncodeOptions) . rows
 
 data BenchData a =
   BenchData {
@@ -207,24 +205,46 @@ data BenchData a =
 
 instance NFData a => NFData (BenchData a) where
 
+instance Applicative BenchData where
+  pure x = BenchData x x x x x x x x x
+  BenchData g1 g2 g3 g4 g5 g6 g7 g8 g9
+    <*> BenchData a1 a2 a3 a4 a5 a6 a7 a8 a9 =
+      BenchData (g1 a1) (g2 a2) (g3 a3) (g4 a4) (g5 a5) (g6 a6) (g7 a7) (g8 a8) (g9 a9)
+
 inds :: BenchData Int
 inds = BenchData 1 10 100 500 1000 5000 10000 50000 100000
 
-benchDataGen :: Gen (BenchData ByteString)
-benchDataGen = traverse (fmap LB.toStrict . rowsSv) inds
+benchDataGen :: Gen (BenchData LBS.ByteString)
+benchDataGen = traverse rowsSv inds
 
 seed :: Seed
 seed = Seed.from 42
 
-sample :: Gen a -> a
-sample gen = loop (100 :: Int)
-  where
-    loop n =
-      if n <= 0
-      then error "sample: too many discards, could not generate a sample"
-      else case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
-        Nothing -> loop (n - 1)
-        Just x -> nodeValue x
+benchData :: BenchData LBS.ByteString
+benchData = sample seed benchDataGen
 
-benchData :: BenchData ByteString
-benchData = sample benchDataGen
+filenames :: BenchData FilePath
+filenames =
+  ("benchmarks/data/" <>) <$> BenchData
+    "1.csv"
+    "10.csv"
+    "100.csv"
+    "500.csv"
+    "1000.csv"
+    "5000.csv"
+    "10000.csv"
+    "50000.csv"
+    "100000.csv"
+
+loadOrCreateTestFiles :: IO (BenchData ByteString)
+loadOrCreateTestFiles = do
+  createDirectoryIfMissing True "benchmarks/data"
+  b <- and <$> traverse doesFileExist filenames
+  if   b
+  then do
+    putStrLn "Data files found. Loading..."
+    traverse BS.readFile filenames
+  else do
+    putStrLn "Data files not found. Creating..."
+    _ <- sequenceA (LBS.writeFile <$> filenames <*> benchData)
+    traverse BS.readFile filenames

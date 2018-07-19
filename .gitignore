@@ -2,6 +2,8 @@
 *#*
 *.swp
 
+benchmarks/data
+benchmarks/benchmarks/data
 dist/
 dist-newstyle/
 cabal-dev/

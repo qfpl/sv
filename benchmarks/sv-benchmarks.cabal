@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                sv-benchmarks
-version:             0.1.0.0
+version:             0.2
 synopsis:            Benchmarks for sv
 description:
   Criterion benchmarks for sv
@@ -20,21 +20,24 @@ tested-with:
   GHC == 7.10.3
   , GHC == 8.0.2
   , GHC == 8.2.2
-  , GHC == 8.4.1
+  , GHC == 8.4.3
+  , GHC == 8.6.1
 
 library
   exposed-modules:     Data.Sv.Random
-  -- other-modules:       
+  other-modules:       Data.Sv.Alien.Hedgehog
   -- other-extensions:    
   build-depends:       base >= 4.8 && < 5
                        , bytestring >= 0.9.1.10 && < 0.11
                        , cassava >= 0.4.1 && < 0.6
-                       , contravariant >= 1.2 && < 1.5
+                       , contravariant >= 1.2 && < 1.6
                        , deepseq >= 1.1 && < 1.5
+                       , directory >= 1.2.1 && < 1.4
                        , hedgehog >= 0.5 && < 0.7
                        , lens >= 4 && < 5
                        , semigroups >= 0.18 && < 0.19
-                       , sv
+                       , semigroupoids >= 5 && < 6
+                       , sv == 1.0.*
                        , text >= 1.0 && < 1.3
                        , transformers >= 0.2 && < 0.6
                        , vector >= 0.10 && < 0.13
@@ -54,12 +57,13 @@ benchmark criterion
                        , base >=4.8 && <5
                        , bytestring >= 0.9.1.10 && < 0.11
                        , cassava >= 0.4.1 && < 0.6
-                       , criterion >= 1.3 && < 1.5
+                       , criterion >= 1.3 && < 1.6
                        , deepseq >= 1.1 && < 1.5
+                       , hw-dsv >= 0.2.1 && < 0.3
                        , lens >= 4 && < 5
                        , sv
                        , sv-benchmarks
-                       , sv-cassava
+                       , sv-cassava == 0.2.*
                        , text >= 1.0 && < 1.3
                        , vector >= 0.10 && < 0.13
 

@@ -1,21 +1,19 @@
-{ mkDerivation, ansi-wl-pprint, attoparsec, base, bifunctors
-, bytestring, charset, containers, contravariant, deepseq, hedgehog
-, lens, mtl, parsec, parsers, profunctors, readable, semigroupoids
-, semigroups, stdenv, tasty, tasty-hedgehog, tasty-hunit, text
-, transformers, trifecta, utf8-string, validation, vector, void
+{ mkDerivation, attoparsec, base, bifunctors, bytestring, cassava
+, contravariant, hedgehog, hw-dsv, lens, Only, parsers
+, semigroupoids, semigroups, stdenv, sv-core, tasty, tasty-hedgehog
+, tasty-hunit, text, transformers, trifecta, utf8-string
+, validation, vector
 }:
 mkDerivation {
   pname = "sv";
-  version = "0.1";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
-    ansi-wl-pprint attoparsec base bifunctors bytestring charset
-    containers contravariant deepseq lens mtl parsec parsers
-    profunctors readable semigroupoids semigroups text transformers
-    trifecta utf8-string validation vector void
+    attoparsec base bifunctors bytestring contravariant hw-dsv
+    semigroupoids sv-core transformers utf8-string validation
   ];
   testHaskellDepends = [
-    ansi-wl-pprint base bytestring contravariant hedgehog lens parsers
+    base bytestring cassava contravariant hedgehog lens Only parsers
     semigroupoids semigroups tasty tasty-hedgehog tasty-hunit text
     trifecta utf8-string validation vector
   ];

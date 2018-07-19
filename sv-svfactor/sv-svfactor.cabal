@@ -1,0 +1,46 @@
+name:                sv-svfactor
+version:             0.1
+license:             BSD3
+license-file:        LICENCE
+author:              George Wilson
+maintainer:          george@qfpl.io
+copyright:           Copyright (c) 2018, Commonwealth Scientific and Industrial Research Organisation (CSIRO) ABN 41 687 119 230.
+category:            CSV, Text, Web
+synopsis:
+  sv-core + svfactor
+
+description:
+  <<http://i.imgur.com/uZnp9ke.png>>
+  .
+  Use sv-core's decoding atop svfactor's parser
+
+homepage:            https://github.com/qfpl/sv
+bug-reports:         https://github.com/qfpl/sv/issues
+build-type:          Simple
+extra-source-files:  changelog.md
+cabal-version:       >=1.10
+tested-with:         GHC == 7.10.3
+                     , GHC == 8.0.2
+                     , GHC == 8.2.2
+                     , GHC == 8.4.3
+                     , GHC == 8.6.1
+
+source-repository    head
+  type:              git
+  location:          git@github.com/qfpl/sv.git
+
+library
+  exposed-modules:     Data.Sv.Svfactor
+  -- other-modules:
+  -- other-extensions:    
+  build-depends:       base >=4.7 && <5
+                       , bytestring >= 0.9.1.10 && < 0.11
+                       , lens >= 4 && < 4.18
+                       , profunctors >= 5.2.1 && < 6
+                       , sv-core >= 0.1 && < 0.2
+                       , svfactor >= 0.1 && < 0.2
+                       , validation >= 1 && < 1.1
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:
+                       -Wall -O2

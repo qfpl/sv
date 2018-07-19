@@ -5,9 +5,9 @@ module Main (main) where
 import Control.Monad (when)
 import Data.ByteString (ByteString)
 import qualified Data.Csv as Cassava
-import Data.Sv
 import Data.Sv.Cassava
-import qualified Data.Sv.Decode as D
+import Data.Sv.Structure.Core (Headedness (Headed, Unheaded))
+import qualified Data.Sv.Decode.Core as D
 import Data.Text (Text)
 import qualified Data.Vector as V
 import System.Exit (exitFailure)
@@ -15,7 +15,7 @@ import Test.HUnit
 
 data TestRow = TestRow Int Double Text deriving (Eq, Show)
 
-testRowDec :: Decode' ByteString TestRow
+testRowDec :: D.Decode' ByteString TestRow
 testRowDec = TestRow <$> D.int <*> D.double <*> D.utf8
 
 bs1 :: ByteString
