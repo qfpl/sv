@@ -22,7 +22,7 @@ test_Laws :: TestTree
 test_Laws =
   testGroup "Laws"
     [ testGroup "Decode Semigroupoid" $ fmap (uncurry testProperty)
-        [ ("Decode category associativity", decodeAssoc)
+        [ ("Decode Semigroupoid associativity", decodeAssoc)
         ]
     ]
 

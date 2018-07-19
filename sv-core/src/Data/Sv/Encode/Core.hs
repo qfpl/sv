@@ -11,7 +11,7 @@ Portability : non-portable
 
 This module is intended to be imported qualified as follows
 
-@import Data.Sv.Encode as E@
+@import Data.Sv.Encode.Core as E@
 
 To produce a CSV file from data types, build an 'Encode' for your data
 type. This module contains primitives, combinators, and type class instances
