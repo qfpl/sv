@@ -34,12 +34,12 @@ library
   -- other-modules:
   -- other-extensions:    
   build-depends:       base >=4.7 && <5
-                       , bytestring
-                       , lens
-                       , profunctors
+                       , bytestring >= 0.9.1.10 && < 0.11
+                       , lens >= 4 && < 4.18
+                       , profunctors >= 5.2.1 && < 6
                        , sv-core >= 0.1 && < 0.2
                        , svfactor >= 0.1 && < 0.2
-                       , validation
+                       , validation >= 1 && < 1.1
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:
