@@ -4,6 +4,7 @@ packages:
   ./examples
   ./sv-cassava
   ./sv-core
+  ./sv-svfactor
   ./weigh
 
 optimization: 2
