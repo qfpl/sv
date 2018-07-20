@@ -14,10 +14,9 @@ Portability : non-portable
 module Data.Sv.Decode.Type (
   Decode (..)
 , Decode'
-, NameDecode
-, NameDecode'
-, unname
 , buildDecode
+, NameDecode (..)
+, NameDecode'
 , DecodeState (..)
 , runDecodeState
 , Ind (..)
@@ -34,8 +33,8 @@ import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Bind (Bind ((>>-)))
 import Data.Functor.Compose (Compose (Compose))
-import Data.List.NonEmpty
-import Data.Map (Map)
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map.Strict (Map)
 import Data.Semigroup (Semigroup)
 import Data.Semigroupoid (Semigroupoid (o))
 import Data.Profunctor (Profunctor (lmap, rmap))
@@ -127,6 +126,8 @@ data DecodeError e =
   | ExpectedEndOfRow (Vector e)
   -- | This decoder was built using the 'categorical' primitive for categorical data
   | UnknownCategoricalValue e [[e]]
+  -- | Looked for a column with this name, but could not find it
+  | MissingColumn e
   -- | The parser failed, meaning decoding proper didn't even begin
   | BadParse e
   -- | Some other kind of decoding failure occured
@@ -138,6 +139,7 @@ instance Functor DecodeError where
     UnexpectedEndOfRow -> UnexpectedEndOfRow
     ExpectedEndOfRow v -> ExpectedEndOfRow (fmap f v)
     UnknownCategoricalValue e ess -> UnknownCategoricalValue (f e) (fmap (fmap f) ess)
+    MissingColumn e -> MissingColumn (f e)
     BadParse e -> BadParse (f e)
     BadDecode e -> BadDecode (f e)
 
@@ -159,28 +161,8 @@ instance NFData e => NFData (DecodeErrors e)
 -- 'Decode'
 type DecodeValidation e = Validation (DecodeErrors e)
 
-data NameDecode e s a
-  = Anonymous (Decode e s a)
-  | Named (Map s Ind -> Decode e s a)
+newtype NameDecode e s a =
+  Named { unNamed :: ReaderT (Map s Ind) (Decode e s) a }
+  deriving (Functor, Applicative)
 
 type NameDecode' s = NameDecode s s
-
-unname :: Map s Ind -> NameDecode e s a -> Decode e s a
-unname m n = case n of
-  Anonymous d -> d
-  Named md -> md m
-
-instance Functor (NameDecode e s) where
-  fmap f (Anonymous d) = Anonymous (fmap f d)
-  fmap f (Named md) = Named (fmap (fmap f) md)
-
-instance Applicative (NameDecode e s) where
-  pure = Anonymous . pure
-  (<*>) nf na =
-    case nf of
-      Named mdf -> Named $ \m -> case na of
-        Named mda -> mdf m <*> mda m
-        Anonymous da -> mdf m <*> da
-      Anonymous df -> case na of
-        Anonymous da -> Anonymous (df <*> da)
-        Named mda -> Named $ \m -> df <*> mda m

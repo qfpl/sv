@@ -65,6 +65,8 @@ module Data.Sv.Decode.Core (
 , replace
 , exactly
 , emptyField
+-- ** Name-based
+, nameDecode
 -- ** Row-based
 , row
 
@@ -112,6 +114,9 @@ module Data.Sv.Decode.Core (
 , promote
 , promote'
 , runWithInd
+, runNamed
+, anonymous
+, makePositional
 ) where
 
 import Prelude hiding (either)
@@ -119,7 +124,7 @@ import qualified Prelude
 
 import Control.Lens (alaf, view)
 import Control.Monad (unless)
-import Control.Monad.Reader (ReaderT (ReaderT))
+import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
 import Control.Monad.State (state)
 import qualified Data.Attoparsec.ByteString as A
 import Data.Bifunctor (first, second)
@@ -130,6 +135,8 @@ import Data.Char (toUpper)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Monoid (First (First))
 import Data.Profunctor (lmap)
 import Data.Readable (Readable (fromBS))
@@ -417,11 +424,6 @@ mkParserFunction err run p =
   in  byteString >>== (err . run p')
 {-# INLINE mkParserFunction #-}
 
--- | Convenience to get the underlying function out of a Decode in a useful form
-runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Ind)
-runDecode = runDecodeState . getCompose . unwrapDecode
-{-# INLINE runDecode #-}
-
 -- | This can be used to build a 'Decode' whose value depends on the
 -- result of another 'Decode'. This is especially useful since 'Decode' is not
 -- a 'Monad'.
@@ -498,3 +500,24 @@ runWithInd :: Ind -> DecodeState s a -> DecodeState s a
 runWithInd i ds =
   DecodeState $ ReaderT $ \v -> state $ \i' ->
     (fst (runDecodeState ds v i), i')
+
+-- | Convenience to get the underlying function out of a Decode in a useful form
+runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Ind)
+runDecode = runDecodeState . getCompose . unwrapDecode
+{-# INLINE runDecode #-}
+
+runNamed :: NameDecode e s a -> Map s Ind -> Decode e s a
+runNamed = runReaderT . unNamed
+
+anonymous :: Decode e s a -> NameDecode e s a
+anonymous = Named . ReaderT . pure
+
+makePositional :: Ord s => Vector s -> NameDecode e s a -> Decode e s a
+makePositional names d =
+  runNamed d . M.fromList $ zip (V.toList names) (Ind <$> [0..])
+
+nameDecode :: Ord s => s -> Decode' s a -> NameDecode' s a
+nameDecode s d =
+  Named . ReaderT $ \m -> case M.lookup s m of
+    Just i -> buildDecode $ \v _ -> runDecode d v i
+    Nothing -> buildDecode $ \_ i -> (missingColumn s, i)

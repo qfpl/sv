@@ -16,6 +16,7 @@ module Data.Sv.Decode.Error (
 , unexpectedEndOfRow
 , expectedEndOfRow
 , unknownCategoricalValue
+, missingColumn
 , badParse
 , badDecode
 
@@ -55,6 +56,9 @@ expectedEndOfRow = decodeError . ExpectedEndOfRow
 unknownCategoricalValue :: e -> [[e]] -> DecodeValidation e a
 unknownCategoricalValue unknown valids =
   decodeError (UnknownCategoricalValue unknown valids)
+
+missingColumn :: e -> DecodeValidation e a
+missingColumn = decodeError . MissingColumn
 
 -- | Fail with 'BadParse' with the given message. This is for when the parse
 -- step fails, and decoding does not even begin.
