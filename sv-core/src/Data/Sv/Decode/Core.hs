@@ -111,6 +111,7 @@ module Data.Sv.Decode.Core (
 , mkDecode
 , promote
 , promote'
+, runWithInd
 ) where
 
 import Prelude hiding (either)
@@ -492,3 +493,8 @@ promote' se dec vecField =
       if i >= len
       then d
       else d *> expectedEndOfRow (V.force (fmap se (V.drop i vecField)))
+
+runWithInd :: Ind -> DecodeState s a -> DecodeState s a
+runWithInd i ds =
+  DecodeState $ ReaderT $ \v -> state $ \i' ->
+    (fst (runDecodeState ds v i), i')

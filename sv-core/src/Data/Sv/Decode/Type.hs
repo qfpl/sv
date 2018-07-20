@@ -14,6 +14,9 @@ Portability : non-portable
 module Data.Sv.Decode.Type (
   Decode (..)
 , Decode'
+, NameDecode
+, NameDecode'
+, unname
 , buildDecode
 , DecodeState (..)
 , runDecodeState
@@ -32,6 +35,7 @@ import Data.Functor.Apply (Apply)
 import Data.Functor.Bind (Bind ((>>-)))
 import Data.Functor.Compose (Compose (Compose))
 import Data.List.NonEmpty
+import Data.Map (Map)
 import Data.Semigroup (Semigroup)
 import Data.Semigroupoid (Semigroupoid (o))
 import Data.Profunctor (Profunctor (lmap, rmap))
@@ -154,3 +158,29 @@ instance NFData e => NFData (DecodeErrors e)
 -- | 'DecodeValidation' is the error-accumulating 'Applicative' underlying
 -- 'Decode'
 type DecodeValidation e = Validation (DecodeErrors e)
+
+data NameDecode e s a
+  = Anonymous (Decode e s a)
+  | Named (Map s Ind -> Decode e s a)
+
+type NameDecode' s = NameDecode s s
+
+unname :: Map s Ind -> NameDecode e s a -> Decode e s a
+unname m n = case n of
+  Anonymous d -> d
+  Named md -> md m
+
+instance Functor (NameDecode e s) where
+  fmap f (Anonymous d) = Anonymous (fmap f d)
+  fmap f (Named md) = Named (fmap (fmap f) md)
+
+instance Applicative (NameDecode e s) where
+  pure = Anonymous . pure
+  (<*>) nf na =
+    case nf of
+      Named mdf -> Named $ \m -> case na of
+        Named mda -> mdf m <*> mda m
+        Anonymous da -> mdf m <*> da
+      Anonymous df -> case na of
+        Anonymous da -> Anonymous (df <*> da)
+        Named mda -> Named $ \m -> df <*> mda m
