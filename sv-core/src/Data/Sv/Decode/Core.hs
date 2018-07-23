@@ -122,10 +122,11 @@ module Data.Sv.Decode.Core (
 import Prelude hiding (either)
 import qualified Prelude
 
-import Control.Lens (alaf, view)
+import Control.Lens (alaf)
 import Control.Monad (unless)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
 import Control.Monad.State (state)
+import Control.Monad.Writer.Strict (runWriter)
 import qualified Data.Attoparsec.ByteString as A
 import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
@@ -137,7 +138,7 @@ import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.Monoid (First (First))
+import Data.Monoid (First (First), Last)
 import Data.Profunctor (lmap)
 import Data.Readable (Readable (fromBS))
 import Data.Semigroup (Semigroup ((<>)), sconcat)
@@ -147,7 +148,6 @@ import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import qualified Data.Text.Lazy as LT
-import Data.Validation (_Validation)
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import Text.Parsec (Parsec)
@@ -377,7 +377,8 @@ named name =
 --
 -- To map over the other two parameters, use the 'Data.Profunctor.Profunctor' instance.
 mapErrors :: (e -> x) -> Decode e s a -> Decode x s a
-mapErrors f (Decode (Compose r)) = Decode (Compose (fmap (first (fmap f)) r))
+mapErrors f (Decode (Compose r)) =
+  Decode (Compose (fmap (rnat (first (fmap f))) r))
 
 -- | This transforms a @Decode' s a@ into a @Decode' t a@. It needs
 -- functions in both directions because the errors can include fragments of the
@@ -436,10 +437,10 @@ infixl 1 >>==
 
 -- | flipped '>>=='
 (==<<) :: (a -> DecodeValidation e b) -> Decode e s a -> Decode e s b
-(==<<) f (Decode c) =
-  Decode (rmapC (`bindValidation` (view _Validation . f)) c)
-    where
-      rmapC g (Compose fga) = Compose (fmap g fga)
+(==<<) f d =
+  buildDecode $ \vec i ->
+    case runDecode d vec i of
+      (v, l, i') -> (bindValidation v f, l, i')
 infixr 1 ==<<
 
 -- | Bind through a 'Decode'.
@@ -454,27 +455,28 @@ bindDecode :: Decode e s a -> (a -> Decode e s b) -> Decode e s b
 bindDecode d f =
   buildDecode $ \v i ->
     case runDecode d v i of
-      (Failure e, i') -> (Failure e, i')
-      (Success a, i') -> runDecode (f a) v i'
+      (Failure e, l, i') -> (Failure e, l, i')
+      (Success a, l, i') ->
+        case runDecode (f a) v i' of
+          (v', l', i'') -> (v', l <> l', i'')
 
 -- | Run a 'Decode', and based on its errors build a new 'Decode'.
 onError :: Decode e s a -> (DecodeErrors e -> Decode e s a) -> Decode e s a
 onError d f =
   buildDecode $ \v i ->
     case runDecode d v i of
-      (Failure e, i') -> runDecode (f e) v i'
-      (Success a, i') -> (Success a, i')
+      (Success a, l, i') -> (Success a, l, i')
+      (Failure e, l, i') ->
+        case runDecode (f e) v i' of
+          (v',l',i'') -> (v',l <> l',i'')
 
 -- | Build a 'Decode' from a function.
---
--- This version gives you just the contents of the field, with no information
--- about the spacing or quoting around that field.
 mkDecode :: (s -> DecodeValidation e a) -> Decode e s a
 mkDecode f =
   Decode . Compose . DecodeState . ReaderT $ \v -> state $ \(Ind i) ->
     if i >= length v
-    then (unexpectedEndOfRow, Ind i)
-    else (f (v ! i), Ind (i+1))
+    then (Compose (pure unexpectedEndOfRow), Ind i)
+    else (Compose (pure (f (v ! i))), Ind (i+1))
 
 -- | Promotes a 'Decode' to work on a whole 'Record' at once.
 -- This does not need to be called by the user. Instead use 'decode'.
@@ -491,10 +493,10 @@ promote' :: (s -> e) -> Decode e s a -> Vector s -> DecodeValidation e a
 promote' se dec vecField =
   let len = length vecField
   in  case runDecode dec vecField (Ind 0) of
-    (d, Ind i) ->
-      if i >= len
-      then d
-      else d *> expectedEndOfRow (V.force (fmap se (V.drop i vecField)))
+    (d, l, Ind i) ->
+      if i < len && and l
+      then d *> expectedEndOfRow (V.force (fmap se (V.drop i vecField)))
+      else d
 
 runWithInd :: Ind -> DecodeState s a -> DecodeState s a
 runWithInd i ds =
@@ -502,8 +504,12 @@ runWithInd i ds =
     (fst (runDecodeState ds v i), i')
 
 -- | Convenience to get the underlying function out of a Decode in a useful form
-runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Ind)
-runDecode = runDecodeState . getCompose . unwrapDecode
+runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Last Bool, Ind)
+runDecode = fmap (fmap z) . runDecodeState . getCompose . unwrapDecode
+  where
+    z (Compose wv, i) = case runWriter wv of
+      (v,l) ->(v,l,i)
+
 {-# INLINE runDecode #-}
 
 runNamed :: NameDecode e s a -> Map s Ind -> DecodeValidation e (Decode e s a)
@@ -519,5 +525,10 @@ makePositional names d =
 column :: Ord s => s -> Decode' s a -> NameDecode' s a
 column s d =
   Named . ReaderT $ \m -> case M.lookup s m of
-    Just i -> Compose . pure . buildDecode $ \v _ -> runDecode d v i
     Nothing -> Compose (missingColumn s)
+    Just i -> Compose . pure . buildDecode $ \vec _ ->
+      case runDecode d vec i of
+        (v, l, i') -> (v, l <> pure False, i')
+
+rnat :: Functor f => (g a -> h a) -> Compose f g a -> Compose f h a
+rnat gh (Compose fga) = Compose (fmap gh fga)
