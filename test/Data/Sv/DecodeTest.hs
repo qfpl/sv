@@ -28,6 +28,7 @@ test_Decode =
     intOrStringTest
   , varyingLengthTest
   , semigroupoidTest
+  , namedTest
   ]
 
 data IntOrString =
@@ -120,4 +121,84 @@ semigroupoidTest = testGroup "Semigroupoid Decode"
   , testCase "Does the right thing in the case of right failure" $
       parseDecode semiD opts semiTestString3 @?=
         Failure (DecodeErrors (pure (BadDecode "Couldn't parse \"false\" as a double")))
+  ]
+
+-- This CSV has enough columns to make an Item, it has more columns than a
+-- SemiItem/SemiItem2, and not enough columns for a SuperItem/SuperItem2
+namedCsv :: LBS.ByteString
+namedCsv =
+  LBS.intercalate "\n" [
+    "id,name,cost,units"
+  , "1,fridge,600,5"
+  , "2,stereo,1499.99,2"
+  , "3,dryer,748.95,3"
+  ]
+
+data Item = Item Int Text Double Int deriving (Eq, Show)
+data SemiItem = SemiItem Text Double deriving (Eq, Show)
+data SemiItem2 = SemiItem2 Int Double deriving (Eq, Show)
+data SuperItem = SuperItem Int Text Text Double Int deriving (Eq, Show)
+data SuperItem2 = SuperItem2 Int Text Text Double Int Double deriving (Eq, Show)
+
+inOrder :: NameDecode' ByteString Item
+inOrder =
+  Item <$> D.column "id" D.int <*> D.column "name" D.utf8
+    <*> D.column "cost" D.double <*> D.column "units" D.int
+
+outOrder :: NameDecode' ByteString Item
+outOrder =
+  (\n u c i -> Item i n c u) <$> D.column "name" D.utf8
+    <*> D.column "units" D.int <*> D.column "cost" D.double
+    <*> D.column "id" D.int
+
+inOrderSemi :: NameDecode' ByteString SemiItem
+inOrderSemi =
+  SemiItem <$> D.column "name" D.utf8 <*> D.column "cost" D.double
+
+outOrderSemi :: NameDecode' ByteString SemiItem2
+outOrderSemi =
+  SemiItem2 <$> D.column "units" D.int <*> D.column "cost" D.double
+
+super :: NameDecode' ByteString SuperItem
+super =
+  SuperItem <$> D.column "id" D.int <*> D.column "name" D.utf8
+    <*> D.column "manufacturer" D.utf8
+    <*> D.column "cost" D.double <*> D.column "units" D.int
+
+super2 :: NameDecode' ByteString SuperItem2
+super2 =
+  SuperItem2 <$> D.column "id" D.int <*> D.column "name" D.utf8
+    <*> D.column "manufacturer" D.utf8
+    <*> D.column "cost" D.double <*> D.column "units" D.int
+    <*> D.column "profit" D.double
+
+namedTest :: TestTree
+namedTest = testGroup "Named decodes"
+  [ testCase "columns in order" $
+      parseDecodeNamed inOrder defaultParseOptions namedCsv @?=
+        pure [Item 1 "fridge" 600 5, Item 2 "stereo" 1499.99 2, Item 3 "dryer" 748.95 3]
+  , testCase "columns out of order" $
+      parseDecodeNamed outOrder defaultParseOptions namedCsv @?=
+        pure [Item 1 "fridge" 600 5, Item 2 "stereo" 1499.99 2, Item 3 "dryer" 748.95 3]
+  , testCase "columns in order, with some skipped" $
+      parseDecodeNamed inOrderSemi defaultParseOptions namedCsv @?=
+        pure [SemiItem "fridge" 600, SemiItem "stereo" 1499.99, SemiItem "dryer" 748.95]
+  , testCase "columns out of order, with some skipped" $
+      parseDecodeNamed outOrderSemi defaultParseOptions namedCsv @?=
+        pure [SemiItem2 5 600, SemiItem2 2 1499.99, SemiItem2 3 748.95]
+  , testCase "one missing column" $
+      parseDecodeNamed super defaultParseOptions namedCsv @?=
+        Failure (DecodeErrors (MissingColumn "manufacturer":|[]))
+  , testCase "multiple missing columns" $
+      parseDecodeNamed super2 defaultParseOptions namedCsv @?=
+        Failure (DecodeErrors (MissingColumn "manufacturer":|[MissingColumn "profit"]))
+  , testCase "empty document (missing header)" $
+      parseDecodeNamed inOrder defaultParseOptions "" @?=
+        Failure (DecodeErrors (MissingHeader:|[]))
+  , testCase "misconfigured" $
+      parseDecodeNamed inOrder opts namedCsv @?=
+        Failure (DecodeErrors (
+          BadConfig "Your ParseOptions indicates a CSV with no header (Unheaded),\nbut your decoder requires column names."
+          :|[]
+        ))
   ]

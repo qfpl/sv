@@ -128,6 +128,10 @@ data DecodeError e =
   | UnknownCategoricalValue e [[e]]
   -- | Looked for a column with this name, but could not find it
   | MissingColumn e
+  -- | There should have been a header but there was nothing
+  | MissingHeader
+  -- | sv is misconfigured
+  | BadConfig e
   -- | The parser failed, meaning decoding proper didn't even begin
   | BadParse e
   -- | Some other kind of decoding failure occured
@@ -140,6 +144,8 @@ instance Functor DecodeError where
     ExpectedEndOfRow v -> ExpectedEndOfRow (fmap f v)
     UnknownCategoricalValue e ess -> UnknownCategoricalValue (f e) (fmap (fmap f) ess)
     MissingColumn e -> MissingColumn (f e)
+    MissingHeader -> MissingHeader
+    BadConfig e -> BadConfig (f e)
     BadParse e -> BadParse (f e)
     BadDecode e -> BadDecode (f e)
 

@@ -66,7 +66,7 @@ module Data.Sv.Decode.Core (
 , exactly
 , emptyField
 -- ** Name-based
-, nameDecode
+, column
 -- ** Row-based
 , row
 
@@ -516,8 +516,8 @@ makePositional :: Ord s => Vector s -> NameDecode e s a -> Decode e s a
 makePositional names d =
   runNamed d . M.fromList $ zip (V.toList names) (Ind <$> [0..])
 
-nameDecode :: Ord s => s -> Decode' s a -> NameDecode' s a
-nameDecode s d =
+column :: Ord s => s -> Decode' s a -> NameDecode' s a
+column s d =
   Named . ReaderT $ \m -> case M.lookup s m of
     Just i -> buildDecode $ \v _ -> runDecode d v i
     Nothing -> buildDecode $ \_ i -> (missingColumn s, i)
