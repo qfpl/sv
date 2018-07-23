@@ -506,18 +506,18 @@ runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Ind)
 runDecode = runDecodeState . getCompose . unwrapDecode
 {-# INLINE runDecode #-}
 
-runNamed :: NameDecode e s a -> Map s Ind -> Decode e s a
-runNamed = runReaderT . unNamed
+runNamed :: NameDecode e s a -> Map s Ind -> DecodeValidation e (Decode e s a)
+runNamed = fmap getCompose . runReaderT . unNamed
 
 anonymous :: Decode e s a -> NameDecode e s a
-anonymous = Named . ReaderT . pure
+anonymous = Named . ReaderT . pure . Compose . pure
 
-makePositional :: Ord s => Vector s -> NameDecode e s a -> Decode e s a
+makePositional :: Ord s => Vector s -> NameDecode e s a -> DecodeValidation e (Decode e s a)
 makePositional names d =
   runNamed d . M.fromList $ zip (V.toList names) (Ind <$> [0..])
 
 column :: Ord s => s -> Decode' s a -> NameDecode' s a
 column s d =
   Named . ReaderT $ \m -> case M.lookup s m of
-    Just i -> buildDecode $ \v _ -> runDecode d v i
-    Nothing -> buildDecode $ \_ i -> (missingColumn s, i)
+    Just i -> Compose . pure . buildDecode $ \v _ -> runDecode d v i
+    Nothing -> Compose (missingColumn s)

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 {-|
 Module      : Data.Sv
@@ -141,7 +142,7 @@ parseDecodeNamedFromDsvCursor n opts cursor =
                   [ "Your ParseOptions indicates a CSV with no header (Unheaded),\n"
                   , "but your decoder requires column names."
                   ]
-              Headed   -> pure (makePositionalLazy header n, body)
+              Headed   -> (,body) <$> makePositionalLazy header n
   in  bindValidation parts $ \(d,b) ->
       flip bindValidation (decode d) $ traverse (traverse toField) b
 

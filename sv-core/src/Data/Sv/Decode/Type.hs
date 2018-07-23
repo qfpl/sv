@@ -168,7 +168,9 @@ instance NFData e => NFData (DecodeErrors e)
 type DecodeValidation e = Validation (DecodeErrors e)
 
 newtype NameDecode e s a =
-  Named { unNamed :: ReaderT (Map s Ind) (Decode e s) a }
+  Named {
+    unNamed :: ReaderT (Map s Ind) (Compose (DecodeValidation e) (Decode e s)) a
+  }
   deriving (Functor, Applicative)
 
 type NameDecode' s = NameDecode s s
