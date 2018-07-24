@@ -181,3 +181,6 @@ newtype NameDecode e s a =
   deriving (Functor, Applicative)
 
 type NameDecode' s = NameDecode s s
+
+instance Alt (NameDecode e s) where
+  Named f <!> Named g = Named (f <!> g)
