@@ -134,18 +134,19 @@ parseDecodeFromDsvCursor d opts cursor =
 -- | Decode from a 'DsvCursor'
 parseDecodeNamedFromDsvCursor :: NameDecode' ByteString a -> ParseOptions -> DsvCursor -> DecodeValidation ByteString [a]
 parseDecodeNamedFromDsvCursor n opts cursor =
-  let makePositionalLazy = makePositional . fmap LBS.toStrict
-      parts =
+  let parts =
         case DSV.toListVector cursor of
           [] -> missingHeader
           (header:body) ->
-            case _headedness opts of
+            let header' = traverse toField header
+            in  case _headedness opts of
               Unheaded ->
                 badConfig $ mconcat
                   [ "Your ParseOptions indicates a CSV with no header (Unheaded),\n"
                   , "but your decoder requires column names."
                   ]
-              Headed   -> (,body) <$> makePositionalLazy header n
+              Headed   ->
+                (,body) <$> bindValidation header' (flip makePositional n)
   in  bindValidation parts $ \(d,b) ->
       flip bindValidation (decode d) $ traverse (traverse toField) b
 
