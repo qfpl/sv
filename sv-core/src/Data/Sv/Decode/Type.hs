@@ -174,12 +174,16 @@ instance NFData e => NFData (DecodeErrors e)
 -- 'Decode'
 type DecodeValidation e = Validation (DecodeErrors e)
 
+-- | 'NameDecode' is a decoder that looks for a column by name rather than
+-- by position.
 newtype NameDecode e s a =
   Named {
     unNamed :: ReaderT (Map s Ind) (Compose (DecodeValidation e) (Decode e s)) a
   }
   deriving (Functor, Applicative)
 
+-- | 'NameDecode'' is 'NameDecode' with both type parameters the same, as
+-- should usually be the case
 type NameDecode' s = NameDecode s s
 
 instance Alt (NameDecode e s) where

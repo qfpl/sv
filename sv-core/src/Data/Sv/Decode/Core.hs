@@ -113,7 +113,6 @@ module Data.Sv.Decode.Core (
 , mkDecode
 , promote
 , promote'
-, runWithInd
 , runNamed
 , anonymous
 , makePositional
@@ -498,29 +497,31 @@ promote' se dec vecField =
       then d *> expectedEndOfRow (V.force (fmap se (V.drop i vecField)))
       else d
 
-runWithInd :: Ind -> DecodeState s a -> DecodeState s a
-runWithInd i ds =
-  DecodeState $ ReaderT $ \v -> state $ \i' ->
-    (fst (runDecodeState ds v i), i')
-
--- | Convenience to get the underlying function out of a Decode in a useful form
+-- | Convenience to get the underlying function out of a 'Decode' in a useful form
 runDecode :: Decode e s a -> Vector s -> Ind -> (DecodeValidation e a, Last Bool, Ind)
 runDecode = fmap (fmap z) . runDecodeState . getCompose . unwrapDecode
   where
     z (Compose wv, i) = case runWriter wv of
       (v,l) ->(v,l,i)
-
 {-# INLINE runDecode #-}
 
+-- | Convenience to get the underlying function out of a 'NameDecode' in a useful form
 runNamed :: NameDecode e s a -> Map s Ind -> DecodeValidation e (Decode e s a)
 runNamed = fmap getCompose . runReaderT . unNamed
 
+-- | Promote a 'Decode' to a 'NameDecode' that doesn't look for any names
 anonymous :: Decode e s a -> NameDecode e s a
 anonymous = Named . ReaderT . pure . Compose . pure
 
+-- | Given a header and a 'NameDecode', resolve header names to positions and
+-- return a 'Decode'
 makePositional :: Ord s => Vector s -> NameDecode e s a -> DecodeValidation e (Decode e s a)
 makePositional names d =
   runNamed d . M.fromList $ zip (V.toList names) (Ind <$> [0..])
+
+-- | This is the primitive for building decoders that work with columns
+--
+-- Look for the column with the given name and run the given decoder on it
 
 column :: Ord s => s -> Decode' s a -> NameDecode' s a
 column s d =

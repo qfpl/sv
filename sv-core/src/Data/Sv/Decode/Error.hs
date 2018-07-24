@@ -59,12 +59,20 @@ unknownCategoricalValue :: e -> [[e]] -> DecodeValidation e a
 unknownCategoricalValue unknown valids =
   decodeError (UnknownCategoricalValue unknown valids)
 
+-- | Fail with 'MissingColumn' with the given column name. This is for when a
+-- 'NameDecode' looks for a column that doesn't exist.
 missingColumn :: e -> DecodeValidation e a
 missingColumn = decodeError . MissingColumn
 
+-- | Fail with 'MissingHeader'. This is for when the user asks for a header but
+-- the input document is completely empty (that is, it has nothing that could be
+-- considered a header).
 missingHeader :: DecodeValidation e a
 missingHeader = decodeError MissingHeader
 
+-- | Fail with 'badConfig'. This is for when the user has asked for something
+-- impossible, like to decode a CSV by column name while asserting there's no
+-- header.
 badConfig :: e -> DecodeValidation e a
 badConfig = decodeError . BadConfig
 

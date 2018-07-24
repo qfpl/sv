@@ -93,6 +93,8 @@ parseDecode d opts bs =
       cursor = DSV.makeCursor sep bs
   in  parseDecodeFromDsvCursor d opts cursor
 
+-- | Parse a 'ByteString' as an Sv, and then decode it with the given colum
+-- based decoder.
 parseDecodeNamed ::
   NameDecode' ByteString a
   -> ParseOptions
@@ -112,6 +114,7 @@ parseDecodeFromFile ::
 parseDecodeFromFile d opts fp =
   parseDecode d opts <$> liftIO (LBS.readFile fp)
 
+-- | Load a file, parse it, and decode it by column.
 parseDecodeNamedFromFile ::
   MonadIO m
   => NameDecode' ByteString a
