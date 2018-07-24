@@ -47,6 +47,9 @@ module Data.Sv.Decode.Core (
 , alterInput
 
 -- * Primitive Decodes
+-- ** Name-based
+, column
+, (.:)
 -- ** Field-based
 , contents
 , char
@@ -65,8 +68,6 @@ module Data.Sv.Decode.Core (
 , replace
 , exactly
 , emptyField
--- ** Name-based
-, column
 -- ** Row-based
 , row
 
@@ -530,6 +531,12 @@ column s d =
     Just i -> Compose . pure . buildDecode $ \vec _ ->
       case runDecode d vec i of
         (v, l, i') -> (v, l <> pure False, i')
+
+-- | Infix alias for 'column'
+(.:) :: Ord s => s -> Decode' s a -> NameDecode' s a
+(.:) = column
+{-# INLINE (.:) #-}
+infixl 5 .:
 
 rnat :: Functor f => (g a -> h a) -> Compose f g a -> Compose f h a
 rnat gh (Compose fga) = Compose (fmap gh fga)
