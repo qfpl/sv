@@ -36,7 +36,7 @@ library
     , base >=4.8 && <5
     , bytestring >= 0.9.1.10 && < 0.11
     , cassava >= 0.4.1 && < 0.6
-    , sv-core >= 0.1 && < 0.2
+    , sv-core >= 0.1 && < 0.3
     , utf8-string >= 1 && < 1.1
     , validation
     , vector >= 0.10 && < 0.13
@@ -56,7 +56,7 @@ test-suite hunit
     base >=4.8 && <5
     , bytestring >= 0.9.1.10 && < 0.11
     , cassava >= 0.4.1 && < 0.6
-    , sv-core >= 0.1 && < 0.2
+    , sv-core >= 0.1 && < 0.3
     , sv-cassava
     , HUnit >= 1.4 && < 1.7
     , text >= 1.0 && < 1.3
