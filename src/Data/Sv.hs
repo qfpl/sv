@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
+
 {-|
 Module      : Data.Sv
 Copyright   : (C) CSIRO 2017-2018
@@ -22,6 +25,9 @@ module Data.Sv (
     parseDecode
   , parseDecodeFromFile
   , parseDecodeFromDsvCursor
+  , parseDecodeNamed
+  , parseDecodeNamedFromFile
+  , parseDecodeNamedFromDsvCursor
   , decode
   , decodeMay
   , decodeEither
@@ -87,6 +93,17 @@ parseDecode d opts bs =
       cursor = DSV.makeCursor sep bs
   in  parseDecodeFromDsvCursor d opts cursor
 
+-- | Parse a 'ByteString' as an Sv, and then decode it with the given colum
+-- based decoder.
+parseDecodeNamed ::
+  NameDecode' ByteString a
+  -> ParseOptions
+  -> LBS.ByteString
+  -> DecodeValidation ByteString [a]
+parseDecodeNamed d opts bs =
+  parseDecodeNamedFromDsvCursor d opts
+    (DSV.makeCursor (_separator opts) bs)
+
 -- | Load a file, parse it, and decode it.
 parseDecodeFromFile ::
   MonadIO m
@@ -97,11 +114,41 @@ parseDecodeFromFile ::
 parseDecodeFromFile d opts fp =
   parseDecode d opts <$> liftIO (LBS.readFile fp)
 
+-- | Load a file, parse it, and decode it by column.
+parseDecodeNamedFromFile ::
+  MonadIO m
+  => NameDecode' ByteString a
+  -> ParseOptions
+  -> FilePath
+  -> m (DecodeValidation ByteString [a])
+parseDecodeNamedFromFile d opts fp =
+  parseDecodeNamed d opts <$> liftIO (LBS.readFile fp)
+
 -- | Decode from a 'DsvCursor'
 parseDecodeFromDsvCursor :: Decode' ByteString a -> ParseOptions -> DsvCursor -> DecodeValidation ByteString [a]
 parseDecodeFromDsvCursor d opts cursor =
-  let toField = Prelude.either badParse pure . parse
-      parse = first UTF8.fromString . AL.eitherResult . AL.parse field
-  in  flip bindValidation (decode d) . traverse (traverse toField) . DSV.toListVector $ case _headedness opts of
-        Unheaded -> cursor
-        Headed   -> nextPosition (nextRow cursor)
+  flip bindValidation (decode d) . traverse (traverse toField) . DSV.toListVector $ case _headedness opts of
+    Unheaded -> cursor
+    Headed   -> nextPosition (nextRow cursor)
+
+-- | Decode from a 'DsvCursor'
+parseDecodeNamedFromDsvCursor :: NameDecode' ByteString a -> ParseOptions -> DsvCursor -> DecodeValidation ByteString [a]
+parseDecodeNamedFromDsvCursor n opts cursor =
+  let parts =
+        case DSV.toListVector cursor of
+          [] -> missingHeader
+          (header:body) ->
+            let header' = traverse toField header
+            in  case _headedness opts of
+              Unheaded ->
+                badConfig $ mconcat
+                  [ "Your ParseOptions indicates a CSV with no header (Unheaded),\n"
+                  , "but your decoder requires column names."
+                  ]
+              Headed   ->
+                (,body) <$> bindValidation header' (flip makePositional n)
+  in  bindValidation parts $ \(d,b) ->
+      flip bindValidation (decode d) $ traverse (traverse toField) b
+
+toField :: LBS.ByteString -> DecodeValidation ByteString ByteString
+toField = Prelude.either badParse pure . first UTF8.fromString . AL.eitherResult . AL.parse field

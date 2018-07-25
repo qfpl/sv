@@ -8,6 +8,7 @@ module Data.Sv.Core.Laws (test_Laws) where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.List.NonEmpty (NonEmpty ((:|)))
+import Data.Monoid (Last)
 import Data.Profunctor (Profunctor (dimap))
 import Data.Semigroupoid (Semigroupoid (o))
 import qualified Data.Validation as V
@@ -46,11 +47,11 @@ decodeGen :: (CoArbitrary (In s), Arbitrary (Out a), Arbitrary (Out e)) => Gen (
 decodeGen =
   buildDecode <$> (unwrap <$> arbitrary)
 
-unwrap :: (Input s -> Output e a) -> Vector s -> Ind -> (Validation e a, Ind)
+unwrap :: (Input s -> Output e a) -> Vector s -> Ind -> (Validation e a, Last Bool, Ind)
 unwrap = curry . dimap Input unwrapO
 
 newtype Output e a =
-  Output { unwrapO :: (Validation e a, Ind) }
+  Output { unwrapO :: (Validation e a, Last Bool, Ind) }
 
 newtype Input s = Input (Vector s, Ind)
 
@@ -66,7 +67,8 @@ arbOut = unout <$> arbitrary
 instance (Arbitrary (Out e), Arbitrary (Out a)) => Arbitrary (Output e a) where
   arbitrary =
     Output <$>
-      ((,) <$> oneof [V.Failure <$> arbOut, V.Success <$> arbOut]
+      ((,,) <$> oneof [V.Failure <$> arbOut, V.Success <$> arbOut]
+          <*> arbitrary
           <*> (Ind <$> arbOut))
 
 instance (CoArbitrary (In (Vector s)), CoArbitrary (In Ind)) => CoArbitrary (Input s) where

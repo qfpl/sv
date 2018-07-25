@@ -34,6 +34,7 @@ import qualified Data.Sv.Encode as E
 ## Examples:
 
 * Decoding a real CSV: [Species.lhs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Species.lhs)
+* Decoding by column name: [Columnar.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Columnar.hs)
 * Encoding data to a CSV: [Encoding.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs)
 * Handling "NULL" and "Unknown" occuring in a column of numbers: [Numbers.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs)
 * Dealing with non-rectangular data: [Ragged.hs](https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs)

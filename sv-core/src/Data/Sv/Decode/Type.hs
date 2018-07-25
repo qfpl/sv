@@ -15,6 +15,8 @@ module Data.Sv.Decode.Type (
   Decode (..)
 , Decode'
 , buildDecode
+, NameDecode (..)
+, NameDecode'
 , DecodeState (..)
 , runDecodeState
 , Ind (..)
@@ -24,15 +26,19 @@ module Data.Sv.Decode.Type (
 , Validation (..)
 ) where
 
+import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
 import Control.Monad.State (State, runState, state, MonadState)
+import Control.Monad.Writer.Strict (Writer, writer, runWriter)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
 import Data.Functor.Bind (Bind ((>>-)))
-import Data.Functor.Compose (Compose (Compose))
-import Data.List.NonEmpty
-import Data.Semigroup (Semigroup)
+import Data.Functor.Compose (Compose (Compose, getCompose))
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map.Strict (Map)
+import Data.Monoid (Last)
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Semigroupoid (Semigroupoid (o))
 import Data.Profunctor (Profunctor (lmap, rmap))
 import Data.Validation (Validation (Success, Failure))
@@ -56,7 +62,7 @@ import GHC.Generics (Generic)
 -- 'Decode' is not a 'Monad', but we can perform monad-like operations on
 -- it with 'Data.Sv.Decode.>>==' or 'Data.Sv.Decode.bindDecode'
 newtype Decode e s a =
-  Decode { unwrapDecode :: Compose (DecodeState s) (DecodeValidation e) a }
+  Decode { unwrapDecode :: Compose (DecodeState s) (Compose (Writer (Last Bool)) (DecodeValidation e)) a }
   deriving (Functor, Apply, Applicative)
 
 -- | 'Decode'' is 'Decode' with the input and error types the same. You usually
@@ -71,9 +77,9 @@ instance Alt (Decode e s) where
           (b, k) ->
             let a' = fmap (,j) a
                 b' = fmap (,k) b
-            in  case a' <!> b' of
-                  Failure e -> (Failure e, k)
-                  Success (z, m) -> (Success z, m)
+            in  case runWriter $ liftA2 (<!>) (getCompose a') (getCompose b') of
+                  (Failure e, l) -> (Failure e, l, k)
+                  (Success (z, m), l) -> (Success z, l, m)
 
 instance Profunctor (Decode e) where
   lmap f (Decode (Compose dec)) = Decode (Compose (lmap f dec))
@@ -84,10 +90,11 @@ instance Semigroupoid (Decode e) where
     Decode (Compose (DecodeState (ReaderT r'))) -> case s of
       Decode (Compose (DecodeState (ReaderT s'))) ->
         buildDecode $ \vec ind -> case runState (s' vec) ind of
-            (v,ind') -> case v of
-              Failure e -> (Failure e, ind')
-              Success x ->
-                (fst (runState (r' (pure x)) (Ind 0)), ind')
+            (v,ind') -> case runWriter (getCompose v) of
+              (Failure e, l) -> (Failure e, l, ind')
+              (Success x, l) ->
+                case runWriter $ getCompose $ fst (runState (r' (pure x)) (Ind 0)) of
+                  (y, l') -> (y, l <> l', ind')
 
 -- | As we decode a row of data, we walk through its fields. This 'Monad'
 -- keeps track of our position.
@@ -103,8 +110,11 @@ instance Profunctor DecodeState where
   rmap = fmap
 
 -- | Convenient constructor for 'Decode' that handles all the newtype noise for you.
-buildDecode :: (Vector s -> Ind -> (DecodeValidation e a, Ind)) -> Decode e s a
-buildDecode f = Decode . Compose . DecodeState . ReaderT $ \v -> state $ \i -> f v i
+buildDecode :: (Vector s -> Ind -> (DecodeValidation e a, Last Bool, Ind)) -> Decode e s a
+buildDecode f =
+  Decode . Compose . DecodeState . ReaderT $ \v -> state $ \i ->
+    case f v i of
+      (va, l, i') -> (Compose (writer (va, l)), i')
 
 -- | Convenient function to run a DecodeState
 runDecodeState :: DecodeState s a -> Vector s -> Ind -> (a, Ind)
@@ -123,6 +133,12 @@ data DecodeError e =
   | ExpectedEndOfRow (Vector e)
   -- | This decoder was built using the 'categorical' primitive for categorical data
   | UnknownCategoricalValue e [[e]]
+  -- | Looked for a column with this name, but could not find it
+  | MissingColumn e
+  -- | There should have been a header but there was nothing
+  | MissingHeader
+  -- | sv is misconfigured
+  | BadConfig e
   -- | The parser failed, meaning decoding proper didn't even begin
   | BadParse e
   -- | Some other kind of decoding failure occured
@@ -134,6 +150,9 @@ instance Functor DecodeError where
     UnexpectedEndOfRow -> UnexpectedEndOfRow
     ExpectedEndOfRow v -> ExpectedEndOfRow (fmap f v)
     UnknownCategoricalValue e ess -> UnknownCategoricalValue (f e) (fmap (fmap f) ess)
+    MissingColumn e -> MissingColumn (f e)
+    MissingHeader -> MissingHeader
+    BadConfig e -> BadConfig (f e)
     BadParse e -> BadParse (f e)
     BadDecode e -> BadDecode (f e)
 
@@ -154,3 +173,18 @@ instance NFData e => NFData (DecodeErrors e)
 -- | 'DecodeValidation' is the error-accumulating 'Applicative' underlying
 -- 'Decode'
 type DecodeValidation e = Validation (DecodeErrors e)
+
+-- | 'NameDecode' is a decoder that looks for a column by name rather than
+-- by position.
+newtype NameDecode e s a =
+  Named {
+    unNamed :: ReaderT (Map s Ind) (Compose (DecodeValidation e) (Decode e s)) a
+  }
+  deriving (Functor, Applicative)
+
+-- | 'NameDecode'' is 'NameDecode' with both type parameters the same, as
+-- should usually be the case
+type NameDecode' s = NameDecode s s
+
+instance Alt (NameDecode e s) where
+  Named f <!> Named g = Named (f <!> g)
