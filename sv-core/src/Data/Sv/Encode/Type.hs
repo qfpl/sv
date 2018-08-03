@@ -13,11 +13,14 @@ The core type for encoding
 
 module Data.Sv.Encode.Type (
   Encode (Encode, getEncode)
+, NameEncode (..)
 ) where
 
+import Control.Monad.Writer (Writer)
 import Data.Bifoldable (bifoldMap)
 import Data.ByteString.Builder (Builder)
 import Data.Functor.Contravariant (Contravariant (contramap))
+import Data.Functor.Contravariant.Compose (ComposeFC (..))
 import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose))
 import Data.Semigroup (Semigroup)
 import Data.Sequence (Seq)
@@ -46,3 +49,7 @@ instance Decidable Encode where
   lose f = Encode (const (absurd . f))
   choose f (Encode x) (Encode y) =
     Encode $ \e a -> either (x e) (y e) (f a)
+
+newtype NameEncode a =
+  NameEncode { unNamedE :: ComposeFC (Writer (Seq Builder)) Encode a}
+  deriving (Contravariant, Divisible) -- intentionally not Decidable
