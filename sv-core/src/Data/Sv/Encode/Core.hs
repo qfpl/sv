@@ -68,8 +68,11 @@ module Data.Sv.Encode.Core (
 
 -- * Running an Encode
 , encode
+, encodeNamed
 , encodeToHandle
+, encodeNamedToHandle
 , encodeToFile
+, encodeNamedToFile
 , encodeBuilder
 , encodeNamedBuilder
 , encodeRow
@@ -168,20 +171,36 @@ unsafeBuilder b = Encode (\_ a -> pure (b a))
 encode :: Encode a -> EncodeOptions -> [a] -> LBS.ByteString
 encode enc opts = BS.toLazyByteString . encodeBuilder enc opts
 
+encodeNamed :: NameEncode a -> EncodeOptions -> [a] -> LBS.ByteString
+encodeNamed enc opts = BS.toLazyByteString . encodeNamedBuilder enc opts
+
 -- | Encode, writing the output to a file handle.
 encodeToHandle :: Encode a -> EncodeOptions -> [a] -> Handle -> IO ()
 encodeToHandle enc opts as h =
   BS.hPutBuilder h (encodeBuilder enc opts as)
 
+encodeNamedToHandle :: NameEncode a -> EncodeOptions -> [a] -> Handle -> IO ()
+encodeNamedToHandle enc opts as h =
+  BS.hPutBuilder h (encodeNamedBuilder enc opts as)
+
 -- | Encode, writing to a file. This way is more efficient than encoding to
 -- a 'ByteString' and then writing to file.
 encodeToFile :: Encode a -> EncodeOptions -> [a] -> FilePath -> IO ()
-encodeToFile enc opts as fp = do
+encodeToFile = genericEncodeToFile encodeToHandle
+
+encodeNamedToFile :: NameEncode a -> EncodeOptions -> [a] -> FilePath -> IO ()
+encodeNamedToFile = genericEncodeToFile encodeNamedToHandle
+
+genericEncodeToFile
+  :: (enc -> EncodeOptions -> [a] -> Handle -> IO ())
+  -> enc -> EncodeOptions -> [a] -> FilePath -> IO ()
+genericEncodeToFile encHandle enc opts as fp = do
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  encodeToHandle enc opts as h
+  encHandle enc opts as h
   hClose h
+{-# INLINE genericEncodeToFile #-}
 
 -- | Encode to a ByteString 'Builder', which is useful if you are going
 -- to combine the output with other 'ByteString's.
