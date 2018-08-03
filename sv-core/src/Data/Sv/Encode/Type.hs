@@ -32,8 +32,9 @@ import Data.Sv.Encode.Options
 -- | An 'Encode' converts its argument into one or more textual fields, to be
 -- written out as CSV.
 --
--- It is 'Semigroup', 'Contravariant', 'Divisible', and 'Decidable', allowing
--- for composition of these values to build bigger 'Encode's from smaller ones.
+-- It is 'Semigroup', 'Monoid', 'Contravariant', 'Divisible', and 'Decidable',
+-- allowing for composition of these values to build bigger 'Encode's
+-- from smaller ones.
 newtype Encode a =
   Encode { getEncode :: EncodeOptions -> a -> Seq Builder }
   deriving (Semigroup, Monoid)
@@ -51,6 +52,14 @@ instance Decidable Encode where
   choose f (Encode x) (Encode y) =
     Encode $ \e a -> either (x e) (y e) (f a)
 
+-- | A 'NameEncode' is an 'Encode' with an attached column name.
+--
+-- It is 'Semigroup', 'Monoid', 'Contravariant', and 'Divisible', allowing
+-- for composition of these values to build bigger 'NameEncode's
+-- from smaller ones.
+--
+-- Notably, 'NameEncode' is not 'Decidable', since taking the sum of column
+-- names does not make sense.
 newtype NameEncode a =
   NameEncode { unNamedE :: ComposeFC (Writer (Seq Builder)) Encode a}
   deriving (Contravariant, Divisible) -- intentionally not Decidable

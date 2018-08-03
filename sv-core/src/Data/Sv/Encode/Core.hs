@@ -84,6 +84,7 @@ module Data.Sv.Encode.Core (
 -- * Primitive encodes
 -- ** Name-based
 , named
+, (=:)
 -- ** Field-based
 , const
 , show
@@ -166,11 +167,13 @@ unsafeBuilder :: (a -> BS.Builder) -> Encode a
 unsafeBuilder b = Encode (\_ a -> pure (b a))
 {-# INLINE unsafeBuilder #-}
 
--- | Encode the given list with the given 'Encode', configured by the given
+-- | Encode the given list using the given 'Encode', configured by the given
 -- 'EncodeOptions'.
 encode :: Encode a -> EncodeOptions -> [a] -> LBS.ByteString
 encode enc opts = BS.toLazyByteString . encodeBuilder enc opts
 
+-- | Encode the given list with a header using the given 'NameEncode',
+-- configured by the given 'EncodeOptions'.
 encodeNamed :: NameEncode a -> EncodeOptions -> [a] -> LBS.ByteString
 encodeNamed enc opts = BS.toLazyByteString . encodeNamedBuilder enc opts
 
@@ -179,6 +182,7 @@ encodeToHandle :: Encode a -> EncodeOptions -> [a] -> Handle -> IO ()
 encodeToHandle enc opts as h =
   BS.hPutBuilder h (encodeBuilder enc opts as)
 
+-- | Encode with a header, writing the output to a file handle.
 encodeNamedToHandle :: NameEncode a -> EncodeOptions -> [a] -> Handle -> IO ()
 encodeNamedToHandle enc opts as h =
   BS.hPutBuilder h (encodeNamedBuilder enc opts as)
@@ -188,6 +192,8 @@ encodeNamedToHandle enc opts as h =
 encodeToFile :: Encode a -> EncodeOptions -> [a] -> FilePath -> IO ()
 encodeToFile = genericEncodeToFile encodeToHandle
 
+-- | Encode with a header, writing to a file. This way is more efficient
+-- than encoding to a 'ByteString' and then writing to file.
 encodeNamedToFile :: NameEncode a -> EncodeOptions -> [a] -> FilePath -> IO ()
 encodeNamedToFile = genericEncodeToFile encodeNamedToHandle
 
@@ -213,6 +219,8 @@ encodeBuilder e opts as =
     [] -> terminal
     (a:as') -> enc a <> mconcat [nl <> enc a' | a' <- as'] <> terminal
 
+-- | Encode with column names to a ByteString 'Builder', which is useful
+-- if you are going to combine the output with other 'ByteString's.
 encodeNamedBuilder :: NameEncode a -> EncodeOptions -> [a] -> BS.Builder
 encodeNamedBuilder ne opts as =
   case runNamed ne of
@@ -392,8 +400,18 @@ bool10 = mkEncodeBS $ B.bool "0" "1"
 mkNamed :: Encode a -> Seq BS.Builder -> NameEncode a
 mkNamed enc b = NameEncode (ComposeFC (writer (enc, b)))
 
+-- | Attach a column name to an 'Encode'. This is used for building 'Encode's
+-- with headers.
+--
+-- Best used with @OverloadedStrings@
 named :: BS.Builder -> Encode a -> NameEncode a
 named name enc = mkNamed enc (pure name)
+
+-- | Synonym for 'named'.
+--
+-- Mnemonic: __D__ot colon names __D__ecoders, __E__qual colon names __E__ncoders.
+(=:) :: BS.Builder -> Encode a -> NameEncode a
+(=:) = named
 
 runNamed :: NameEncode a -> (Encode a, Seq BS.Builder)
 runNamed = runWriter . getComposeFC . unNamedE
