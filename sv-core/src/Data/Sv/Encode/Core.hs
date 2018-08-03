@@ -220,7 +220,10 @@ encodeNamedBuilder ne opts as =
       let mkHeader = fold . addSeparators opts . addQuoting opts
           addQuoting = fmap . enquote
           nl = newlineToBuilder (_newline opts)
-      in  mkHeader builders <> nl <> encodeBuilder e opts as
+          header = mkHeader builders
+      in  header <> case as of
+        []    -> if _terminalNewline opts then nl else mempty
+        (_:_) -> nl <> encodeBuilder e opts as
 
 -- | Encode one row only
 encodeRow :: Encode a -> EncodeOptions -> a -> LBS.ByteString

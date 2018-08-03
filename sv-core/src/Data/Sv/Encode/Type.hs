@@ -16,13 +16,14 @@ module Data.Sv.Encode.Type (
 , NameEncode (..)
 ) where
 
+import Control.Applicative (liftA2)
 import Control.Monad.Writer (Writer)
 import Data.Bifoldable (bifoldMap)
 import Data.ByteString.Builder (Builder)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Compose (ComposeFC (..))
 import Data.Functor.Contravariant.Divisible (Divisible (divide, conquer), Decidable (choose, lose))
-import Data.Semigroup (Semigroup)
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
 import Data.Void (absurd)
 
@@ -53,3 +54,11 @@ instance Decidable Encode where
 newtype NameEncode a =
   NameEncode { unNamedE :: ComposeFC (Writer (Seq Builder)) Encode a}
   deriving (Contravariant, Divisible) -- intentionally not Decidable
+
+instance Semigroup (NameEncode a) where
+  NameEncode (ComposeFC a) <> NameEncode (ComposeFC b) =
+    NameEncode (ComposeFC (liftA2 (<>) a b))
+
+instance Monoid (NameEncode a) where
+  mappend = (<>)
+  mempty = NameEncode (ComposeFC (pure mempty))
