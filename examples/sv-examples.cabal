@@ -26,6 +26,7 @@ tested-with:         GHC == 7.10.3
 library
   exposed-modules:     Data.Sv.Example.Columnar
                        , Data.Sv.Example.Encoding
+                       , Data.Sv.Example.EncodingWithHeader
                        , Data.Sv.Example.Numbers
                        , Data.Sv.Example.Ragged
                        , Data.Sv.Example.Species

@@ -130,7 +130,7 @@ examples =
   ]
 
 opts :: EncodeOptions
-opts = defaultEncodeOptions & terminalNewline .~ False
+opts = defaultEncodeOptions
 
 main :: IO ()
 main = do
