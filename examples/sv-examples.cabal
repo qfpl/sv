@@ -12,6 +12,7 @@ category:            Example
 build-type:          Simple
 extra-source-files:  changelog.md
                      , csv/encoding.expected.csv
+                     , csv/encoding-header.expected.csv
                      , csv/numbers.csv
                      , csv/ragged.csv
                      , csv/species.csv
