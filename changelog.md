@@ -1,5 +1,9 @@
 # Revision history for sv
 
+## 1.1.1 -- 2018-08-10
+
+* Depend on sv-core 0.2.1 to get column-name-based encoding
+
 ## 1.1 -- 2018-07-25
 
 * Add column-name-based decoding by adding parseDecodeNamed and associated functions

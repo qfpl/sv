@@ -1,5 +1,5 @@
 name:                sv
-version:             1.1
+version:             1.1.1
 license:             BSD3
 license-file:        LICENCE
 author:              George Wilson
@@ -46,6 +46,7 @@ description:
   * Decoding a real CSV: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Species.lhs Species.lhs>
   * Decoding by column name: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Columnar.hs Columnar.hs>
   * Encoding data to a CSV: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Encoding.hs Encoding.hs>
+  * Encoding data to a CSV with a header: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/EncodingWithHeader.hs EncodingWithHeader.hs>
   * Handling NULL and Unknown occuring in a column of numbers: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Numbers.hs Numbers.hs>
   * Dealing with non-rectangular data: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/Ragged.hs Ragged.hs>
   * Integrating with an existing attoparsec parser to read date stamps: <https://github.com/qfpl/sv/blob/master/examples/src/Data/Sv/Example/TableTennis.hs TableTennis.hs>
@@ -97,7 +98,7 @@ library
                        , contravariant >= 1.2 && < 1.6
                        , hw-dsv >= 0.2.1 && < 0.3
                        , semigroupoids >= 5 && <6
-                       , sv-core >= 0.2 && < 0.3
+                       , sv-core >= 0.2.1 && < 0.3
                        , transformers >= 0.2 && < 0.6
                        , utf8-string >= 1 && < 1.1
                        , validation >= 1 && < 1.1
