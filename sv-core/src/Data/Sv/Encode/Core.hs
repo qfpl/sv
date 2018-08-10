@@ -139,7 +139,7 @@ import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (fold)
 import Data.Functor.Contravariant (Contravariant (contramap))
-import Data.Functor.Contravariant.Compose (ComposeFC (..))
+import Data.Functor.Contravariant.Compose (ComposeFC (ComposeFC, getComposeFC))
 import Data.Functor.Contravariant.Divisible (Divisible (conquer), Decidable (choose))
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
 import Data.Sequence (Seq)
@@ -150,8 +150,8 @@ import GHC.Word (Word8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Alien.Containers (intersperseSeq)
-import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
-import Data.Sv.Encode.Type (Encode (Encode, getEncode), NameEncode (..))
+import Data.Sv.Encode.Options (EncodeOptions (EncodeOptions, _encodeSeparator, _newline, _terminalNewline, _quoting), HasEncodeOptions (), HasSeparator (separator), defaultEncodeOptions, Quoting (Always, AsNeeded, Never))
+import Data.Sv.Encode.Type (Encode (Encode, getEncode), NameEncode (NameEncode, unNamedE))
 import Data.Sv.Structure.Newline (newlineToBuilder)
 
 -- | Make an 'Encode' from a function that builds one 'Field'.

@@ -10,7 +10,7 @@ import System.Exit (exitFailure)
 
 import Data.Sv
 import qualified Data.Sv.Encode as E
-import Data.Sv.Example.Encoding (Example (..), sumEnc, examples, e1,e2,e3,e4,e5,e6,p1,p2)
+import Data.Sv.Example.Encoding (Example, sumEnc, examples, e1,e2,e3,e4,e5,e6,p1,p2)
 
 -- This module demonstrates encoding with a header.
 --
