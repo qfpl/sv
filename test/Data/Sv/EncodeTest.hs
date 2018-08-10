@@ -7,6 +7,7 @@ import Control.Lens (makeClassyPrisms)
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.Semigroup ((<>))
+import Data.Text (Text)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=))
 
@@ -21,9 +22,6 @@ makeClassyPrisms ''IntOrString
 
 data IntAndString = IAS { getInt :: Int, getString :: String }
 
-intAndString :: Encode IntAndString
-intAndString = contramap getInt E.int <> contramap getString E.string
-
 test_Encode :: TestTree
 test_Encode =
   testGroup "Encode" [
@@ -31,7 +29,12 @@ test_Encode =
   , decidableTests
   , encodeTests
   , escapeTests
+  , encodeNamedTests
   ]
+
+intAndString :: Encode IntAndString
+intAndString = contramap getInt E.int <> contramap getString E.string
+
 
 opts :: EncodeOptions
 opts = defaultEncodeOptions
@@ -86,4 +89,39 @@ escapeTests =
       encodeRow E.byteString opts "\"test\"ing\" " @?= "\"\"\"test\"\"ing\"\" \""
   , testCase "bytestring - lazy" $
       encodeRow E.lazyByteString opts "\"" @?= "\"\"\"\""
+  ]
+
+data Three = Three {
+  int :: Int
+, double :: Double
+, text :: Text
+} deriving (Eq, Ord, Show)
+
+three :: NameEncode Three
+three =
+  E.named "first" (contramap int E.int)
+    <> E.named "\"Second\"" (contramap double E.double)
+    <> E.named "third" (contramap text E.text)
+
+myInt :: NameEncode Int
+myInt = E.named "my int" E.int
+
+encodeNamedTests :: TestTree
+encodeNamedTests = testGroup "named" [
+    testCase "empty decoder" $
+      encodeNamed mempty opts [] @?= ""
+  , testCase "single column, zero rows" $
+      encodeNamed myInt opts [] @?= "my int"
+  , testCase "single column, one row" $
+      encodeNamed myInt opts [5] @?= "my int\n5"
+  , testCase "single column, many rows" $
+      encodeNamed myInt opts [1..5] @?= "my int\n1\n2\n3\n4\n5"
+  , testCase "multiple columns, zero rows" $
+      encodeNamed three opts [] @?= "first,\"\"\"Second\"\"\",third"
+  , testCase "multiple columns, one row" $
+      encodeNamed three opts [Three 1 2 "th\"ree"]
+        @?= "first,\"\"\"Second\"\"\",third\n1,2.0,\"th\"\"ree\""
+  , testCase "multiple columns, multiple rows" $
+      encodeNamed three opts [Three 1 2 "three", Three 4 5 "SIX"]
+        @?= "first,\"\"\"Second\"\"\",third\n1,2.0,three\n4,5.0,SIX"
   ]

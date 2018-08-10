@@ -15,7 +15,7 @@ import Control.Applicative ((<$>), (<*>), (<|>), empty)
 import Control.DeepSeq (NFData)
 import Control.Lens (makeLenses, makePrisms)
 import Control.Monad (replicateM)
-import Data.Csv (FromRecord (..), FromField (..), (.!))
+import Data.Csv (FromRecord (parseRecord), FromField (parseField), (.!))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS

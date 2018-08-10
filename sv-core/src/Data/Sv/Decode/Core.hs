@@ -533,6 +533,8 @@ column s d =
         (v, l, i') -> (v, l <> pure False, i')
 
 -- | Infix alias for 'column'
+--
+-- Mnemonic: __D__ot colon names __D__ecoders, __E__qual colon names __E__ncoders.
 (.:) :: Ord s => s -> Decode' s a -> NameDecode' s a
 (.:) = column
 {-# INLINE (.:) #-}

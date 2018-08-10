@@ -32,6 +32,7 @@ module Data.Sv (
   , decodeMay
   , decodeEither
   , decodeEither'
+  , (.:)
   , (>>==)
   , (==<<)
   , module Data.Sv.Parse
@@ -43,7 +44,12 @@ module Data.Sv (
   , encodeToFile
   , encodeToHandle
   , encodeBuilder
+  , encodeNamed
+  , encodeNamedToFile
+  , encodeNamedToHandle
+  , encodeNamedBuilder
   , encodeRow
+  , (=:)
   , module Data.Sv.Encode.Type
   , module Data.Sv.Encode.Options
 

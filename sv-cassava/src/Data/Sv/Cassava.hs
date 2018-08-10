@@ -30,7 +30,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString.UTF8 as UTF8
 import qualified Data.Csv as Cassava
 import qualified Data.Csv.Parser as Cassava
-import Data.Sv.Structure.Core (Headedness (..))
+import Data.Sv.Structure.Core (Headedness (Headed, Unheaded))
 import Data.Sv.Decode.Core (Decode', DecodeValidation, validateEitherWith)
 import qualified Data.Sv.Decode.Core as D
 import Data.Validation (bindValidation)

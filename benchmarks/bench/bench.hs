@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy as LBS
 import Data.Csv as C
 import Data.Csv.Parser as C
 import Data.Vector (Vector)
-import HaskellWorks.Data.Dsv.Lazy.Cursor (DsvCursor (..), makeCursor)
+import HaskellWorks.Data.Dsv.Lazy.Cursor (DsvCursor, makeCursor)
 import System.Exit (exitFailure)
 
 import Data.Sv (Validation (Failure, Success), DecodeValidation, ParseOptions, defaultParseOptions, headedness, Headedness (Unheaded), comma, parseDecode, parseDecodeFromDsvCursor)

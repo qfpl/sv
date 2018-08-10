@@ -68,9 +68,13 @@ module Data.Sv.Encode.Core (
 
 -- * Running an Encode
 , encode
+, encodeNamed
 , encodeToHandle
+, encodeNamedToHandle
 , encodeToFile
+, encodeNamedToFile
 , encodeBuilder
+, encodeNamedBuilder
 , encodeRow
 , encodeRowBuilder
 
@@ -78,6 +82,9 @@ module Data.Sv.Encode.Core (
 , module Data.Sv.Encode.Options
 
 -- * Primitive encodes
+-- ** Name-based
+, named
+, (=:)
 -- ** Field-based
 , const
 , show
@@ -125,14 +132,17 @@ import Prelude hiding (const, show)
 
 import Control.Lens (Getting, preview, view)
 import Control.Monad (join)
+import Control.Monad.Writer (runWriter, writer)
 import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (fold)
 import Data.Functor.Contravariant (Contravariant (contramap))
+import Data.Functor.Contravariant.Compose (ComposeFC (ComposeFC, getComposeFC))
 import Data.Functor.Contravariant.Divisible (Divisible (conquer), Decidable (choose))
 import Data.Monoid (Monoid (mempty), First, (<>), mconcat)
+import Data.Sequence (Seq)
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -140,8 +150,8 @@ import GHC.Word (Word8)
 import System.IO (BufferMode (BlockBuffering), Handle, hClose, hSetBinaryMode, hSetBuffering, openFile, IOMode (WriteMode))
 
 import Data.Sv.Alien.Containers (intersperseSeq)
-import Data.Sv.Encode.Options (EncodeOptions (..), HasEncodeOptions (..), HasSeparator (..), defaultEncodeOptions, Quoting (..))
-import Data.Sv.Encode.Type (Encode (Encode, getEncode))
+import Data.Sv.Encode.Options (EncodeOptions (EncodeOptions, _encodeSeparator, _newline, _terminalNewline, _quoting), HasEncodeOptions (), HasSeparator (separator), defaultEncodeOptions, Quoting (Always, AsNeeded, Never))
+import Data.Sv.Encode.Type (Encode (Encode, getEncode), NameEncode (NameEncode, unNamedE))
 import Data.Sv.Structure.Newline (newlineToBuilder)
 
 -- | Make an 'Encode' from a function that builds one 'Field'.
@@ -157,25 +167,46 @@ unsafeBuilder :: (a -> BS.Builder) -> Encode a
 unsafeBuilder b = Encode (\_ a -> pure (b a))
 {-# INLINE unsafeBuilder #-}
 
--- | Encode the given list with the given 'Encode', configured by the given
+-- | Encode the given list using the given 'Encode', configured by the given
 -- 'EncodeOptions'.
 encode :: Encode a -> EncodeOptions -> [a] -> LBS.ByteString
 encode enc opts = BS.toLazyByteString . encodeBuilder enc opts
+
+-- | Encode the given list with a header using the given 'NameEncode',
+-- configured by the given 'EncodeOptions'.
+encodeNamed :: NameEncode a -> EncodeOptions -> [a] -> LBS.ByteString
+encodeNamed enc opts = BS.toLazyByteString . encodeNamedBuilder enc opts
 
 -- | Encode, writing the output to a file handle.
 encodeToHandle :: Encode a -> EncodeOptions -> [a] -> Handle -> IO ()
 encodeToHandle enc opts as h =
   BS.hPutBuilder h (encodeBuilder enc opts as)
 
+-- | Encode with a header, writing the output to a file handle.
+encodeNamedToHandle :: NameEncode a -> EncodeOptions -> [a] -> Handle -> IO ()
+encodeNamedToHandle enc opts as h =
+  BS.hPutBuilder h (encodeNamedBuilder enc opts as)
+
 -- | Encode, writing to a file. This way is more efficient than encoding to
 -- a 'ByteString' and then writing to file.
 encodeToFile :: Encode a -> EncodeOptions -> [a] -> FilePath -> IO ()
-encodeToFile enc opts as fp = do
+encodeToFile = genericEncodeToFile encodeToHandle
+
+-- | Encode with a header, writing to a file. This way is more efficient
+-- than encoding to a 'ByteString' and then writing to file.
+encodeNamedToFile :: NameEncode a -> EncodeOptions -> [a] -> FilePath -> IO ()
+encodeNamedToFile = genericEncodeToFile encodeNamedToHandle
+
+genericEncodeToFile
+  :: (enc -> EncodeOptions -> [a] -> Handle -> IO ())
+  -> enc -> EncodeOptions -> [a] -> FilePath -> IO ()
+genericEncodeToFile encHandle enc opts as fp = do
   h <- openFile fp WriteMode
   hSetBuffering h (BlockBuffering Nothing)
   hSetBinaryMode h True
-  encodeToHandle enc opts as h
+  encHandle enc opts as h
   hClose h
+{-# INLINE genericEncodeToFile #-}
 
 -- | Encode to a ByteString 'Builder', which is useful if you are going
 -- to combine the output with other 'ByteString's.
@@ -188,6 +219,20 @@ encodeBuilder e opts as =
     [] -> terminal
     (a:as') -> enc a <> mconcat [nl <> enc a' | a' <- as'] <> terminal
 
+-- | Encode with column names to a ByteString 'Builder', which is useful
+-- if you are going to combine the output with other 'ByteString's.
+encodeNamedBuilder :: NameEncode a -> EncodeOptions -> [a] -> BS.Builder
+encodeNamedBuilder ne opts as =
+  case runNamed ne of
+    (e, builders) ->
+      let mkHeader = fold . addSeparators opts . addQuoting opts
+          addQuoting = fmap . enquote
+          nl = newlineToBuilder (_newline opts)
+          header = mkHeader builders
+      in  header <> case as of
+        []    -> if _terminalNewline opts then nl else mempty
+        (_:_) -> nl <> encodeBuilder e opts as
+
 -- | Encode one row only
 encodeRow :: Encode a -> EncodeOptions -> a -> LBS.ByteString
 encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
@@ -195,8 +240,11 @@ encodeRow e opts = BS.toLazyByteString . encodeRowBuilder e opts
 -- | Encode one row only, as a ByteString 'Builder'
 encodeRowBuilder :: Encode a -> EncodeOptions -> a -> BS.Builder
 encodeRowBuilder e opts =
-  let addSeparators = intersperseSeq (BS.word8 (view separator opts))
-  in  fold . addSeparators . getEncode e opts
+  fold . addSeparators opts . getEncode e opts
+
+addSeparators :: HasSeparator s => s -> Seq BS.Builder -> Seq BS.Builder
+addSeparators opts = intersperseSeq (BS.word8 (view separator opts))
+{-# INLINE addSeparators #-}
 
 -- | Encode this 'Data.ByteString.ByteString' every time, ignoring the input.
 const :: Strict.ByteString -> Encode a
@@ -262,6 +310,19 @@ quotingIsNecessary opts bs =
         w == 13  || -- cr
         w == 34     -- double quote
 
+enquote :: EncodeOptions -> BS.Builder -> BS.Builder
+enquote opts s =
+  let lbs = BS.toLazyByteString s
+      quoted = quote lbs
+  in  case _quoting opts of
+        Never ->
+          s
+        AsNeeded ->
+          if quotingIsNecessary opts lbs
+          then quoted
+          else s
+        Always -> quoted
+
 quote :: LBS.ByteString -> BS.Builder
 quote bs =
   let q = BS.charUtf8 '"'
@@ -310,17 +371,7 @@ lazyByteString = escaped BS.lazyByteString
 escaped :: (s -> BS.Builder) -> Encode s
 escaped build =
   mkEncodeWithOpts $ \opts s ->
-    let s' = build s
-        lbs = BS.toLazyByteString s'
-        quoted = quote lbs
-    in  case _quoting opts of
-          Never ->
-            s'
-          AsNeeded ->
-            if quotingIsNecessary opts lbs
-            then quoted
-            else s'
-          Always -> quoted
+    enquote opts (build s)
 
 -- | Encode a 'Bool' as True or False
 boolTrueFalse :: Encode Bool
@@ -345,6 +396,25 @@ boolYN = mkEncodeBS $ B.bool "N" "Y"
 -- | Encode a 'Bool' as 1 or 0
 bool10 :: Encode Bool
 bool10 = mkEncodeBS $ B.bool "0" "1"
+
+mkNamed :: Encode a -> Seq BS.Builder -> NameEncode a
+mkNamed enc b = NameEncode (ComposeFC (writer (enc, b)))
+
+-- | Attach a column name to an 'Encode'. This is used for building 'Encode's
+-- with headers.
+--
+-- Best used with @OverloadedStrings@
+named :: BS.Builder -> Encode a -> NameEncode a
+named name enc = mkNamed enc (pure name)
+
+-- | Synonym for 'named'.
+--
+-- Mnemonic: __D__ot colon names __D__ecoders, __E__qual colon names __E__ncoders.
+(=:) :: BS.Builder -> Encode a -> NameEncode a
+(=:) = named
+
+runNamed :: NameEncode a -> (Encode a, Seq BS.Builder)
+runNamed = runWriter . getComposeFC . unNamedE
 
 -- | Given an optic from @s@ to @a@, Try to use it to build an encode.
 --
