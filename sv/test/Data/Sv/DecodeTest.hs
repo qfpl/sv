@@ -108,7 +108,7 @@ parseDecoder = D.contents D.>>==
 data Semi = Semi Text Int Double Text deriving (Eq, Show)
 
 semiD :: D.Decode' ByteString Semi
-semiD = Semi <$> D.utf8 <*> (parseDecoder `o` D.contents) <*> D.double <*> D.utf8
+semiD = Semi <$> D.utf8 <*> (parseDecoder `o` D.contents) <*> D.rational <*> D.utf8
 
 semigroupoidTest :: TestTree
 semigroupoidTest = testGroup "Semigroupoid Decode"
@@ -120,7 +120,7 @@ semigroupoidTest = testGroup "Semigroupoid Decode"
         Failure (DecodeErrors (pure (BadDecode "no")))
   , testCase "Does the right thing in the case of right failure" $
       parseDecode semiD opts semiTestString3 @?=
-        Failure (DecodeErrors (pure (BadDecode "Couldn't decode \"false\" as a double")))
+        Failure (DecodeErrors (pure (BadDecode "Couldn't decode \"false\": input does not start with a digit")))
   ]
 
 -- This CSV has enough columns to make an Item, it has more columns than a
@@ -143,34 +143,34 @@ data SuperItem2 = SuperItem2 Int Text Text Double Int Double deriving (Eq, Show)
 inOrder :: NameDecode' ByteString Item
 inOrder =
   Item <$> D.column "id" D.int <*> D.column "name" D.utf8
-    <*> D.column "cost" D.double <*> D.column "units" D.int
+    <*> D.column "cost" D.rational <*> D.column "units" D.int
 
 outOrder :: NameDecode' ByteString Item
 outOrder =
   (\n u c i -> Item i n c u) <$> D.column "name" D.utf8
-    <*> D.column "units" D.int <*> D.column "cost" D.double
+    <*> D.column "units" D.int <*> D.column "cost" D.rational
     <*> D.column "id" D.int
 
 inOrderSemi :: NameDecode' ByteString SemiItem
 inOrderSemi =
-  SemiItem <$> D.column "name" D.utf8 <*> D.column "cost" D.double
+  SemiItem <$> D.column "name" D.utf8 <*> D.column "cost" D.rational
 
 outOrderSemi :: NameDecode' ByteString SemiItem2
 outOrderSemi =
-  SemiItem2 <$> D.column "units" D.int <*> D.column "cost" D.double
+  SemiItem2 <$> D.column "units" D.int <*> D.column "cost" D.rational
 
 super :: NameDecode' ByteString SuperItem
 super =
   SuperItem <$> D.column "id" D.int <*> D.column "name" D.utf8
     <*> D.column "manufacturer" D.utf8
-    <*> D.column "cost" D.double <*> D.column "units" D.int
+    <*> D.column "cost" D.rational <*> D.column "units" D.int
 
 super2 :: NameDecode' ByteString SuperItem2
 super2 =
   SuperItem2 <$> D.column "id" D.int <*> D.column "name" D.utf8
     <*> D.column "manufacturer" D.utf8
-    <*> D.column "cost" D.double <*> D.column "units" D.int
-    <*> D.column "profit" D.double
+    <*> D.column "cost" D.rational <*> D.column "units" D.int
+    <*> D.column "profit" D.rational
 
 namedTest :: TestTree
 namedTest = testGroup "Named decodes"
