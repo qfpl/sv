@@ -85,7 +85,7 @@ let
       hw-rankselect = pkgs.haskell.lib.dontCheck (super.callCabal2nix "hw-rankselect" "${sources.hw-rankselect}" {});
       hw-rankselect-base = super.callCabal2nix "hw-rankselect-base" "${sources.hw-rankselect-base}" {};
       bits-extra = super.callCabal2nix "bits-extra" "${sources.bits-extra}" {};
-      sv-core = super.callCabal2nix "sv-core" ./sv-core {};
+      sv-core = super.callCabal2nix "sv-core" ../sv-core {};
     };
   };
 

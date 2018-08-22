@@ -2,7 +2,7 @@
 #
 #   runghc make_travis_yml_2.hs 'cabal.project'
 #
-# For more information, see https://github.com/hvr/multi-ghc-travis
+# For more information, see https://github.com/haskell-CI/haskell-ci
 #
 language: c
 sudo: false
@@ -88,13 +88,13 @@ install:
       cabal new-update head.hackage -v
     fi
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \".\" \"./benchmarks\" \"./examples\" \"./sv-cassava\" \"./sv-core\" \"./sv-svfactor\" \"./weigh\"\\n' > cabal.project"
+  - "printf 'packages: \"./sv\" \"./benchmarks\" \"./examples\" \"./sv-cassava\" \"./sv-core\" \"./sv-svfactor\" \"./weigh\"\\n' > cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg  | grep -vw -- sv | grep -vw -- sv-benchmarks | grep -vw -- sv-examples | grep -vw -- sv-cassava | grep -vw -- sv-core | grep -vw -- sv-svfactor | grep -vw -- sv-weigh | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
   - cat cabal.project.local || true
-  - if [ -f "./configure.ac" ]; then
-      (cd "." && autoreconf -i);
+  - if [ -f "./sv/configure.ac" ]; then
+      (cd "./sv" && autoreconf -i);
     fi
   - if [ -f "./benchmarks/configure.ac" ]; then
       (cd "./benchmarks" && autoreconf -i);
@@ -117,21 +117,21 @@ install:
   - rm -f cabal.project.freeze
   - cabal new-build -w ${HC} ${TEST} ${BENCH} --project-file="cabal.project" --dep -j2 all
   - cabal new-build -w ${HC} --disable-tests --disable-benchmarks --project-file="cabal.project" --dep -j2 all
-  - rm -rf .ghc.environment.* "."/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist "./sv-core"/dist "./sv-svfactor"/dist "./weigh"/dist
+  - rm -rf .ghc.environment.* "./sv"/dist "./benchmarks"/dist "./examples"/dist "./sv-cassava"/dist "./sv-core"/dist "./sv-svfactor"/dist "./weigh"/dist
   - DISTDIR=$(mktemp -d /tmp/dist-test.XXXX)
 
 # Here starts the actual work to be performed for the package under test;
 # any command which exits with a non-zero exit code causes the build to fail.
 script:
   # test that source-distributions can be generated
-  - (cd "." && cabal sdist)
+  - (cd "./sv" && cabal sdist)
   - (cd "./benchmarks" && cabal sdist)
   - (cd "./examples" && cabal sdist)
   - (cd "./sv-cassava" && cabal sdist)
   - (cd "./sv-core" && cabal sdist)
   - (cd "./sv-svfactor" && cabal sdist)
   - (cd "./weigh" && cabal sdist)
-  - mv "."/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz "./sv-core"/dist/sv-core-*.tar.gz "./sv-svfactor"/dist/sv-svfactor-*.tar.gz "./weigh"/dist/sv-weigh-*.tar.gz ${DISTDIR}/
+  - mv "./sv"/dist/sv-*.tar.gz "./benchmarks"/dist/sv-benchmarks-*.tar.gz "./examples"/dist/sv-examples-*.tar.gz "./sv-cassava"/dist/sv-cassava-*.tar.gz "./sv-core"/dist/sv-core-*.tar.gz "./sv-svfactor"/dist/sv-svfactor-*.tar.gz "./weigh"/dist/sv-weigh-*.tar.gz ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
   - "printf 'packages: sv-*/*.cabal sv-benchmarks-*/*.cabal sv-examples-*/*.cabal sv-cassava-*/*.cabal sv-core-*/*.cabal sv-svfactor-*/*.cabal sv-weigh-*/*.cabal\\n' > cabal.project"

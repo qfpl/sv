@@ -1,5 +1,5 @@
 packages:
-  ./
+  ./sv
   ./benchmarks
   ./examples
   ./sv-cassava
