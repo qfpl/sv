@@ -252,10 +252,20 @@ float :: Decode' ByteString Float
 float = named "float"
 
 -- | Decode a UTF-8 'ByteString' field as a 'Double'
+--
+-- This is much faster than 'rational' but can be less precise. If you're
+-- not sure which to use, use 'rational'.
+--
+-- See the documentation for 'Data.Text.Read.double' for more information.
 double :: Decode' ByteString Double
 double = named "double"
 
--- | Decode a UTF-8 'ByteString' as any 'Rational' type
+-- | Decode a UTF-8 'ByteString' as any 'Floating' type (usually 'Double')
+--
+-- This is slower than 'double ' but more precise. If you're
+-- not sure which to use, use 'rational'.
+--
+-- See the documentation for 'Data.Text.Read.double' for more information.
 rational :: Floating a => Decode' ByteString a
 rational = rat `o` utf8
   where
