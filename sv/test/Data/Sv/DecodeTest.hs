@@ -120,7 +120,7 @@ semigroupoidTest = testGroup "Semigroupoid Decode"
         Failure (DecodeErrors (pure (BadDecode "no")))
   , testCase "Does the right thing in the case of right failure" $
       parseDecode semiD opts semiTestString3 @?=
-        Failure (DecodeErrors (pure (BadDecode "Couldn't parse \"false\" as a double")))
+        Failure (DecodeErrors (pure (BadDecode "Couldn't decode \"false\" as a double")))
   ]
 
 -- This CSV has enough columns to make an Item, it has more columns than a

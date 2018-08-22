@@ -369,7 +369,7 @@ categorical' as =
 
 -- | Use the 'Readable' instance to try to decode the given value.
 decodeRead :: Readable a => Decode' ByteString a
-decodeRead = decodeReadWithMsg (mappend "Couldn't parse ")
+decodeRead = decodeReadWithMsg (mappend "Couldn't decode ")
 
 -- | Use the 'Readable' instance to try to decode the given value,
 -- or fail with the given error message.
@@ -392,7 +392,7 @@ named name =
       n'' = n' name
       space = " "
   in  decodeReadWithMsg $ \bs ->
-        mconcat ["Couldn't parse \"", bs, "\" as a", n'', space, name]
+        mconcat ["Couldn't decode \"", bs, "\" as a", n'', space, name]
 
 -- | Map over the errors of a 'Decode'
 --
