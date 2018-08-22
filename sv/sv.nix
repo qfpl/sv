@@ -18,7 +18,8 @@ mkDerivation {
     trifecta utf8-string validation vector
   ];
   benchmarkHaskellDepends = [
-    attoparsec base bytestring criterion deepseq lens text vector
+    attoparsec base bytestring criterion deepseq hw-dsv lens text
+    vector
   ];
   homepage = "https://github.com/qfpl/sv";
   description = "Encode and decode separated values (CSV, PSV, ...)";
