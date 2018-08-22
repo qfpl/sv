@@ -62,6 +62,7 @@ module Data.Sv.Decode.Core (
 , integer
 , float
 , double
+, rational
 , boolean
 , boolean'
 , ignore
@@ -95,6 +96,7 @@ module Data.Sv.Decode.Core (
 , withTrifecta
 , withAttoparsec
 , withParsec
+, withTextReader
 
 -- * Working with errors
 , onError
@@ -143,10 +145,13 @@ import Data.Profunctor (lmap)
 import Data.Readable (Readable (fromBS))
 import Data.Semigroup (Semigroup ((<>)), sconcat)
 import Data.Semigroup.Foldable (asum1)
+import Data.Semigroupoid (Semigroupoid (o))
 import Data.Set (Set, fromList, member)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
-import Data.Text.Encoding (decodeUtf8')
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8', encodeUtf8)
+import qualified Data.Text.Read as TR (Reader, rational)
 import qualified Data.Text.Lazy as LT
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
@@ -247,8 +252,24 @@ float :: Decode' ByteString Float
 float = named "float"
 
 -- | Decode a UTF-8 'ByteString' field as a 'Double'
+--
+-- This is much faster than 'rational' but can be less precise. If you're
+-- not sure which to use, use 'rational'.
+--
+-- See the documentation for 'Data.Text.Read.double' for more information.
 double :: Decode' ByteString Double
 double = named "double"
+
+-- | Decode a UTF-8 'ByteString' as any 'Floating' type (usually 'Double')
+--
+-- This is slower than 'double ' but more precise. If you're
+-- not sure which to use, use 'rational'.
+--
+-- See the documentation for 'Data.Text.Read.double' for more information.
+rational :: Floating a => Decode' ByteString a
+rational = rat `o` utf8
+  where
+    rat = mapErrors encodeUtf8 (withTextReader TR.rational)
 
 -- | Decode a field as a 'Bool'
 --
@@ -413,6 +434,21 @@ withParsec =
   in  mkParserFunction
     (validateEitherWith (BadDecode . UTF8.fromString . dropPos . show))
     (\p s -> P.parse p mempty s)
+
+-- | Build a 'Decode' from a @Data.Text@ 'Data.Text.Read.Reader'
+withTextReader :: TR.Reader a -> Decode' Text a
+withTextReader ir =
+  decodeEither $ \t -> case ir t of
+    Left s ->
+      let msg = "Couldn't decode \"" <> t <> "\": " <> T.pack s
+      in  Left (BadDecode msg)
+    Right (a,leftover) ->
+      if T.null leftover
+      then pure a
+      else Left (BadDecode (
+          "Leftover input during decoding: " <> leftover
+        ))
+
 
 mkParserFunction ::
   Tri.CharParsing p

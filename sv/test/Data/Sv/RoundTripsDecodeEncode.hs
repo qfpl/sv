@@ -8,6 +8,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.UTF8 as UTF8
 import Data.Semigroup ((<>))
+import Data.String (IsString)
 import Test.Tasty (TestName, TestTree, testGroup)
 import Test.Tasty.HUnit ((@?=), testCase)
 
@@ -25,6 +26,7 @@ test_Roundtrips =
     , integer
     , float
     , double
+    , rational
     , string
     , byteString
     , lazyByteString
@@ -100,15 +102,24 @@ integer = roundTripCodecIso "integer" D.integer E.integer
   , ("1000000", 1000000)
   ]
 
-float :: TestTree
-float = roundTripCodecIso "float" D.float E.float
+floatingTests :: (IsString s, Fractional a) => [(s,a)]
+floatingTests =
   [ ("5.0", 5)
   , ("10.5", 10.5)
   , ("12345.678", 12345.678)
   ]
 
+float :: TestTree
+float = roundTripCodecIso "float" D.float E.float
+  floatingTests
+
 double :: TestTree
-double = roundTripCodecIso "double" D.double E.double [("5.0", 5)]
+double = roundTripCodecIso "double" D.double E.double
+  floatingTests
+
+rational :: TestTree
+rational = roundTripCodecIso "rational" D.rational E.double
+  (("7.845860130857695", 7.845860130857695) : floatingTests)
 
 text :: TestTree
 text = roundTripCodecIso "text" D.utf8 E.text [(utf8lb "hello", "hello"), (utf8lb "💩💩💩💩", "💩💩💩💩")]
