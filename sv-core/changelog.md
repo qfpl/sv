@@ -1,5 +1,10 @@
 # Revision history for sv-core
 
+## 0.2.2 -- 2018-08-23
+
+* Add `rational` and `withTextReadable`.
+  `rational` can be more accurate than `double` but is slower.
+
 ## 0.2.1 -- 2018-08-10
 
 * Add column-name-based encoding. NameEncode, NameEncode', and
