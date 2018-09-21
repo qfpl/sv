@@ -95,7 +95,7 @@ test-suite             tasty
                        , text >= 1.0 && < 1.3
                        , validation >= 1 && < 1.1
                        , vector >= 0.10 && < 0.13
-                       , QuickCheck >= 2.10 && < 2.12
+                       , QuickCheck >= 2.10 && < 2.13
   ghc-options:
                        -Wall
   hs-source-dirs:
