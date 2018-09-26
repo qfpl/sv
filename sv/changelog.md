@@ -1,5 +1,9 @@
 # Revision history for sv
 
+## 1.2 -- 2018-09-26
+
+* Update to sv-core 0.3
+
 ## 1.1.1 -- 2018-08-10
 
 * Depend on sv-core 0.2.1 to get column-name-based encoding
