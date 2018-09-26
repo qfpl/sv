@@ -63,7 +63,7 @@ benchmark criterion
                        , lens >= 4 && < 5
                        , sv
                        , sv-benchmarks
-                       , sv-cassava == 0.2.*
+                       , sv-cassava == 0.3.*
                        , text >= 1.0 && < 1.3
                        , vector >= 0.10 && < 0.13
 

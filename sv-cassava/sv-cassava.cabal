@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                sv-cassava
-version:             0.2
+version:             0.3
 synopsis:            Integration to use sv with cassava's parser
 description:
   This package provides functions allowing you to use cassava's parser
