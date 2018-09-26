@@ -1,5 +1,10 @@
 # Revision history for sv-core
 
+## 0.3 -- 2018-09-26
+
+* Re-release 0.2.2 as 0.3 due to a change in error messages that
+  broke sv's tests
+
 ## 0.2.2 -- 2018-08-23
 
 * Add `rational` and `withTextReadable`.
