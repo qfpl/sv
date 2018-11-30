@@ -33,10 +33,10 @@ library
   exposed-modules:     Data.Sv.Svfactor
   -- other-modules:
   -- other-extensions:    
-  build-depends:       base >=4.7 && <5
+  build-depends:       base >=4.7 && < 4.13
                        , bytestring >= 0.9.1.10 && < 0.11
                        , lens >= 4 && < 4.18
-                       , profunctors >= 5.2.1 && < 6
+                       , profunctors >= 5.2.1 && < 5.4
                        , sv-core >= 0.3 && < 0.4
                        , svfactor >= 0.1 && < 0.2
                        , validation >= 1 && < 1.1
