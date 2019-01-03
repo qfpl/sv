@@ -21,6 +21,7 @@ main =
   defaultMain
       [ bench "double" $ nf (pd D.double) doublesC
       , bench "rational" $ nf (pd (D.rational :: Decode' BS.ByteString Double)) doublesC
+      , bench "read double" $ nf (pd (D.read :: Decode' BS.ByteString Double)) doublesC
       ]
 
 doubles :: LBS.ByteString
