@@ -87,6 +87,10 @@ module Data.Sv.Decode.Core (
 , (==<<)
 , bindDecode
 
+-- * Building Decodes from Read
+, read
+, read'
+
 -- * Building Decodes from Readable
 , decodeRead
 , decodeRead'
@@ -121,7 +125,7 @@ module Data.Sv.Decode.Core (
 , makePositional
 ) where
 
-import Prelude hiding (either)
+import Prelude hiding (either, read)
 import qualified Prelude
 
 import Control.Lens (alaf)
@@ -157,6 +161,7 @@ import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
+import Text.Read (readMaybe)
 import qualified Text.Trifecta as Tri
 
 import Data.Sv.Decode.Error
@@ -253,19 +258,18 @@ float = named "float"
 
 -- | Decode a UTF-8 'ByteString' field as a 'Double'
 --
--- This is much faster than 'rational' but can be less precise. If you're
--- not sure which to use, use 'rational'.
+-- This is currently the fastest but least precise way to decode doubles.
+-- 'rational' is more precise but slower. 'read' is the most precise, but
+-- slower still.
 --
--- See the documentation for 'Data.Text.Read.double' for more information.
+-- If you aren't sure which to use, use 'read'.
 double :: Decode' ByteString Double
 double = named "double"
 
 -- | Decode a UTF-8 'ByteString' as any 'Floating' type (usually 'Double')
 --
--- This is slower than 'double ' but more precise. If you're
--- not sure which to use, use 'rational'.
---
--- See the documentation for 'Data.Text.Read.double' for more information.
+-- This is slower than 'double' but more precise. It is not as precise as
+-- 'read'.
 rational :: Floating a => Decode' ByteString a
 rational = rat `o` utf8
   where
@@ -366,6 +370,18 @@ categorical' as =
   in  contents >>== \s ->
     validateMaybe (UnknownCategoricalValue s (fmap snd as)) $
       alaf First foldMap (go s) as'
+
+-- | Build a 'Decode' from a 'Read' instance
+read :: Read a => Decode' ByteString a
+read = read' (const $ badDecode "read decoder failed")
+
+-- | Build a 'Decode' from a 'Read' instance.
+--
+-- This version takes a function which lets you build your own error message
+-- in the event of a failure.
+read' :: Read a => (ByteString -> DecodeValidation e a) -> Decode e ByteString a
+read' mkError = contents >>== \c ->
+  maybe (mkError c) pure $ readMaybe $ UTF8.toString c
 
 -- | Use the 'Readable' instance to try to decode the given value.
 decodeRead :: Readable a => Decode' ByteString a

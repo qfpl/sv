@@ -27,6 +27,7 @@ test_Roundtrips =
     , float
     , double
     , rational
+    , readDouble
     , string
     , byteString
     , lazyByteString
@@ -120,6 +121,13 @@ double = roundTripCodecIso "double" D.double E.double
 rational :: TestTree
 rational = roundTripCodecIso "rational" D.rational E.double
   (("7.845860130857695", 7.845860130857695) : floatingTests)
+
+readDouble :: TestTree
+readDouble = roundTripCodecIso "read double" D.read (E.show :: Encode Double)
+  ( ("1.0000000000034547e-2", 1.0000000000034547e-2)
+  : ("7.845860130857695", 7.845860130857695)
+  : floatingTests
+  )
 
 text :: TestTree
 text = roundTripCodecIso "text" D.utf8 E.text [(utf8lb "hello", "hello"), (utf8lb "💩💩💩💩", "💩💩💩💩")]
