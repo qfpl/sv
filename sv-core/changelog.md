@@ -1,5 +1,9 @@
 # Revision history for sv-core
 
+## 0.3.1 -- 2019-01-04
+
+* Add `read` and `read'` decoders
+
 ## 0.3 -- 2018-09-26
 
 * Re-release 0.2.2 as 0.3 due to a change in error messages that

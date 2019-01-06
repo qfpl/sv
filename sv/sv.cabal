@@ -98,7 +98,7 @@ library
                        , contravariant >= 1.2 && < 1.6
                        , hw-dsv >= 0.2.1 && < 0.4
                        , semigroupoids >= 5 && < 5.4
-                       , sv-core >= 0.3 && < 0.4
+                       , sv-core >= 0.3.1 && < 0.4
                        , transformers >= 0.2 && < 0.6
                        , utf8-string >= 1 && < 1.1
                        , validation >= 1 && < 1.1
