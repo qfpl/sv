@@ -1,5 +1,13 @@
 # Revision history for sv-core
 
+## 0.4 -- unreleased
+
+* Use attoparsec for decoding in `double`, which is faster and more accurate
+* Deprecate `rational`
+* Add `doubleFast`, a fast and correct way to render doubles. The only
+  downside is that it does not satisfy a round-trip property with any
+  decoder.
+
 ## 0.3.1 -- 2019-01-04
 
 * Add `read` and `read'` decoders

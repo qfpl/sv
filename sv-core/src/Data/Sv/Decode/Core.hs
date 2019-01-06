@@ -266,6 +266,7 @@ double = withAttoparsec AC8.double <!> (
     contents >>== \s -> badDecode $ "Couldn't decode \"" <> s <> "\" as a double"
   )
 
+{-# DEPRECATED rational "use double or float instead" #-}
 -- | Decode a UTF-8 'ByteString' as any 'Floating' type (usually 'Double')
 rational :: Floating a => Decode' ByteString a
 rational = rat `o` utf8
