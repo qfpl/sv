@@ -26,7 +26,7 @@ test_Roundtrips =
     , integer
     , float
     , double
-    , rational
+    , doubleFast
     , readDouble
     , string
     , byteString
@@ -114,19 +114,28 @@ float :: TestTree
 float = roundTripCodecIso "float" D.float E.float
   floatingTests
 
+doubleTests :: (IsString s, Fractional a) => [(s,a)]
+doubleTests = ("7.845860130857695", 7.845860130857695) : floatingTests
+
 double :: TestTree
 double = roundTripCodecIso "double" D.double E.double
-  floatingTests
+  ( ("1.0000000000034547e-2", 1.0000000000034547e-2)
+  : doubleTests
+  )
 
-rational :: TestTree
-rational = roundTripCodecIso "rational" D.rational E.double
-  (("7.845860130857695", 7.845860130857695) : floatingTests)
+doubleFast :: TestTree
+doubleFast = roundTripCodecIso "doubleFast" D.double E.doubleFast
+  [ ("5", 5)
+  , ("10.5", 10.5)
+  , ("12345.678", 12345.678)
+  , ("7.845860130857695", 7.845860130857695)
+  , ("0.010000000000034547", 1.0000000000034547e-2)
+  ]
 
 readDouble :: TestTree
 readDouble = roundTripCodecIso "read double" D.read (E.show :: Encode Double)
   ( ("1.0000000000034547e-2", 1.0000000000034547e-2)
-  : ("7.845860130857695", 7.845860130857695)
-  : floatingTests
+  : doubleTests
   )
 
 text :: TestTree

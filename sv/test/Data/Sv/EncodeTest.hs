@@ -100,7 +100,7 @@ data Three = Three {
 three :: NameEncode Three
 three =
   E.named "first" (contramap int E.int)
-    <> E.named "\"Second\"" (contramap double E.double)
+    <> E.named "\"Second\"" (contramap double E.doubleFast)
     <> E.named "third" (contramap text E.text)
 
 myInt :: NameEncode Int
@@ -120,8 +120,8 @@ encodeNamedTests = testGroup "named" [
       encodeNamed three opts [] @?= "first,\"\"\"Second\"\"\",third"
   , testCase "multiple columns, one row" $
       encodeNamed three opts [Three 1 2 "th\"ree"]
-        @?= "first,\"\"\"Second\"\"\",third\n1,2.0,\"th\"\"ree\""
+        @?= "first,\"\"\"Second\"\"\",third\n1,2,\"th\"\"ree\""
   , testCase "multiple columns, multiple rows" $
       encodeNamed three opts [Three 1 2 "three", Three 4 5 "SIX"]
-        @?= "first,\"\"\"Second\"\"\",third\n1,2.0,three\n4,5.0,SIX"
+        @?= "first,\"\"\"Second\"\"\",third\n1,2,three\n4,5,SIX"
   ]

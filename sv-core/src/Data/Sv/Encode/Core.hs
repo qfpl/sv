@@ -96,6 +96,7 @@ module Data.Sv.Encode.Core (
 , integer
 , float
 , double
+, doubleFast
 , boolTrueFalse
 , booltruefalse
 , boolyesno
@@ -137,6 +138,7 @@ import qualified Data.Bool as B (bool)
 import qualified Data.ByteString as Strict
 import qualified Data.ByteString.Builder as BS
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Double.Conversion.ByteString as DC
 import Data.Foldable (fold)
 import Data.Functor.Contravariant (Contravariant (contramap))
 import Data.Functor.Contravariant.Compose (ComposeFC (ComposeFC, getComposeFC))
@@ -349,8 +351,16 @@ float :: Encode Float
 float = unsafeBuilder BS.floatDec
 
 -- | Encode a 'Double'
+--
+-- This version satisfies the roundtrip property. If that doesn't matter to you,
+-- use the faster version 'doubleFast'
 double :: Encode Double
 double = unsafeBuilder BS.doubleDec
+
+-- | Encode a 'Double' really quickly. This version uses the @double-conversion@
+-- package.
+doubleFast :: Encode Double
+doubleFast = contramap DC.toShortest unsafeByteString
 
 -- | Encode a 'String'
 string :: Encode String

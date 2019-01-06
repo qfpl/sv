@@ -32,7 +32,7 @@ exampleEnc =
       "Bytestring" =: E.encodeOf e1 E.byteString
   <>  "Text" =: E.encodeOf e2 E.text
   <>  "Int" =: E.encodeOf e3 E.int
-  <>  "Double" =: E.encodeOf e4 E.double
+  <>  "Double" =: E.encodeOf e4 E.doubleFast
   -- Notice that we have had to inline the definition of productEnc to
   -- attach a name to each component of it.
   --
@@ -42,7 +42,7 @@ exampleEnc =
   -- This could also be avoided by not using ADTs within the data
   -- type to be encoded.
   <>  "Text2" =: E.encodeOf (e5.p1) E.text
-  <>  "Double2" =: E.encodeOf (e5.p2) E.double
+  <>  "Double2" =: E.encodeOf (e5.p2) E.doubleFast
   <>  "Sum" =: E.encodeOf e6 sumEnc
 
 

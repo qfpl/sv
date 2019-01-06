@@ -150,11 +150,11 @@ shortRowEnc =
 
 productEnc :: E.Encode Product
 productEnc =
-  contramap i E.int <> contramap f E.float <> contramap d E.double
+  contramap i E.int <> contramap f E.float <> contramap d E.doubleFast
 
 coproductEnc :: E.Encode Coproduct
 coproductEnc =
-  E.encodeOf _I  E.int <> E.encodeOf _B E.byteString <> E.encodeOf _D E.double
+  E.encodeOf _I  E.int <> E.encodeOf _B E.byteString <> E.encodeOf _D E.doubleFast
 
 longRowEnc :: E.Encode LongRow
 longRowEnc = mconcat [
@@ -163,7 +163,7 @@ longRowEnc = mconcat [
   , E.encodeOf lrI E.int
   , E.encodeOf lrG E.integer
   , E.encodeOf lrF E.float
-  , E.encodeOf lrD E.double
+  , E.encodeOf lrD E.doubleFast
   , E.encodeOf lrP productEnc
   , E.encodeOf lrC coproductEnc
   ]

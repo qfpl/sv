@@ -134,6 +134,7 @@ import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
 import Control.Monad.State (state)
 import Control.Monad.Writer.Strict (runWriter)
 import qualified Data.Attoparsec.ByteString as A
+import qualified Data.Attoparsec.ByteString.Char8 as AC8
 import Data.Bifunctor (first, second)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
@@ -159,6 +160,7 @@ import qualified Data.Text.Read as TR (Reader, rational)
 import qualified Data.Text.Lazy as LT
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
+import GHC.Float (double2Float)
 import Text.Parsec (Parsec)
 import qualified Text.Parsec as P (parse)
 import Text.Read (readMaybe)
@@ -254,22 +256,17 @@ integer = named "integer"
 
 -- | Decode a UTF-8 'ByteString' field as a 'Float'
 float :: Decode' ByteString Float
-float = named "float"
+float = double2Float <$> double
 
 -- | Decode a UTF-8 'ByteString' field as a 'Double'
 --
--- This is currently the fastest but least precise way to decode doubles.
--- 'rational' is more precise but slower. 'read' is the most precise, but
--- slower still.
---
--- If you aren't sure which to use, use 'read'.
+-- This is currently the fastest and most precise way to decode doubles.
 double :: Decode' ByteString Double
-double = named "double"
+double = withAttoparsec AC8.double <!> (
+    contents >>== \s -> badDecode $ "Couldn't decode \"" <> s <> "\" as a double"
+  )
 
 -- | Decode a UTF-8 'ByteString' as any 'Floating' type (usually 'Double')
---
--- This is slower than 'double' but more precise. It is not as precise as
--- 'read'.
 rational :: Floating a => Decode' ByteString a
 rational = rat `o` utf8
   where
