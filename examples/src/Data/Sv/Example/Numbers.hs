@@ -21,7 +21,7 @@ opts :: ParseOptions
 opts = defaultParseOptions & headedness .~ Unheaded
 
 num :: Decode' ByteString (Maybe Double)
-num = D.orEmpty D.rational
+num = D.orEmpty D.double
   <!> (D.exactly "unknown" <!> D.exactly "NULL") $> Nothing
 
 main :: IO ()

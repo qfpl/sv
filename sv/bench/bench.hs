@@ -20,8 +20,9 @@ main :: IO ()
 main =
   defaultMain
       [ bench "double" $ nf (pd D.double) doublesC
-      , bench "rational" $ nf (pd (D.rational :: Decode' BS.ByteString Double)) doublesC
       , bench "read double" $ nf (pd (D.read :: Decode' BS.ByteString Double)) doublesC
+      , bench "float" $ nf (pd D.float) doublesC
+      , bench "read float" $ nf (pd (D.read :: Decode' BS.ByteString Float)) doublesC
       ]
 
 doubles :: LBS.ByteString

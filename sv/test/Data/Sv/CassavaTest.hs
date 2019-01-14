@@ -12,7 +12,7 @@ import Data.Sv.Encode (Encode)
 import qualified Data.Sv.Encode as E
 import Data.Vector as V
 import Data.Tuple.Only (Only (fromOnly))
-import Hedgehog (Gen, (===), failure, forAll, property)
+import Hedgehog (Gen, TestLimit, (===), failure, forAll, property, withTests)
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty (TestName, TestTree, testGroup)
@@ -25,9 +25,9 @@ test_CassavaAgreement =
     , cassavaAgreement "char" Sv.char E.char (Gen.unicode)
     , cassavaAgreement "integer" Sv.integer E.integer (Gen.integral (Range.linear (-10000000) 10000000))
     , cassavaAgreement "string" Sv.string E.string (Gen.string (Range.linear 1 500) Gen.unicode)
-    , cassavaAgreement "bytestring" Sv.byteString E.byteString (Gen.utf8 (Range.linear 1 600) Gen.unicode)
-    , cassavaAgreement "float" Sv.float E.float (Gen.float (Range.exponentialFloat (-10000000) 10000000))
-    , cassavaAgreement "double" Sv.double E.double (Gen.double (Range.exponentialFloat (-10000000) 10000000))
+    , cassavaAgreement' "bytestring" 5000 Sv.byteString E.byteString (Gen.utf8 (Range.linear 1 600) Gen.unicode)
+    , cassavaAgreement' "float" 5000 Sv.float E.float (Gen.float (Range.exponentialFloat (-1000000000) 1000000000))
+    , cassavaAgreement' "double" 5000 Sv.double E.double (Gen.double (Range.exponentialFloat (-1000000000) 1000000000))
     ]
 
 opts :: ParseOptions
@@ -35,7 +35,10 @@ opts = defaultParseOptions { _headedness = Unheaded }
 
 -- | Test that decoding with sv gets the same result as decoding with cassava
 cassavaAgreement :: forall a . (Csv.FromField a, Csv.ToField a, Show a, Eq a) => TestName -> Decode' BS.ByteString a -> Encode a -> Gen a -> TestTree
-cassavaAgreement name dec enc gen = testProperty name $ property $ do
+cassavaAgreement t = cassavaAgreement' t 100
+
+cassavaAgreement' :: forall a . (Csv.FromField a, Csv.ToField a, Show a, Eq a) => TestName -> TestLimit -> Decode' BS.ByteString a -> Encode a -> Gen a -> TestTree
+cassavaAgreement' name reps dec enc gen = testProperty name $ withTests reps $ property $ do
   a <- forAll gen
   let sa = Sv.encode enc defaultEncodeOptions [a]
   let cassava :: Either String [a]

@@ -70,7 +70,7 @@ makeLenses ''Example
 -- divide :: (Product -> (Text, Int)) -> Encode Text -> Encode Int -> Encode Product
 -- @
 productEnc :: Encode Product
-productEnc = divide (\(Product t d) -> (t,d)) E.text E.double
+productEnc = divide (\(Product t d) -> (t,d)) E.text E.doubleFast
 
 -- | Here we're defining an encoder for a 'Sum' using the 'choose' combinator.
 --
@@ -92,11 +92,11 @@ productEnc = divide (\(Product t d) -> (t,d)) E.text E.double
 -- @
 -- split :: Sum -> Either Int (Either Double Text)
 -- choose split :: Encode Int -> Encode (Either Double Text) -> Encode Sum
--- chosen E.double E.text :: Encode (Either Double Text)
+-- chosen E.doubleFast E.text :: Encode (Either Double Text)
 -- @
 --
 sumEnc :: Encode Sum
-sumEnc = choose split E.int $ chosen E.double E.text
+sumEnc = choose split E.int $ chosen E.doubleFast E.text
   where
     split s =
       case s of
@@ -119,7 +119,7 @@ exampleEnc =
   divide (\(Example b t i d p s) -> (b,(t,(i,(d,(p,s)))))) E.byteString $
     divided E.text $
     divided E.int $
-    divided E.double $
+    divided E.doubleFast $
     divided productEnc sumEnc
 
 examples :: [Example]
@@ -160,7 +160,7 @@ main = do
 exampleEncContravariantExtras :: Encode Example
 exampleEncContravariantExtras =
   contramap (\(Example b t i d p s) -> (b,t,i,d,p,s)) $
-    contrazip6 E.byteString E.text E.int E.double productEnc sumEnc
+    contrazip6 E.byteString E.text E.int E.doubleFast productEnc sumEnc
 
 -- | Bonus Round #2
 --
@@ -177,17 +177,17 @@ exampleEncContravariantExtras =
 -- This version is pretty clean. It's my favourite of the three :)
 productEncLens :: Encode Product
 productEncLens =
-  E.encodeOf p1 E.text <> E.encodeOf p2 E.double
+  E.encodeOf p1 E.text <> E.encodeOf p2 E.doubleFast
 
 sumEncLens :: Encode Sum
 sumEncLens =
-    E.encodeOf _Sum1 E.int <> E.encodeOf _Sum2 E.double <> E.encodeOf _Sum3 E.text
+    E.encodeOf _Sum1 E.int <> E.encodeOf _Sum2 E.doubleFast <> E.encodeOf _Sum3 E.text
 
 exampleEncLens :: Encode Example
 exampleEncLens =
       E.encodeOf e1 E.byteString
   <>  E.encodeOf e2 E.text
   <>  E.encodeOf e3 E.int
-  <>  E.encodeOf e4 E.double
+  <>  E.encodeOf e4 E.doubleFast
   <>  E.encodeOf e5 productEncLens
   <>  E.encodeOf e6 sumEncLens
