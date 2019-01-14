@@ -1,6 +1,6 @@
 # Revision history for sv
 
-## 1.3 -- unreleased
+## 1.3 -- 2019-01-14
 
 * Update to sv-core 0.4
 

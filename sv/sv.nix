@@ -6,7 +6,7 @@
 }:
 mkDerivation {
   pname = "sv";
-  version = "1.2";
+  version = "1.3";
   src = ./.;
   libraryHaskellDepends = [
     attoparsec base bifunctors bytestring contravariant hw-dsv
