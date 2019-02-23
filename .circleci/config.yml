@@ -1,0 +1,39 @@
+version: 2.1
+
+orbs:
+  haskell: haskell-works/haskell-build@dev:1.6.0
+  github: haskell-works/github-release@1.2.1
+  hackage: haskell-works/hackage@1.0.0
+
+workflows:
+  multiple-ghc-build:
+    jobs:
+      - haskell/build:
+          name: GHC 8.2.2
+          executor: haskell/ghc-8_2_2
+
+      - haskell/build:
+          name: GHC 8.4.4
+          executor: haskell/ghc-8_4_4
+
+      - haskell/build:
+          name: GHC 8.6.3
+          executor: haskell/ghc-8_6_3
+
+      - github/release-cabal:
+          name: GitHub Release
+          requires:
+            - GHC 8.2.2
+            - GHC 8.4.4
+            - GHC 8.6.3
+          checkout: true
+          filters:
+            branches:
+              only: master
+
+      - hackage/upload:
+          publish: true
+          requires:
+            - GitHub Release
+          username: ${HACKAGE_USER}
+          password: ${HACKAGE_PASS}
