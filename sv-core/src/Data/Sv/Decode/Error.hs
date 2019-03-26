@@ -42,14 +42,17 @@ module Data.Sv.Decode.Error (
 ) where
 
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as LBS
-import Data.ByteString.Builder (Builder)
-import qualified Data.ByteString.Builder as BSB
+import qualified Data.ByteString.Char8 as Char8
 import Data.Foldable (toList)
 import Data.List (intersperse)
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Semigroup.Foldable (Foldable1 (foldMap1))
 import Data.String (IsString)
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.IO as LT
+import Data.Text.Lazy.Builder (Builder)
+import qualified Data.Text.Lazy.Builder as Builder
 import Data.Validation (Validation (Failure), bindValidation)
 import Data.Vector (Vector)
 import qualified Text.Trifecta.Result as Trifecta
@@ -128,13 +131,13 @@ validateTrifectaResult f =
         Trifecta.Success a -> Right a
 
 -- | Pretty print errors as a string. Each error is on its own line.
-displayErrors :: DecodeErrors ByteString -> LBS.ByteString
-displayErrors = displayErrors' BSB.byteString
+displayErrors :: DecodeErrors ByteString -> LT.Text
+displayErrors = displayErrors' buildBytestring
 
 -- | Pretty print errors as a string. Each error is on its own line.
 --
 -- This version lets you work with any 'String' type in your errors.
-displayErrors' :: forall e. (e -> Builder) -> DecodeErrors e -> LBS.ByteString
+displayErrors' :: forall e. (e -> Builder) -> DecodeErrors e -> LT.Text
 displayErrors' build (DecodeErrors errs) =
   let
     indent :: Builder -> Builder
@@ -160,20 +163,33 @@ displayErrors' build (DecodeErrors errs) =
     pluralise n s =
       if n == 1
       then s
-      else BSB.integerDec n <> " " <> s <> "s"
+      else Builder.fromString (show n) <> " " <> s <> "s"
     heading = spaceSep ["The following", pluralise c "error", "occured:"]
   in
-    BSB.toLazyByteString $ heading <> "\n" <> body
+    Builder.toLazyText $ heading <> "\n" <> body
 
+-- | If the 'DecodeValidation' is a 'Failure', print a pretty error message
+-- and call 'exitFailure'
 dieOnError :: DecodeValidation ByteString a -> IO a
-dieOnError = dieOnError' BSB.byteString
+dieOnError = dieOnError' buildBytestring
 
-dieOnError' :: Semigroup e => (e -> Builder) -> DecodeValidation e a -> IO a
+-- | If the 'DecodeValidation' is a 'Failure', print a pretty error message
+-- and call 'exitFailure'
+--
+-- This version lets you work with different String types.
+dieOnError' :: (e -> Builder) -> DecodeValidation e a -> IO a
 dieOnError' build e = case e of
   Failure errs -> do
-    LBS.putStrLn $ displayErrors' build errs
+    LT.putStrLn $ displayErrors' build errs
     exitFailure
   Success a -> pure a
+
+---- internal
+
+buildBytestring :: ByteString -> Builder
+buildBytestring bs = case T.decodeUtf8' bs of
+  Left  _ -> Builder.fromString $ Char8.unpack bs
+  Right b -> Builder.fromText b
 
 data Counted e = Counted e Integer
 
