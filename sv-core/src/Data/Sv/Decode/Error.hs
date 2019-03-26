@@ -1,3 +1,6 @@
+{-# language OverloadedStrings #-}
+{-# language ScopedTypeVariables #-}
+
 {-|
 Module      : Data.Sv.Decode.Error
 Copyright   : (C) CSIRO 2017-2019
@@ -22,6 +25,12 @@ module Data.Sv.Decode.Error (
 , badParse
 , badDecode
 
+-- * Display
+, displayErrors
+, displayErrors'
+, dieOnError
+, dieOnError'
+
 -- * Conversions
 , validateEither
 , validateEitherWith
@@ -32,9 +41,19 @@ module Data.Sv.Decode.Error (
 , bindValidation
 ) where
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as LBS
+import Data.ByteString.Builder (Builder)
+import qualified Data.ByteString.Builder as BSB
+import Data.Foldable (toList)
+import Data.List (intersperse)
+import Data.Semigroup (Semigroup ((<>)))
+import Data.Semigroup.Foldable (Foldable1 (foldMap1))
+import Data.String (IsString)
 import Data.Validation (Validation (Failure), bindValidation)
 import Data.Vector (Vector)
 import qualified Text.Trifecta.Result as Trifecta
+import System.Exit (exitFailure)
 
 import Data.Sv.Decode.Type
 
@@ -107,3 +126,60 @@ validateTrifectaResult f =
       trifectaResultToEither r = case r of
         Trifecta.Failure e -> Left . show . Trifecta._errDoc $ e
         Trifecta.Success a -> Right a
+
+-- | Pretty print errors as a string. Each error is on its own line.
+displayErrors :: DecodeErrors ByteString -> LBS.ByteString
+displayErrors = displayErrors' BSB.byteString
+
+-- | Pretty print errors as a string. Each error is on its own line.
+--
+-- This version lets you work with any 'String' type in your errors.
+displayErrors' :: forall e. (e -> Builder) -> DecodeErrors e -> LBS.ByteString
+displayErrors' build (DecodeErrors errs) =
+  let
+    indent :: Builder -> Builder
+    indent x = "  " <> x
+
+    displayErr :: DecodeError e -> Builder
+    displayErr e = indent $ case e of
+      BadParse msg -> "Parsing the document failed. The error was: " <> build msg
+      UnexpectedEndOfRow -> "Expected more fields, but the row ended."
+      ExpectedEndOfRow extras -> "Expected fewer fields in the row. The extra fields contained: " <> spaceSep (fmap build $ toList extras)
+      UnknownCategoricalValue found required ->
+        "Unknown categorical value found: " <> build found <> ". Expected one of:\n" <>
+          (indent . commaSep . fmap build . mconcat) required
+      MissingColumn name -> "Couldn't find required column \"" <> build name <> "\""
+      MissingHeader -> "A header row was required, but one was not found."
+      BadConfig msg -> "sv was misconfigured: " <> build msg
+      BadDecode msg -> "Decoding a field failed: " <> build msg
+
+    displayAndCount = count . displayErr
+    Counted body c = foldMap1 displayAndCount errs
+    spaceSep = mconcat . intersperse " "
+    commaSep = mconcat . intersperse ", "
+    pluralise n s =
+      if n == 1
+      then s
+      else BSB.integerDec n <> " " <> s <> "s"
+    heading = spaceSep ["The following", pluralise c "error", "occured:"]
+  in
+    BSB.toLazyByteString $ heading <> "\n" <> body
+
+dieOnError :: DecodeValidation ByteString a -> IO a
+dieOnError = dieOnError' BSB.byteString
+
+dieOnError' :: Semigroup e => (e -> Builder) -> DecodeValidation e a -> IO a
+dieOnError' build e = case e of
+  Failure errs -> do
+    LBS.putStrLn $ displayErrors' build errs
+    exitFailure
+  Success a -> pure a
+
+data Counted e = Counted e Integer
+
+count :: e -> Counted e
+count e = Counted e 1
+
+instance (Semigroup e, IsString e) => Semigroup (Counted e) where
+  Counted b c <> Counted b' c' =
+    Counted (b <> "\n" <> b') (c+c')
