@@ -3,7 +3,7 @@
 
 {-|
 Module      : Data.Sv.Encode.Core
-Copyright   : (C) CSIRO 2017-2018
+Copyright   : (C) CSIRO 2017-2019
 License     : BSD3
 Maintainer  : George Wilson <george.wilson@data61.csiro.au>
 Stability   : experimental
