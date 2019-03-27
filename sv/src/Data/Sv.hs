@@ -148,7 +148,7 @@ parseDecodeNamedFromDsvCursor n opts cursor =
             in  case _headedness opts of
               Unheaded ->
                 badConfig $ mconcat
-                  [ "Your ParseOptions indicates a CSV with no header (Unheaded),\n"
+                  [ "Your ParseOptions indicates a CSV with no header (Unheaded), "
                   , "but your decoder requires column names."
                   ]
               Headed   ->

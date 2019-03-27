@@ -147,11 +147,13 @@ displayErrors' build (DecodeErrors errs) =
     displayErr e = indent $ case e of
       BadParse msg -> "Parsing the document failed. The error was: " <> build msg
       UnexpectedEndOfRow -> "Expected more fields, but the row ended."
-      ExpectedEndOfRow extras -> "Expected fewer fields in the row. The extra fields contained: " <> spaceSep (fmap build $ toList extras)
+      ExpectedEndOfRow extras ->
+        "Expected fewer fields in the row. The extra fields contained: " <>
+          commaSep (bquote <$> toList extras)
       UnknownCategoricalValue found required ->
-        "Unknown categorical value found: " <> build found <> ". Expected one of:\n" <>
-          (indent . commaSep . fmap build . mconcat) required
-      MissingColumn name -> "Couldn't find required column \"" <> build name <> "\""
+        "Unknown categorical value found: " <> bquote found <> ". Expected one of: " <>
+          (commaSep . fmap bquote . mconcat) required
+      MissingColumn name -> "Could not find required column " <> bquote name
       MissingHeader -> "A header row was required, but one was not found."
       BadConfig msg -> "sv was misconfigured: " <> build msg
       BadDecode msg -> "Decoding a field failed: " <> build msg
@@ -160,11 +162,13 @@ displayErrors' build (DecodeErrors errs) =
     Counted body c = foldMap1 displayAndCount errs
     spaceSep = mconcat . intersperse " "
     commaSep = mconcat . intersperse ", "
+    quote s = "\"" <> s <> "\""
+    bquote = quote . build
     pluralise n s =
       if n == 1
       then s
       else Builder.fromString (show n) <> " " <> s <> "s"
-    heading = spaceSep ["The following", pluralise c "error", "occured:"]
+    heading = spaceSep ["The following", pluralise c "error", "occurred:"]
   in
     Builder.toLazyText $ heading <> "\n" <> body
 

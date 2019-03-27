@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Sv.DecodeTest (test_Decode) where
@@ -12,7 +13,7 @@ import qualified Data.ByteString.Char8 as BS8
 import Data.Functor.Alt ((<!>))
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import Text.Read (readMaybe)
-import Data.Semigroup (Semigroup)
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Semigroupoid (Semigroupoid (o))
 import qualified Data.Vector as V
 import Test.Tasty (TestTree, testGroup)
@@ -29,6 +30,7 @@ test_Decode =
   , varyingLengthTest
   , semigroupoidTest
   , namedTest
+  , displayErrorsTest
   ]
 
 data IntOrString =
@@ -197,8 +199,48 @@ namedTest = testGroup "Named decodes"
         Failure (DecodeErrors (MissingHeader:|[]))
   , testCase "misconfigured" $
       parseDecodeNamed inOrder opts namedCsv @?=
-        Failure (DecodeErrors (
-          BadConfig "Your ParseOptions indicates a CSV with no header (Unheaded),\nbut your decoder requires column names."
-          :|[]
-        ))
+        Failure badConfigErrors
+  ]
+
+badConfigErrors :: DecodeErrors ByteString
+badConfigErrors =
+  DecodeErrors (
+    BadConfig "Your ParseOptions indicates a CSV with no header (Unheaded), but your decoder requires column names."
+      :|[]
+  )
+
+displayErrorsTest :: TestTree
+displayErrorsTest = testGroup "displayErrors" [
+    testCase "single error / BadParse" $
+      displayErrors (DecodeErrors (BadParse "missing comma":|[])) @?=
+        "The following error occurred:\n" <>
+        "  Parsing the document failed. The error was: missing comma"
+  , testCase "two errors / UnexpectedEndOfRow, BadDecode" $
+      displayErrors (DecodeErrors (UnexpectedEndOfRow:|[BadDecode "Could not decode \"3.z\" as a Double"])) @?=
+        "The following 2 errors occurred:\n" <>
+        "  Expected more fields, but the row ended.\n" <>
+        "  Decoding a field failed: Could not decode \"3.z\" as a Double"
+  , testCase "BadConfig" $
+      displayErrors badConfigErrors @?=
+        "The following error occurred:\n" <>
+        "  sv was misconfigured: Your ParseOptions indicates a CSV with no header (Unheaded), but your decoder requires column names."
+  , testCase "Missing Columns" $
+      displayErrors (DecodeErrors (MissingColumn "name":|[MissingColumn "age", MissingColumn "address"])) @?=
+        "The following 3 errors occurred:\n" <>
+        "  Could not find required column \"name\"\n" <>
+        "  Could not find required column \"age\"\n" <>
+        "  Could not find required column \"address\""
+  , testCase "MissingHeader" $
+      displayErrors (DecodeErrors (MissingHeader:|[])) @?=
+        "The following error occurred:\n" <>
+        "  A header row was required, but one was not found."
+  , testCase "ExpectedEndOfRow" $
+      displayErrors (DecodeErrors (ExpectedEndOfRow ["hello", "yes", "no"]:|[])) @?=
+        "The following error occurred:\n" <>
+        "  Expected fewer fields in the row. The extra fields contained: \"hello\", \"yes\", \"no\""
+  , testCase "UnknownCategoricalValue" $
+      displayErrors (DecodeErrors (UnknownCategoricalValue "yes" [["y","true","ok"],["n","false","nope"]] :|[])) @?=
+        "The following error occurred:\n" <>
+        "  Unknown categorical value found: \"yes\". " <>
+          "Expected one of: \"y\", \"true\", \"ok\", \"n\", \"false\", \"nope\""
   ]
