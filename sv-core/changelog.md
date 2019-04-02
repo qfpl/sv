@@ -1,5 +1,10 @@
 # Revision history for sv-core
 
+## 0.4.1 -- 2019-03-26
+
+* Add `displayErrors`, which pretty prints `DecodeErrors`.
+* Add `dieOnError`, which calls `exitFailure` in the case of `DecodeErrors`
+
 ## 0.4 -- 2019-01-14
 
 * Use attoparsec for decoding in `double`, which is faster and more accurate
