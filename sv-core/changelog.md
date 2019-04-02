@@ -1,6 +1,6 @@
 # Revision history for sv-core
 
-## 0.4.1 -- 2019-03-26
+## 0.4.1 -- 2019-04-02
 
 * Add `displayErrors`, which pretty prints `DecodeErrors`.
 * Add `dieOnError`, which calls `exitFailure` in the case of `DecodeErrors`

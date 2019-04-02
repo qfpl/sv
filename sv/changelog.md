@@ -1,5 +1,9 @@
 # Revision history for sv
 
+## 1.3.1 -- 2019-04-02
+
+* Update to sv-core 0.4.1
+
 ## 1.3.0.1 -- 2019-02-26
 
 * Fix an occasionally failing property-test
