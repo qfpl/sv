@@ -38,7 +38,7 @@ library
     , cassava >= 0.4.1 && < 0.6
     , sv-core >= 0.3 && < 0.5
     , utf8-string >= 1 && < 1.1
-    , validation >= 1 && < 1.1
+    , validation >= 1 && < 1.2
     , vector >= 0.10 && < 0.13
   hs-source-dirs:
     src
@@ -60,7 +60,7 @@ test-suite hunit
     , sv-cassava
     , HUnit >= 1.4 && < 1.7
     , text >= 1.0 && < 1.3
-    , validation >= 1 && < 1.1
+    , validation >= 1 && < 1.2
     , vector >= 0.10 && < 0.13
   ghc-options:
     -Wall
