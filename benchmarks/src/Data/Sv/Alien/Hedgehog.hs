@@ -36,10 +36,10 @@ import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.Functor.Identity (runIdentity)
 import Hedgehog.Internal.Gen (Gen, runGenT)
 import Hedgehog.Internal.Seed (Seed)
-import Hedgehog.Internal.Tree (runTree, nodeValue)
+import Hedgehog.Internal.Tree (runTreeT, nodeValue)
 
 sample :: Seed -> Gen a -> a
 sample seed gen =
-  case runIdentity . runMaybeT . runTree $ runGenT 30 seed gen of
+  case runIdentity . runMaybeT . runTreeT $ runGenT 30 seed gen of
     Nothing -> error "could not generate a sample"
     Just x -> nodeValue x
