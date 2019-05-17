@@ -19,11 +19,10 @@ bug-reports:         https://github.com/qfpl/sv/issues
 build-type:          Simple
 extra-source-files:  changelog.md
 cabal-version:       >=1.10
-tested-with:         GHC == 7.10.3
-                     , GHC == 8.0.2
+tested-with:         GHC == 8.0.2
                      , GHC == 8.2.2
                      , GHC == 8.4.4
-                     , GHC == 8.6.4
+                     , GHC == 8.6.5
 
 source-repository    head
   type:              git
