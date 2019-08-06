@@ -198,7 +198,7 @@ endemicity =
 \end{code}
 
 This is a boolean indicator of significance. We give it a categorical decoder.
-This categorical decoder is different because we allow different several
+This categorical decoder is different because we allow several
 different strings to indicate each of the two values. This helps to deal with
 data sets with inconsistently labeled categorical data.
 
