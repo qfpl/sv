@@ -1,5 +1,9 @@
 # Revision history for sv
 
+## 1.4 -- 2019-08-13
+
+* Update to sv-core 0.5
+
 ## 1.3.1 -- 2019-04-02
 
 * Update to sv-core 0.4.1

@@ -36,7 +36,7 @@ library
                        , bytestring >= 0.9.1.10 && < 0.11
                        , lens >= 4 && < 4.18
                        , profunctors >= 5.2.1 && < 5.5
-                       , sv-core >= 0.3 && < 0.5
+                       , sv-core >= 0.3 && < 0.6
                        , svfactor >= 0.1 && < 0.2
                        , validation >= 1 && < 1.2
   hs-source-dirs:      src
