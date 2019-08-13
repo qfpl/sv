@@ -132,7 +132,7 @@ import Control.Lens (alaf)
 import Control.Monad (unless)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT))
 import Control.Monad.State (state)
-import Control.Monad.Writer.Strict (runWriter)
+import Control.Monad.Writer (runWriter)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.ByteString.Char8 as AC8
 import Data.Bifunctor (first, second)

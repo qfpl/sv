@@ -1,5 +1,11 @@
 # Revision history for sv-core
 
+## 0.5 -- 2019-08-13
+
+* Change Decode to use lazy Writer.
+  This allows the many combinator to work in infinite cases, such as the useful
+  pattern `many ignore`, which ignores the rest of the columns.
+
 ## 0.4.1 -- 2019-04-02
 
 * Add `displayErrors`, which pretty prints `DecodeErrors`.

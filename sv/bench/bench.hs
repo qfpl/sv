@@ -1,3 +1,5 @@
+{-# language OverloadedStrings #-}
+
 module Main (main) where
 
 import Control.Lens ((&), (.~))
@@ -23,6 +25,7 @@ main =
       , bench "read double" $ nf (pd (D.read :: Decode' BS.ByteString Double)) doublesC
       , bench "float" $ nf (pd D.float) doublesC
       , bench "read float" $ nf (pd (D.read :: Decode' BS.ByteString Float)) doublesC
+      , bench "many" $ nf (parseDecode (D.utf8 <* many D.utf8) opts) "a\na"
       ]
 
 doubles :: LBS.ByteString
