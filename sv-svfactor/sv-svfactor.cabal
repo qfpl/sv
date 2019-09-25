@@ -23,6 +23,7 @@ tested-with:         GHC == 8.0.2
                      , GHC == 8.2.2
                      , GHC == 8.4.4
                      , GHC == 8.6.5
+                     , GHC == 8.8.1
 
 source-repository    head
   type:              git
@@ -32,10 +33,10 @@ library
   exposed-modules:     Data.Sv.Svfactor
   -- other-modules:
   -- other-extensions:    
-  build-depends:       base >=4.7 && < 4.13
+  build-depends:       base >=4.7 && < 4.14
                        , bytestring >= 0.9.1.10 && < 0.11
                        , lens >= 4 && < 4.19
-                       , profunctors >= 5.2.1 && < 5.5
+                       , profunctors >= 5.2.1 && < 5.6
                        , sv-core >= 0.3 && < 0.6
                        , svfactor >= 0.1 && < 0.2
                        , validation >= 1 && < 1.2
