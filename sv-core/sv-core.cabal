@@ -10,7 +10,7 @@ synopsis:
   Encode and decode separated values (CSV, PSV, ...)
 
 description:
-  <<http://i.imgur.com/uZnp9ke.png>>
+  <<https://raw.githubusercontent.com/qfpl/assets/master/data61-transparent-bg.png>>
   .
   sv-core is the decoding and encoding for the
   <https://hackage.haskell.org/package/sv sv> CSV library. This is split
