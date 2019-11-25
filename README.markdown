@@ -1,6 +1,6 @@
 # SV: Separated Values
 
-<img src="http://i.imgur.com/0h9dFhl.png" width="300px"/>
+![CSIRO's Data61 Logo](https://raw.githubusercontent.com/qfpl/assets/master/data61-transparent-bg.png)
 
 sv (separated values) is a library for parsing, decoding, encoding, and
 printing CSV and similar formats (such as PSV, TSV, and many more).
