@@ -10,7 +10,7 @@ synopsis:
   Encode and decode separated values (CSV, PSV, ...)
 
 description:
-  <<http://i.imgur.com/uZnp9ke.png>>
+  <<https://raw.githubusercontent.com/qfpl/assets/master/data61-transparent-bg.png>>
   .
   sv (separated values) is a library for parsing, decoding, encoding, and
   printing CSV and similar formats (such as PSV, TSV, and many more).
