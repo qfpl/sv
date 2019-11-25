@@ -10,7 +10,7 @@ synopsis:
   sv-core + svfactor
 
 description:
-  <<http://i.imgur.com/uZnp9ke.png>>
+  <<https://raw.githubusercontent.com/qfpl/assets/master/data61-transparent-bg.png>>
   .
   Use sv-core's decoding atop svfactor's parser
 
