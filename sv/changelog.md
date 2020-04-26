@@ -1,5 +1,9 @@
 # Revision history for sv
 
+## 1.4.0.1 -- 2020-04-26
+
+* Build with newer hw-dsv versions (>= 0.4)
+
 ## 1.4 -- 2019-08-13
 
 * Update to sv-core 0.5
