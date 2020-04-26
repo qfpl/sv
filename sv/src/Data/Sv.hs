@@ -73,6 +73,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.UTF8 as UTF8
 import qualified Data.ByteString.Lazy as LBS
 import HaskellWorks.Data.Dsv.Lazy.Cursor as DSV
+import HaskellWorks.Data.Dsv.Lazy.Cursor.Lazy as DSV
 import Data.Functor.Alt (Alt (..))
 import Data.Functor.Contravariant (Contravariant (..))
 import Data.Functor.Contravariant.Divisible (Divisible (..), divided, Decidable (..), chosen)
