@@ -9,6 +9,9 @@ packages:
 
 optimization: 2
 
+benchmarks: True
+tests: True
+
 package bits-extra
   flags: +bmi2
 
