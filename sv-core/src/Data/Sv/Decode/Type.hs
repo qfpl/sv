@@ -50,7 +50,7 @@ import GHC.Generics (Generic)
 -- The second type parameter (@s@) is the input string type
 -- (usually 'ByteString' or 'Text').
 -- The first type parameter (@e@) is the type of strings which occur in errors.
--- Under most circumstances you want these type paraters to coincide, but they
+-- Under most circumstances you want these type parameters to coincide, but they
 -- don't have to. They are two separate type parameters instead of one so that
 -- 'Decode' can have a 'Data.Profunctor.Profunctor' instance.
 --
