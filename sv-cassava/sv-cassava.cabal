@@ -33,9 +33,9 @@ library
   exposed-modules:
     Data.Sv.Cassava
   build-depends:
-    attoparsec >= 0.12.1.4 && < 0.14
+    attoparsec >= 0.12.1.4 && < 0.15
     , base >=4.9 && < 4.15
-    , bytestring >= 0.9.1.10 && < 0.11
+    , bytestring >= 0.9.1.10 && < 0.12
     , cassava >= 0.4.1 && < 0.6
     , sv-core >= 0.3 && < 0.6
     , utf8-string >= 1 && < 1.1
@@ -55,7 +55,7 @@ test-suite hunit
     Haskell2010
   build-depends:
     base >=4.9 && < 4.15
-    , bytestring >= 0.9.1.10 && < 0.11
+    , bytestring >= 0.9.1.10 && < 0.12
     , cassava >= 0.4.1 && < 0.6
     , sv-core >= 0.3 && < 0.6
     , sv-cassava
