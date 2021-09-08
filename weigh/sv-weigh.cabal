@@ -28,7 +28,7 @@ executable sv-weigh
   -- other-modules:
   -- other-extensions:
   build-depends:
-      base >=4.9 && <4.15
+      base >=4.9 && <4.16
     , bytestring >= 0.9.1.10 && < 0.12
     , directory >= 1.2 && < 1.4
     , sv == 1.4.*
