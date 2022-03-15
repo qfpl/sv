@@ -50,6 +50,8 @@ module Data.Sv.Decode.Core (
 -- ** Name-based
 , column
 , (.:)
+, optionalColumn
+, (.?)
 -- ** Field-based
 , contents
 , char
@@ -396,7 +398,7 @@ decodeReadWithMsg :: Readable a => (ByteString -> e) -> Decode e ByteString a
 decodeReadWithMsg e = contents >>== \c ->
   maybe (badDecode (e c)) pure . fromBS $ c
 
--- | Given the name of a type, try to decode it using 'Readable', 
+-- | Given the name of a type, try to decode it using 'Readable',
 named :: Readable a => ByteString -> Decode' ByteString a
 named name =
   let vs' = ['a','e','i','o','u']
@@ -573,7 +575,6 @@ makePositional names d =
 -- | This is the primitive for building decoders that work with columns
 --
 -- Look for the column with the given name and run the given decoder on it
-
 column :: Ord s => s -> Decode' s a -> NameDecode' s a
 column s d =
   Named . ReaderT $ \m -> case M.lookup s m of
@@ -589,6 +590,22 @@ column s d =
 (.:) = column
 {-# INLINE (.:) #-}
 infixl 5 .:
+
+-- | A variant of 'column' that returns 'Nothing' if the column is missing;
+-- useful for backwards compatible decoders.
+optionalColumn :: Ord s => s -> Decode' s a -> NameDecode' s (Maybe a)
+optionalColumn s d =
+  Named . ReaderT $ \m -> case Map.lookup s m of
+    Nothing -> pure Nothing
+    Just i -> Compose . pure . buildDecode $ \vec _ ->
+      case runDecode d vec i of
+        (v, l, i') -> (Just <$> v, l <> pure False, i')
+
+-- | Infix alias for 'optionalColumn'
+(.?) :: Ord s => s -> Decode' s a -> NameDecode' s (Maybe a)
+(.?) = optionalColumn
+{-# INLINE (.?) #-}
+infixl 5 .?
 
 rnat :: Functor f => (g a -> h a) -> Compose f g a -> Compose f h a
 rnat gh (Compose fga) = Compose (fmap gh fga)
