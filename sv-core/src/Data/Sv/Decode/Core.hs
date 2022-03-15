@@ -595,7 +595,7 @@ infixl 5 .:
 -- useful for backwards compatible decoders.
 optionalColumn :: Ord s => s -> Decode' s a -> NameDecode' s (Maybe a)
 optionalColumn s d =
-  Named . ReaderT $ \m -> case Map.lookup s m of
+  Named . ReaderT $ \m -> case M.lookup s m of
     Nothing -> pure Nothing
     Just i -> Compose . pure . buildDecode $ \vec _ ->
       case runDecode d vec i of
