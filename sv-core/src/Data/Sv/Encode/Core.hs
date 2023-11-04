@@ -85,6 +85,7 @@ module Data.Sv.Encode.Core (
 -- ** Name-based
 , named
 , (=:)
+, unNameEncode
 -- ** Field-based
 , const
 , show
@@ -131,7 +132,7 @@ module Data.Sv.Encode.Core (
 import qualified Prelude as P
 import Prelude hiding (const, show)
 
-import Control.Lens (Getting, preview, view)
+import Control.Lens (Getting, preview, view, _1)
 import Control.Monad (join)
 import Control.Monad.Writer (runWriter, writer)
 import qualified Data.Bool as B (bool)
@@ -301,8 +302,8 @@ char :: Encode Char
 char = escaped BS.charUtf8
 
 quotingIsNecessary :: EncodeOptions -> LBS.ByteString -> Bool
-quotingIsNecessary opts bs =
-  LBS.any p bs
+quotingIsNecessary opts =
+  LBS.any p
     where
       sep = _encodeSeparator opts
       p :: Word8 -> Bool
@@ -426,6 +427,9 @@ named name enc = mkNamed enc (pure name)
 runNamed :: NameEncode a -> (Encode a, Seq BS.Builder)
 runNamed = runWriter . getComposeFC . unNamedE
 
+unNameEncode :: NameEncode a -> Encode a
+unNameEncode = view _1 . runWriter . getComposeFC . unNamedE
+
 -- | Given an optic from @s@ to @a@, Try to use it to build an encode.
 --
 -- @
@@ -460,7 +464,7 @@ encodeOf g = encodeOfMay g . choose (maybe (Left ()) Right) conquer
 -- In 'encodeOf', it is handled by the Encode which does nothing,
 -- but for example you might like to use 'orEmpty' to encode an empty field.
 encodeOfMay :: Getting (First a) s a -> Encode (Maybe a) -> Encode s
-encodeOfMay g x = contramap (preview g) x
+encodeOfMay = contramap . preview
 
 -- | Encode a 'String' really quickly.
 -- If the string has quotes in it, they will not be escaped properly, so
