@@ -203,7 +203,7 @@ row =
 char :: Decode' ByteString Char
 char = string >>== \cs -> case cs of
   [] -> badDecode "Expected single char but got empty string"
-  (c:[]) -> pure c
+  [c] -> pure c
   (_:_:_) -> badDecode ("Expected single char but got " <> UTF8.fromString cs)
 
 -- | Get the contents of a field as a bytestring.
@@ -396,7 +396,7 @@ decodeReadWithMsg :: Readable a => (ByteString -> e) -> Decode e ByteString a
 decodeReadWithMsg e = contents >>== \c ->
   maybe (badDecode (e c)) pure . fromBS $ c
 
--- | Given the name of a type, try to decode it using 'Readable', 
+-- | Given the name of a type, try to decode it using 'Readable',
 named :: Readable a => ByteString -> Decode' ByteString a
 named name =
   let vs' = ['a','e','i','o','u']
@@ -430,7 +430,7 @@ withTrifecta :: Tri.Parser a -> Decode' ByteString a
 withTrifecta =
   mkParserFunction
     (validateTrifectaResult (BadDecode . UTF8.fromString))
-    (flip Tri.parseByteString mempty)
+    (`Tri.parseByteString` mempty)
 
 -- | Build a 'Decode' from an Attoparsec parser
 withAttoparsec :: A.Parser a -> Decode' ByteString a
@@ -447,7 +447,7 @@ withParsec =
   let dropPos = drop 1 . dropWhile (/= ':')
   in  mkParserFunction
     (validateEitherWith (BadDecode . UTF8.fromString . dropPos . show))
-    (\p s -> P.parse p mempty s)
+    (`P.parse` mempty)
 
 -- | Build a 'Decode' from a @Data.Text@ 'Data.Text.Read.Reader'
 withTextReader :: TR.Reader a -> Decode' Text a

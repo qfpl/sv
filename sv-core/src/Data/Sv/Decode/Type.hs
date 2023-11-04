@@ -29,7 +29,7 @@ module Data.Sv.Decode.Type (
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData)
 import Control.Monad.Reader (ReaderT (ReaderT, runReaderT), MonadReader, withReaderT)
-import Control.Monad.State (State, runState, state, MonadState)
+import Control.Monad.State (State, runState, evalState, state, MonadState)
 import Control.Monad.Writer (Writer, writer, runWriter)
 import Data.Functor.Alt (Alt ((<!>)))
 import Data.Functor.Apply (Apply)
@@ -93,7 +93,7 @@ instance Semigroupoid (Decode e) where
             (v,ind') -> case runWriter (getCompose v) of
               (Failure e, l) -> (Failure e, l, ind')
               (Success x, l) ->
-                case runWriter $ getCompose $ fst (runState (r' (pure x)) (Ind 0)) of
+                case runWriter $ getCompose $ evalState (r' (pure x)) (Ind 0) of
                   (y, l') -> (y, l <> l', ind')
 
 -- | As we decode a row of data, we walk through its fields. This 'Monad'
@@ -124,7 +124,7 @@ runDecodeState = fmap runState . runReaderT . getDecodeState
 newtype Ind = Ind Int deriving (Eq, Ord, Show)
 
 -- | 'DecodeError' is a value indicating what went wrong during a parse or
--- decode. Its constructor indictates the type of error which occured, and
+-- decode. Its constructor indicates the type of error which occured, and
 -- there is usually an associated string with more finely-grained details.
 data DecodeError e =
   -- | I was looking for another field, but I am at the end of the row
@@ -156,6 +156,30 @@ instance Functor DecodeError where
     BadParse e -> BadParse (f e)
     BadDecode e -> BadDecode (f e)
 
+instance Foldable DecodeError where
+  foldMap f d =
+    case d of
+      UnexpectedEndOfRow -> mempty
+      ExpectedEndOfRow v -> foldMap f v
+      UnknownCategoricalValue e ess -> f e <> foldMap (foldMap f) ess
+      MissingColumn e -> f e
+      MissingHeader -> mempty
+      BadConfig e -> f e
+      BadParse e -> f e
+      BadDecode e -> f e
+
+instance Traversable DecodeError where
+  traverse f d =
+    case d of
+      UnexpectedEndOfRow -> pure UnexpectedEndOfRow
+      ExpectedEndOfRow v -> ExpectedEndOfRow <$> traverse f v
+      UnknownCategoricalValue e ess -> UnknownCategoricalValue <$> f e <*> traverse (traverse f) ess
+      MissingColumn e -> MissingColumn <$> f e
+      MissingHeader -> pure MissingHeader
+      BadConfig e -> BadConfig <$> f e
+      BadParse e -> BadParse <$> f e
+      BadDecode e -> BadDecode <$> f e
+
 instance NFData e => NFData (DecodeError e)
 
 -- | 'DecodeErrors' is a 'Semigroup' full of 'DecodeError'. It is used as the
@@ -167,6 +191,14 @@ newtype DecodeErrors e =
 
 instance Functor DecodeErrors where
   fmap f (DecodeErrors nel) = DecodeErrors (fmap (fmap f) nel)
+
+instance Foldable DecodeErrors where
+  foldMap f (DecodeErrors x) =
+    foldMap (foldMap f) x
+
+instance Traversable DecodeErrors where
+  traverse f (DecodeErrors x) =
+    DecodeErrors <$> traverse (traverse f) x
 
 instance NFData e => NFData (DecodeErrors e)
 
