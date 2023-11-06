@@ -92,7 +92,7 @@ library
                        , Data.Sv.Structure
   other-modules:       Data.Sv.Alien.Cassava
   -- other-extensions:    
-  build-depends:       base >=4.9 && < 4.15
+  build-depends:       base >=4.9 && < 4.16
                        , attoparsec >= 0.12.1.4 && < 0.15
                        , bifunctors >= 5.1 && < 5.6
                        , bytestring >= 0.9.1.10 && < 0.12
@@ -121,7 +121,7 @@ test-suite             tasty
   default-language:
                        Haskell2010
   build-depends:
-                       base >=4.9 && < 4.15
+                       base >=4.9 && < 4.16
                        , bytestring >= 0.9.1.10 && < 0.12
                        , cassava >= 0.4.1 && < 0.6
                        , contravariant >= 1.2 && < 1.6
@@ -154,7 +154,7 @@ benchmark criterion
                        Haskell2010
   build-depends:
                          attoparsec >= 0.12.1.4 && < 0.15
-                       , base >=4.9 && < 4.15
+                       , base >=4.9 && < 4.16
                        , bytestring >= 0.9.1.10 && < 0.12
                        , criterion >= 1.3 && < 1.6
                        , deepseq >= 1.1 && < 1.5
